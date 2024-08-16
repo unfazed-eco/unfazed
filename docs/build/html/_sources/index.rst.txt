@@ -16,4 +16,5 @@ documentation for details.
    :caption: Contents:
 
    topics/common/quickstart
+   modules/modules
 
