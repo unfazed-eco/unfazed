@@ -20,6 +20,10 @@ class AppCenter:
 
         self._store: t.Dict[str, BaseAppConfig] = {}
 
+    @property
+    def ready(self) -> bool:
+        return self._ready
+
     def setup(self) -> None:
         if self._ready:
             return
@@ -48,3 +52,6 @@ class AppCenter:
     def load_app(self, app_path: str) -> BaseAppConfig:
         app_config = BaseAppConfig.from_entry(app_path, self.unfazed)
         return app_config
+
+    def __getitem__(self, key: str) -> BaseAppConfig:
+        return self._store[key]

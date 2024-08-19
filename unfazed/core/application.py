@@ -26,6 +26,10 @@ class Unfazed(Starlette):
         return settings["UNFAZED_SETTINGS"]
 
     @property
+    def ready(self) -> bool:
+        return self._ready
+
+    @property
     def app_center(self) -> AppCenter:
         if self._app_center is None:
             self._app_center = AppCenter(self, self.settings.INSTALLED_APPS)

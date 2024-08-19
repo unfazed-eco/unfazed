@@ -67,13 +67,12 @@ class BaseAppConfig:
 
         try:
             module = importlib.import_module(entry)
-        except ImportError:
+        except Exception:
             raise ImportError(f"Could not import module {entry}")
 
         # check if module has app submodule
-        try:
-            importlib.util.find_spec(f"{module.__name__}.app")
-        except ModuleNotFoundError:
+        ret = importlib.util.find_spec(f"{module.__name__}.app")
+        if ret is None:
             raise ModuleNotFoundError(f"Could not find app.py in {entry}")
 
         app_module = importlib.import_module(f"{module.__name__}.app")
