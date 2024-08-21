@@ -7,7 +7,7 @@ from click import Parameter
 from unfazed.protocol import Command
 
 if t.TYPE_CHECKING:
-    from unfazed.core import Unfazed
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 class BaseCommand(ClickCommand, Command):
@@ -62,5 +62,5 @@ class BaseCommand(ClickCommand, Command):
     def add_arguments(self) -> t.List[Parameter | None]:
         return []
 
-    async def handle(self, **option: t.Any) -> t.Any:
+    async def handle(self, **option: t.Any) -> None:
         raise NotImplementedError("handle method must be implemented")

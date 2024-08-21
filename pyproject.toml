@@ -36,3 +36,9 @@ build-backend = "poetry.core.masonry.api"
 testpaths = [
     "tests",
 ]
+
+[tool.coverage.report]
+exclude_lines = [
+    "# pragma: no cover",
+    "if TYPE_CHECKING:"
+]

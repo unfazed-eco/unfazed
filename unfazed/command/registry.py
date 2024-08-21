@@ -10,8 +10,8 @@ from unfazed.utils import import_string
 from .base import BaseCommand
 
 if t.TYPE_CHECKING:
-    from unfazed.app import AppCenter
-    from unfazed.core import Unfazed
+    from unfazed.app import AppCenter  # pragma: no cover
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 class CommandCenter(Group):
@@ -35,10 +35,6 @@ class CommandCenter(Group):
         internal_command_dir = Path(unfazed.__path__[0] + "/command/internal")
         for command_file in internal_command_dir.glob("*.py"):
             command_name = command_file.stem
-
-            if command_name.startswith("_"):
-                continue
-
             path = f"unfazed.command.internal.{command_name}.Command"
             command = Command(
                 path=path, stem=command_name, label="unfazed.command.internal"

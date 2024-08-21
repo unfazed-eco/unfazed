@@ -84,8 +84,6 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
         ]
 
         unfazed.setup()
-
-        assert unfazed.app_center.ready is True
         success_app = unfazed.app_center["tests.test_application.success"]
 
         assert success_app.label == "tests_test_application_success"
@@ -98,6 +96,6 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
         ]
 
         unfazed.setup()
-        unfazed.app_center.setup()
-        assert unfazed.app_center.ready is True
+        with pytest.raises(RuntimeError):
+            unfazed.app_center.setup()
         assert unfazed.ready is True

@@ -7,7 +7,7 @@ from types import ModuleType
 from unfazed.schema import Command
 
 if t.TYPE_CHECKING:
-    from unfazed.core import Unfazed
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 class BaseAppConfig:
@@ -56,9 +56,6 @@ class BaseAppConfig:
                     continue
 
                 path = f"{self.name}.commands.{command_file.stem}.Command"
-                print(
-                    f"path: {path}, app_label: {self.label}, name: {command_file.stem}"
-                )
                 ret.append(
                     Command(
                         path=path,
@@ -66,7 +63,6 @@ class BaseAppConfig:
                         stem=command_file.stem,
                     )
                 )
-
 
         return ret
 
