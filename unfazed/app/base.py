@@ -42,7 +42,10 @@ class BaseAppConfig:
 
     @property
     def app_path(self) -> Path:
-        ret = Path(self.app_module.__path__._path[0])
+        if hasattr(self.app_module.__path__, "_path"):
+            ret = Path(self.app_module.__path__._path[0])
+        else:
+            ret = Path(self.app_module.__path__[0])
         return ret
 
     def list_command(self) -> t.List[Command]:

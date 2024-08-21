@@ -19,6 +19,7 @@ def test_app_launch(mocker: "MockerFixture") -> None:
             "DEBUG": True,
             "PROJECT_NAME": "test_app_launch",
             "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
+            "ROOT_URLCONF": "tests.test_application.mainapp.routes",
             "INSTALLED_APPS": ["tests.test_application.success"],
         }
     }

@@ -15,6 +15,9 @@ def test_command_center(mocker: "MockerFixture") -> None:
             "DEBUG": True,
             "PROJECT_NAME": "test_command_center",
             "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
+            "ROOT_URLCONF": "tests.test_application.mainapp.routes",
+
+            
         }
     }
     with mocker.patch.object(utils, "import_setting", return_value=return_value):

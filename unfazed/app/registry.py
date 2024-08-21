@@ -31,6 +31,9 @@ class AppCenter:
     def __getitem__(self, key: str) -> BaseAppConfig:
         return self._store[key]
 
+    def __contains__(self, key: str) -> bool:
+        return key in self._store
+
     def __iter__(self) -> t.Iterator[t.Tuple[str, BaseAppConfig]]:
         for key, value in self._store.items():
             yield (key, value)

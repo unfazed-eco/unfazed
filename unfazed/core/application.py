@@ -7,6 +7,7 @@ from unfazed import protocol as p
 from unfazed.app import AppCenter
 from unfazed.command import CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.route import parse_urlconf
 
 
 class Unfazed(Starlette):
@@ -50,9 +51,15 @@ class Unfazed(Starlette):
             )
         return self._command_center
 
+    def setup_routes(self):
+        # add routes from settings.ROOT_URLCONF
+        for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
+            self.router.routes.append(route)
+
     def setup(self) -> None:
         if self._ready:
             return
+
         with Lock():
             if self._ready:
                 return
@@ -64,6 +71,7 @@ class Unfazed(Starlette):
 
             self.app_center.setup()
             self.command_center.setup()
+            self.setup_routes()
 
             self._ready = True
             self._loading = False
