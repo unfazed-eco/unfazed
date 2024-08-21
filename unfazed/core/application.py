@@ -5,6 +5,7 @@ from starlette.applications import Starlette
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
+from unfazed.command import CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 
 
@@ -18,7 +19,11 @@ class Unfazed(Starlette):
         middlewares: t.Sequence[p.MiddleWare] | None = None,
     ) -> None:
         self._ready = False
+        self._loading = False
+
         self._app_center: AppCenter = None
+        self._command_center: CommandCenter = None
+
         super().__init__(debug=debug, routes=routes, middleware=middlewares)
 
     @property
@@ -35,6 +40,16 @@ class Unfazed(Starlette):
             self._app_center = AppCenter(self, self.settings.INSTALLED_APPS)
         return self._app_center
 
+    @property
+    def command_center(self) -> CommandCenter:
+        if self._command_center is None:
+            self._command_center = CommandCenter(
+                self,
+                self.app_center,
+                self.settings.PROJECT_NAME,
+            )
+        return self._command_center
+
     def setup(self) -> None:
         if self._ready:
             return
@@ -42,6 +57,16 @@ class Unfazed(Starlette):
             if self._ready:
                 return
 
+            if self._loading:
+                raise RuntimeError("circular dependency detected when loading apps")
+
+            self._loading = True
+
             self.app_center.setup()
+            self.command_center.setup()
 
             self._ready = True
+            self._loading = False
+
+    def execute_command_from_argv(self):
+        self.command_center.main()

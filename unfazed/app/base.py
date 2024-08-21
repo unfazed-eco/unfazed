@@ -1,7 +1,10 @@
 import importlib
 import importlib.util
 import typing as t
+from pathlib import Path
 from types import ModuleType
+
+from unfazed.schema import Command
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed
@@ -38,8 +41,38 @@ class BaseAppConfig:
         self.app_module = app_module
 
     @property
+    def app_path(self) -> Path:
+        ret = Path(self.app_module.__path__._path[0])
+        return ret
+
+    def list_command(self) -> t.List[Command]:
+        ret: t.List[Command] = []
+        commands_path = self.app_path.joinpath("commands")
+        if commands_path.exists() and commands_path.is_dir():
+            command_file_list = commands_path.glob("*.py")
+
+            for command_file in command_file_list:
+                if command_file.stem.startswith("_"):
+                    continue
+
+                path = f"{self.name}.commands.{command_file.stem}.Command"
+                print(
+                    f"path: {path}, app_label: {self.label}, name: {command_file.stem}"
+                )
+                ret.append(
+                    Command(
+                        path=path,
+                        label=self.label,
+                        stem=command_file.stem,
+                    )
+                )
+
+
+        return ret
+
+    @property
     def name(self) -> str:
-        return self.app_module.__name__.rsplit(".", 1)[0]
+        return self.app_module.__name__
 
     @property
     def label(self) -> str:
@@ -89,7 +122,7 @@ class BaseAppConfig:
                 f"{entry}.app.AppConfig must be a subclass of BaseAppConfig"
             )
 
-        return app_cls(unfazed, app_module)
+        return app_cls(unfazed, module)
 
     def ready(self):
         raise NotImplementedError("Subclasses must implement this method.")
