@@ -4,6 +4,7 @@ import typing as t
 from pathlib import Path
 from types import ModuleType
 
+from unfazed.protocol import Model
 from unfazed.schema import Command
 
 if t.TYPE_CHECKING:
@@ -48,6 +49,14 @@ class BaseAppConfig:
             ret = Path(self.app_module.__path__[0])
         return ret
 
+    @property
+    def name(self) -> str:
+        return self.app_module.__name__
+
+    @property
+    def label(self) -> str:
+        return self.name.replace(".", "_")
+
     def list_command(self) -> t.List[Command]:
         ret: t.List[Command] = []
         commands_path = self.app_path.joinpath("commands")
@@ -69,13 +78,23 @@ class BaseAppConfig:
 
         return ret
 
-    @property
-    def name(self) -> str:
-        return self.app_module.__name__
+    def list_models(self) -> t.List[str]:
+        ret: t.List[str] = []
 
-    @property
-    def label(self) -> str:
-        return self.name.replace(".", "_")
+        # check if models module exists
+        existed = importlib.util.find_spec(f"{self.app_module.__name__}.app")
+        if not existed:
+            return ret
+
+        models_module = importlib.import_module(f"{self.app_module.__name__}.models")
+
+        # check all class in models module
+        for name in dir(models_module):
+            obj = getattr(models_module, name)
+            if isinstance(obj, type) and issubclass(obj, Model):
+                ret.append(f"{self.name}.models.{name}")
+
+        return ret
 
     @classmethod
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:

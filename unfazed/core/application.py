@@ -7,6 +7,7 @@ from unfazed import protocol as p
 from unfazed.app import AppCenter
 from unfazed.command import CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
 
 
@@ -24,6 +25,7 @@ class Unfazed(Starlette):
 
         self._app_center: AppCenter = None
         self._command_center: CommandCenter = None
+        self._model_center: ModelCenter = None
 
         super().__init__(debug=debug, routes=routes, middleware=middlewares)
 
@@ -51,6 +53,15 @@ class Unfazed(Starlette):
             )
         return self._command_center
 
+    @property
+    def model_center(self) -> ModelCenter:
+        if self._model_center is None:
+            self._model_center = ModelCenter(
+                self.settings.DATABASE,
+                self.app_center,
+            )
+        return self._model_center
+
     def setup_routes(self):
         # add routes from settings.ROOT_URLCONF
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
@@ -72,6 +83,8 @@ class Unfazed(Starlette):
             self.app_center.setup()
             self.command_center.setup()
             self.setup_routes()
+
+            self.model_center.setup()
 
             self._ready = True
             self._loading = False
