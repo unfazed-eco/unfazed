@@ -2,7 +2,8 @@ import typing as t
 
 import pytest
 
-from unfazed import utils
+from tests.decorators import mock_unfazed_settings
+from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.route import include, parse_urlconf, path
 
@@ -10,22 +11,22 @@ if t.TYPE_CHECKING:
     from pytest_mock import MockerFixture  # pragma: no cover
 
 
+SETTINGS = {
+    "DEBUG": True,
+    "PROJECT_NAME": "test_setup_routes",
+    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
+}
+
+
+@mock_unfazed_settings(UnfazedSettings(**SETTINGS))
 def test_setup_routes(mocker: "MockerFixture"):
-    return_value = {
-        "UNFAZED_SETTINGS": {
-            "DEBUG": True,
-            "PROJECT_NAME": "test_setup_routes",
-            "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
-        }
-    }
-    with mocker.patch.object(utils, "import_setting", return_value=return_value):
-        unfazed = Unfazed()
+    unfazed = Unfazed()
 
-        unfazed.settings.ROOT_URLCONF = "tests.test_application.routeapp.routes"
-        unfazed.settings.INSTALLED_APPS = ["tests.test_application.success"]
-        unfazed.setup()
+    unfazed.settings.ROOT_URLCONF = "tests.apps.route.routes"
+    unfazed.settings.INSTALLED_APPS = ["tests.apps.route.common"]
+    unfazed.setup()
 
-        assert len(unfazed.routes) == 4
+    assert len(unfazed.routes) == 4
 
 
 class TestInclude:
@@ -33,12 +34,12 @@ class TestInclude:
 
 
 def test_include():
-    import_path = "tests.test_application.mainapp.nopatternroutes"
+    import_path = "tests.apps.route.include.nopatternroutes"
 
     with pytest.raises(ValueError):
         include(import_path)
 
-    import_path = "tests.test_application.mainapp.invalidroutes"
+    import_path = "tests.apps.route.include.invalidroutes"
 
     with pytest.raises(ValueError):
         include(import_path)
@@ -63,16 +64,14 @@ def test_path():
 
 
 def test_parse_urlconf():
-    import_path = "tests.test_application.mainapp.nopatternroutes"
-    app_center = {"tests.test_application.success": None}
+    import_path = "tests.apps.route.include.nopatternroutes"
+    app_center = {"not.existed.app": None}
 
     with pytest.raises(ValueError):
         parse_urlconf(import_path, app_center)
 
-    import_path = "tests.test_application.routeapp.routes"
+    import_path = "tests.apps.route.routes"
     app_center = {"tests": None}
 
     with pytest.raises(ValueError):
         parse_urlconf(import_path, app_center)
-
-
