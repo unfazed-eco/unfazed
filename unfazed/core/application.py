@@ -2,6 +2,7 @@ import typing as t
 from asyncio import Lock
 
 from starlette.applications import Starlette
+from starlette.concurrency import run_in_threadpool
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
@@ -75,7 +76,6 @@ class Unfazed(Starlette):
             if self._ready:
                 return
 
-
             if self._loading:
                 raise RuntimeError("Unfazed is already loading")
 
@@ -90,5 +90,5 @@ class Unfazed(Starlette):
             self._ready = True
             self._loading = False
 
-    def execute_command_from_argv(self):
-        self.command_center.main()
+    async def execute_command_from_argv(self):
+        await run_in_threadpool(self.command_center.main)

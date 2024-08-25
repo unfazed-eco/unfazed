@@ -36,7 +36,7 @@ class Command(BaseCommand):
         app = "models"
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
-        await aerich_cmd.init()
+
         dirname = Path(location, app)
         try:
             await aerich_cmd.init_db(safe)

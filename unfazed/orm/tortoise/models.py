@@ -4,8 +4,8 @@ import warnings
 from tortoise.models import Model as _Model
 
 if t.TYPE_CHECKING:
-    from tortoise.backends.base.client import BaseDBAsyncClient
-    from tortoise.signals import Signals
+    from tortoise.backends.base.client import BaseDBAsyncClient  # pragma: no cover
+    from tortoise.signals import Signals  # pragma: no cover
 
 
 class Model(_Model):
@@ -60,4 +60,3 @@ class Model(_Model):
     ) -> None:
         warnings.warn("Signal is not allowed in unfazed", UserWarning)
         return
-

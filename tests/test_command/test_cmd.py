@@ -1,6 +1,7 @@
 import typing as t
 
 import pytest
+from starlette.concurrency import run_in_threadpool
 
 from tests.decorators import mock_unfazed_settings
 from unfazed.conf import UnfazedSettings
@@ -28,7 +29,7 @@ async def test_cmd_common(mocker: "MockerFixture") -> None:
     assert "common" in unfazed.command_center.commands
     assert "_ignore" not in unfazed.command_center.commands
     cmd = unfazed.command_center.commands["common"]
-    assert cmd._callback() is None
+    await run_in_threadpool(cmd._callback)
 
 
 @pytest.mark.asyncio

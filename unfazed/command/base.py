@@ -57,8 +57,7 @@ class BaseCommand(ClickCommand, Command):
     def _callback(self, **option: t.Optional[t.Any]) -> None:
         if not asyncio.iscoroutinefunction(self.handle):
             raise TypeError("handle method must be a coroutine")
-        asyncio.ensure_future(self.handle(**option))
-
+        asyncio.run(self.handle(**option))
 
     def add_arguments(self) -> t.List[Parameter | None]:
         return []

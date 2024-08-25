@@ -13,10 +13,9 @@ UNFAZED_SETTINGS = {
                     "PORT": 3306,
                     "USER": "root",
                     "PASSWORD": "app",
-                    "DATABASE": "app",
+                    "DATABASE": "test_app",
                 },
             }
         }
     },
 }
-

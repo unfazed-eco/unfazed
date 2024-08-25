@@ -35,6 +35,7 @@ class Command(BaseCommand):
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
         await aerich_cmd.init()
+
         ret = await aerich_cmd.migrate(name)
 
         if not ret:

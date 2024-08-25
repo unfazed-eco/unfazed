@@ -1,8 +1,17 @@
-# import asyncio
+import pytest
 
-# import pytest_asyncio
+from tests.utils import DataBase
 
 
-# @pytest_asyncio.fixture(loop_scope="module")
-# async def current_loop():
-#     return asyncio.get_running_loop()
+@pytest.fixture(scope="session")
+def use_test_db():
+    # refer: Unfazed/docker-compose.yml
+    db = DataBase("mysql", 3306, "root", "app")
+
+    # create test database
+    db.create_db("test_app")
+
+    yield
+
+    # drop test database
+    db.drop_db("test_app")
