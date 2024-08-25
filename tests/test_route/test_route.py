@@ -18,13 +18,14 @@ SETTINGS = {
 }
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(UnfazedSettings(**SETTINGS))
-def test_setup_routes(mocker: "MockerFixture"):
+async def test_setup_routes(mocker: "MockerFixture"):
     unfazed = Unfazed()
 
     unfazed.settings.ROOT_URLCONF = "tests.apps.route.routes"
     unfazed.settings.INSTALLED_APPS = ["tests.apps.route.common"]
-    unfazed.setup()
+    await unfazed.setup()
 
     assert len(unfazed.routes) == 4
 

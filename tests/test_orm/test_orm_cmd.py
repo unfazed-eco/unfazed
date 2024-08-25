@@ -13,7 +13,7 @@ async def test_cmd(tmp_path: Path):
     # set_event_loop(event_loop)
     os.environ[UNFAZED_SETTINGS_MODULE] = "tests.apps.orm.settings"
     unfazed = Unfazed()
-    unfazed.setup()
+    await unfazed.setup()
     root_path = tmp_path / "orm"
     root_path.mkdir()
 

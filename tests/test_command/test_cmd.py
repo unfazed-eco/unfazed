@@ -18,47 +18,51 @@ SETTINGS = {
 }
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.common"])
 )
-def test_cmd_common(mocker: "MockerFixture") -> None:
+async def test_cmd_common(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
-    unfazed.setup()
+    await unfazed.setup()
     assert "common" in unfazed.command_center.commands
     assert "_ignore" not in unfazed.command_center.commands
     cmd = unfazed.command_center.commands["common"]
     assert cmd._callback() is None
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.wrong"])
 )
-def test_cmd_noasync(mocker: "MockerFixture") -> None:
+async def test_cmd_noasync(mocker: "MockerFixture") -> None:
     # 1、test if handle method is not a coroutine
     unfazed = Unfazed()
-    unfazed.setup()
+    await unfazed.setup()
     with pytest.raises(TypeError):
         cmd = unfazed.command_center.commands["noasync"]
         cmd._callback()
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.wrong"])
 )
-def test_cmd_wrong(mocker: "MockerFixture") -> None:
+async def test_cmd_wrong(mocker: "MockerFixture") -> None:
     # 2、test if handle method exists
     unfazed = Unfazed()
-    unfazed.setup()
+    await unfazed.setup()
     with pytest.raises(NotImplementedError):
         cmd = unfazed.command_center.commands["nohandle"]
-        cmd._callback()
+        await cmd.handle()
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.failed"])
 )
-def test_cmd_failed(mocker: "MockerFixture") -> None:
+async def test_cmd_failed(mocker: "MockerFixture") -> None:
     # 3、test if Command is not a subclass of BaseCommand
     unfazed = Unfazed()
     with pytest.raises(TypeError):
-        unfazed.setup()
+        await unfazed.setup()

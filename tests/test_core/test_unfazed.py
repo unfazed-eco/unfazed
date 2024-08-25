@@ -1,5 +1,4 @@
-import threading
-import time
+import asyncio
 import typing as t
 from unittest.mock import patch
 
@@ -25,28 +24,28 @@ _Setting = {
 Setting = UnfazedSettings(**_Setting)
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(Setting)
-def test_app_launch(mocker: "MockerFixture") -> None:
+async def test_app_launch(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
 
-    unfazed.setup()
+    await unfazed.setup()
 
     assert unfazed.ready is True
     # test repeated setup
-    unfazed.setup()
+    await unfazed.setup()
     assert unfazed.ready is True
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(Setting)
-def test_loading_state(mocker: "MockerFixture") -> None:
+async def test_loading_state(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
 
     # test loading state
-    def new_app_center_setup(self):
-        time.sleep(1)
+    async def new_app_center_setup(self):
+        await asyncio.sleep(1)
 
     with patch.object(AppCenter, "setup", new=new_app_center_setup):
         with pytest.raises(RuntimeError):
-            threading.Thread(target=unfazed.setup).start()
-            time.sleep(0.1)
-            unfazed.setup()
+            await asyncio.gather(unfazed.setup(), unfazed.setup())

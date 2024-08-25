@@ -71,9 +71,10 @@ class Unfazed(Starlette):
         if self._ready:
             return
 
-        with Lock():
+        async with Lock():
             if self._ready:
                 return
+
 
             if self._loading:
                 raise RuntimeError("Unfazed is already loading")
