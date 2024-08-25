@@ -20,7 +20,7 @@ class CommandCenter(Group):
         self.app_center = app_center
         super().__init__(name=name)
 
-    def setup(self) -> None:
+    async def setup(self) -> None:
         # load all the commands from the unfazed internal
         for command in self.list_internal_command():
             self.load_command(command)

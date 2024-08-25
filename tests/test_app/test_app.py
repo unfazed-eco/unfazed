@@ -18,8 +18,9 @@ SETTINGS = {
 }
 
 
+@pytest.mark.asyncio
 @mock_unfazed_settings(UnfazedSettings(**SETTINGS))
-def test_installed_apps(mocker: "MockerFixture") -> None:
+async def test_installed_apps(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
 
     # Check if the installed apps are loaded correctly
@@ -30,7 +31,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
         "tests.apps.app.common",
     ]
     with pytest.raises(RuntimeError):
-        unfazed.setup()
+        await unfazed.setup()
 
     # 2. Test if the installed apps are all valid
     unfazed = Unfazed()
@@ -39,7 +40,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
     ]
 
     with pytest.raises(ImportError):
-        unfazed.setup()
+        await unfazed.setup()
 
     # 3. dont have app.py under the path
     unfazed = Unfazed()
@@ -48,7 +49,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
     ]
 
     with pytest.raises(ModuleNotFoundError):
-        unfazed.setup()
+        await unfazed.setup()
 
     # 4. dont have AppConfig class
     unfazed = Unfazed()
@@ -57,7 +58,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
     ]
 
     with pytest.raises(AttributeError):
-        unfazed.setup()
+        await unfazed.setup()
 
     # 5. dont inherit from BaseAppConfig
     unfazed = Unfazed()
@@ -66,7 +67,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
     ]
 
     with pytest.raises(TypeError):
-        unfazed.setup()
+        await unfazed.setup()
 
     # 6. didnot impl ready method
     unfazed = Unfazed()
@@ -75,7 +76,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
     ]
 
     with pytest.raises(NotImplementedError):
-        unfazed.setup()
+        await unfazed.setup()
         noready_app = unfazed.app_center["tests.apps.app.noready"]
         noready_app.ready()
 
@@ -85,7 +86,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
         "tests.apps.app.common",
     ]
 
-    unfazed.setup()
+    await unfazed.setup()
     success_app = unfazed.app_center["tests.apps.app.common"]
 
     assert success_app.label == "tests_apps_app_common"
@@ -97,7 +98,7 @@ def test_installed_apps(mocker: "MockerFixture") -> None:
         "tests.apps.app.common",
     ]
 
-    unfazed.setup()
+    await unfazed.setup()
     with pytest.raises(RuntimeError):
-        unfazed.app_center.setup()
+        await unfazed.app_center.setup()
     assert unfazed.ready is True

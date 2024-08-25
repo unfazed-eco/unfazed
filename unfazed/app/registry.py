@@ -14,7 +14,7 @@ class AppCenter:
         self.installed_apps = installed_apps
         self._store: t.Dict[str, BaseAppConfig] = {}
 
-    def setup(self) -> None:
+    async def setup(self) -> None:
         for app_path in self.installed_apps:
             if app_path in self._store:
                 raise RuntimeError(f"App with path {app_path} is already loaded")

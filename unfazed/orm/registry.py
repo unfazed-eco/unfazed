@@ -11,15 +11,14 @@ class ModelCenter:
         self.app_center = app_center
         self.conf = conf
 
-    def setup(self):
+    async def setup(self):
         if not self.conf:
             return
         driver_cls = import_string(self.conf.driver)
         if not self.conf.apps:
             self.conf.apps = self.build_apps()
         driver: DataBaseDriver = driver_cls(self.conf.model_dump(exclude_none=True))
-        driver.setup()
-
+        await driver.setup()
 
     def build_apps(self) -> t.Dict[str, t.Any]:
         models_list = ["aerich.models"]  # support aerich cmd

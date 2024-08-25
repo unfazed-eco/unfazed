@@ -1,4 +1,3 @@
-import asyncio
 import typing as t
 
 from tortoise import Tortoise
@@ -14,11 +13,5 @@ class Driver(DataBaseDriver):
     def config(self) -> t.Dict:
         return self._config
 
-    async def _setup(self) -> None:
+    async def setup(self) -> None:
         await Tortoise.init(config=self.config)
-
-    def setup(self) -> None:
-        # loop = asyncio.get_event_loop()
-        # loop.call_soon(self._setup())
-        asyncio.ensure_future(self._setup())
-

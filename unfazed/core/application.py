@@ -1,5 +1,5 @@
 import typing as t
-from threading import Lock
+from asyncio import Lock
 
 from starlette.applications import Starlette
 
@@ -67,7 +67,7 @@ class Unfazed(Starlette):
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
             self.router.routes.append(route)
 
-    def setup(self) -> None:
+    async def setup(self) -> None:
         if self._ready:
             return
 
@@ -76,15 +76,15 @@ class Unfazed(Starlette):
                 return
 
             if self._loading:
-                raise RuntimeError("circular dependency detected when loading apps")
+                raise RuntimeError("Unfazed is already loading")
 
             self._loading = True
 
-            self.app_center.setup()
-            self.command_center.setup()
+            await self.app_center.setup()
+            await self.command_center.setup()
             self.setup_routes()
 
-            self.model_center.setup()
+            await self.model_center.setup()
 
             self._ready = True
             self._loading = False
