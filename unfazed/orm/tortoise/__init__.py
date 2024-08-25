@@ -1,21 +1,4 @@
 from tortoise.expressions import Aggregate, Case, F, Function, Q, RawSQL, Subquery, When
-from tortoise.functions import (
-    Avg,
-    Coalesce,
-    Concat,
-    Count,
-    Length,
-    Lower,
-    Max,
-    Min,
-    Sum,
-    Trim,
-    Upper,
-)
-from tortoise.indexes import Index, PartialIndex
-from tortoise.queryset import QuerySet
-from tortoise.transactions import atomic
-
 from tortoise.fields.base import (
     CASCADE,
     NO_ACTION,
@@ -44,10 +27,26 @@ from tortoise.fields.data import (
     TimeField,
     UUIDField,
 )
-
+from tortoise.functions import (
+    Avg,
+    Coalesce,
+    Concat,
+    Count,
+    Length,
+    Lower,
+    Max,
+    Min,
+    Sum,
+    Trim,
+    Upper,
+)
+from tortoise.indexes import Index, PartialIndex
+from tortoise.queryset import QuerySet
+from tortoise.transactions import atomic
 
 from .driver import Driver
 from .models import Model
+from .relational import ForeignKeyField, ManyToManyField, OneToOneField
 
 __all__ = [
     "Model",
@@ -75,7 +74,6 @@ __all__ = [
     "PartialIndex",
     "QuerySet",
     "atomic",
-
     "CASCADE",
     "NO_ACTION",
     "RESTRICT",
@@ -83,7 +81,6 @@ __all__ = [
     "SET_NULL",
     "Field",
     "OnDelete",
-
     "BigIntField",
     "BinaryField",
     "BooleanField",
@@ -101,4 +98,7 @@ __all__ = [
     "TimeDeltaField",
     "TimeField",
     "UUIDField",
+    "ForeignKeyField",
+    "ManyToManyField",
+    "OneToOneField",
 ]

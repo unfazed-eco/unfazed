@@ -7,22 +7,24 @@ from unfazed.utils import import_string
 
 
 class ModelCenter:
-    def __init__(self, conf: t.Dict, app_center: AppCenter) -> None:
-        self.conf = Database(**conf)
+    def __init__(self, conf: Database, app_center: AppCenter) -> None:
         self.app_center = app_center
+        self.conf = conf
 
     def setup(self):
+        if not self.conf:
+            return
         driver_cls = import_string(self.conf.driver)
         if not self.conf.apps:
             self.conf.apps = self.build_apps()
-        driver: DataBaseDriver = driver_cls(self.conf)
+        driver: DataBaseDriver = driver_cls(self.conf.model_dump(exclude_none=True))
         driver.setup()
 
+
     def build_apps(self) -> t.Dict[str, t.Any]:
-        ret = {}
-        for alias, app in self.app_center:
-            model_list = app.list_model()
+        models_list = ["aerich.models"]  # support aerich cmd
+        for _, app in self.app_center:
+            if app.has_models():
+                models_list.append(f"{app.name}.models")
 
-            ret[alias] = AppModels(models=model_list)
-
-        return ret
+        return {"models": AppModels(MODELS=models_list)}

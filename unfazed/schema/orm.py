@@ -28,12 +28,13 @@ class BaseCredential(BaseModel):
     ssl: t.Optional[bool] = Field(None, alias="SSL")
 
 
-class PgsqlCredential(BaseModel):
+
+class PgsqlCredential(BaseCredential):
     max_queries: _[int] = Field(None, alias="MAX_QUERIES")
     max_inactive_connection_lifetime: _[float] = Field(
         None, alias="MAX_INACTIVE_CONNECTION_LIFETIME"
     )
-    schema: _[t.Any] = Field(None, alias="SCHEMA")
+    # schema: _[t.Any] = Field(None, alias="SCHEMA")
 
 
 class MysqlCredential(BaseCredential):

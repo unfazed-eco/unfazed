@@ -24,7 +24,7 @@ class Model(_Model):
         return
 
     @t.final
-    async def _wait_for_listeners(self, signal: Signals, *listener_args) -> None:
+    async def _wait_for_listeners(self, signal: "Signals", *listener_args) -> None:
         warnings.warn("Signal is not allowed in unfazed", UserWarning)
         return
 
@@ -60,3 +60,4 @@ class Model(_Model):
     ) -> None:
         warnings.warn("Signal is not allowed in unfazed", UserWarning)
         return
+

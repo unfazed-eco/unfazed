@@ -4,7 +4,6 @@ import typing as t
 from pathlib import Path
 from types import ModuleType
 
-from unfazed.protocol import Model
 from unfazed.schema import Command
 
 if t.TYPE_CHECKING:
@@ -71,30 +70,18 @@ class BaseAppConfig:
                 ret.append(
                     Command(
                         path=path,
-                        label=self.label,
+                        label=self.name,
                         stem=command_file.stem,
                     )
                 )
 
         return ret
 
-    def list_models(self) -> t.List[str]:
-        ret: t.List[str] = []
-
+    def has_models(self) -> bool:
         # check if models module exists
-        existed = importlib.util.find_spec(f"{self.app_module.__name__}.app")
-        if not existed:
-            return ret
+        existed = importlib.util.find_spec(f"{self.app_module.__name__}.models")
 
-        models_module = importlib.import_module(f"{self.app_module.__name__}.models")
-
-        # check all class in models module
-        for name in dir(models_module):
-            obj = getattr(models_module, name)
-            if isinstance(obj, type) and issubclass(obj, Model):
-                ret.append(f"{self.name}.models.{name}")
-
-        return ret
+        return bool(existed)
 
     @classmethod
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:
