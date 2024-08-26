@@ -1,6 +1,7 @@
 import typing as t
 from asyncio import Lock
 
+from asgiref import typing as at
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 
@@ -10,6 +11,7 @@ from unfazed.command import CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
+from unfazed.utils import import_string
 
 
 class Unfazed(Starlette):
@@ -68,6 +70,22 @@ class Unfazed(Starlette):
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
             self.router.routes.append(route)
 
+    def setup_middleware(self):
+        for middleware in self.settings.MIDDLEWARE:
+            cls = import_string(middleware)
+            middleware = cls(self.unfazed, self.unfazed.router)
+            self.add_middleware(middleware)
+
+    def build_middleware_stack(
+        self,
+    ) -> at.ASGIApplication:
+        super().build_middleware_stack()
+        middleware = self.user_middleware
+        app = self.router
+        for cls in reversed(middleware):
+            app = cls(self, app)
+        return app
+
     async def setup(self) -> None:
         if self._ready:
             return
@@ -82,9 +100,9 @@ class Unfazed(Starlette):
             self._loading = True
 
             await self.app_center.setup()
-            await self.command_center.setup()
             self.setup_routes()
-
+            self.setup_middleware()
+            await self.command_center.setup()
             await self.model_center.setup()
 
             self._ready = True
