@@ -7,6 +7,7 @@ from starlette.concurrency import run_in_threadpool
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
+from unfazed.cache import caches
 from unfazed.command import CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.orm import ModelCenter
@@ -66,15 +67,31 @@ class Unfazed(Starlette):
         return self._model_center
 
     def setup_routes(self):
+        if not self.settings.ROOT_URLCONF:
+            return
         # add routes from settings.ROOT_URLCONF
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
             self.router.routes.append(route)
 
     def setup_middleware(self):
+        if not self.settings.MIDDLEWARE:
+            return
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
             middleware = cls(self, self.router)
             self.add_middleware(middleware)
+
+    def setup_cache(self):
+        cache = self.settings.CACHE
+        if not cache:
+            return
+
+        for alias, conf in cache.items():
+            backend_cls = import_string(conf.BACKEND)
+            location = conf.LOCATION
+            options = conf.OPTIONS
+            cache = backend_cls(location, options)
+            caches[alias] = cache
 
     def build_middleware_stack(
         self,
@@ -99,6 +116,12 @@ class Unfazed(Starlette):
 
             self._loading = True
 
+            """
+            app center setup may be required for cache
+
+            so we setup cache first
+            """
+            self.setup_cache()
             await self.app_center.setup()
             self.setup_routes()
             self.setup_middleware()
