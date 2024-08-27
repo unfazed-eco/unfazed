@@ -20,7 +20,4 @@ def mock_unfazed_settings(model: UnfazedSettings):
 
         return inner
 
-
-
-
     return outter

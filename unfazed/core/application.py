@@ -73,7 +73,7 @@ class Unfazed(Starlette):
     def setup_middleware(self):
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
-            middleware = cls(self.unfazed, self.unfazed.router)
+            middleware = cls(self, self.router)
             self.add_middleware(middleware)
 
     def build_middleware_stack(
