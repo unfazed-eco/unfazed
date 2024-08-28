@@ -78,8 +78,7 @@ class Unfazed(Starlette):
             return
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
-            middleware = cls(self, self.router)
-            self.add_middleware(middleware)
+            self.user_middleware.insert(0, cls)
 
     def setup_cache(self):
         cache = self.settings.CACHE
@@ -96,10 +95,10 @@ class Unfazed(Starlette):
     def build_middleware_stack(
         self,
     ) -> at.ASGIApplication:
-        super().build_middleware_stack()
         middleware = self.user_middleware
         app = self.router
         for cls in reversed(middleware):
+            print(cls)
             app = cls(self, app)
         return app
 

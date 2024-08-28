@@ -2,6 +2,8 @@ import inspect
 import typing as t
 from importlib import import_module
 
+from starlette.routing import compile_path
+
 from unfazed.protocol import MiddleWare
 
 from .registry import _flatten_patterns
@@ -61,14 +63,20 @@ def path(
             )
 
     elif routes:
+        ret = []
         for route in routes:
             if not isinstance(route, Route):
                 raise ValueError("routes should be a list of Route")
 
             route.path = path + route.path
+            route.path_regex, route.path_format, route.param_convertors = compile_path(
+                route.path
+            )
             route.load_middlewares(middlewares)
 
             if not route.app_label:
                 route.app_label = app_label
 
-        return routes
+            ret.append(route)
+
+        return ret
