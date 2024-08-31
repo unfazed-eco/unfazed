@@ -14,7 +14,24 @@ if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
-class CommandCenter(Group):
+class Base(Group):
+    def load_command(self, command: Command) -> None:
+        cls = import_string(command.path)
+
+        if not issubclass(cls, BaseCommand):
+            raise TypeError("Command must be a subclass of BaseCommand")
+
+        escaped_name = command.stem.replace("_", "-")
+        cmd = cls(
+            self.unfazed,
+            escaped_name,
+            command.label,
+        )
+
+        self.add_command(cmd)
+
+
+class CommandCenter(Base):
     def __init__(self, unfazed: "Unfazed", app_center: "AppCenter", name: str) -> None:
         self.unfazed = unfazed
         self.app_center = app_center
@@ -35,6 +52,12 @@ class CommandCenter(Group):
         internal_command_dir = Path(unfazed.__path__[0] + "/command/internal")
         for command_file in internal_command_dir.glob("*.py"):
             command_name = command_file.stem
+
+            # ignore the startproject command
+            # its a cli command and should not be loaded
+            if command_name == "startproject":
+                continue
+
             path = f"unfazed.command.internal.{command_name}.Command"
             command = Command(
                 path=path, stem=command_name, label="unfazed.command.internal"
@@ -44,17 +67,31 @@ class CommandCenter(Group):
 
         return ret
 
-    def load_command(self, command: Command) -> None:
-        cls = import_string(command.path)
 
-        if not issubclass(cls, BaseCommand):
-            raise TypeError("Command must be a subclass of BaseCommand")
+class CliCommandCenter(Base):
+    def __init__(self, unfazed: "Unfazed") -> None:
+        self.unfazed = unfazed
+        super().__init__(name="unfazed-cli")
 
-        escaped_name = command.stem.replace("_", "-")
-        cmd = cls(
-            self.unfazed,
-            escaped_name,
-            command.label,
-        )
+        self.cli_command = ["startproject"]
 
-        self.add_command(cmd)
+    def setup(self) -> None:
+        # load all the commands from the unfazed internal
+        for command in self.list_cli_command():
+            self.load_command(command)
+
+    def list_cli_command(self) -> t.List[Command]:
+        ret = []
+        internal_command_dir = Path(unfazed.__path__[0] + "/command/internal")
+        for command_file in internal_command_dir.glob("*.py"):
+            command_name = command_file.stem
+
+            if command_name in self.cli_command:
+                path = f"unfazed.command.internal.{command_name}.Command"
+                command = Command(
+                    path=path, stem=command_name, label="unfazed.command.internal"
+                )
+
+                ret.append(command)
+
+        return ret

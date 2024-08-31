@@ -8,7 +8,7 @@ from starlette.concurrency import run_in_threadpool
 from unfazed import protocol as p
 from unfazed.app import AppCenter
 from unfazed.cache import caches
-from unfazed.command import CommandCenter
+from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
@@ -56,6 +56,15 @@ class Unfazed(Starlette):
                 self.settings.PROJECT_NAME,
             )
         return self._command_center
+
+    @property
+    def cli_command_center(self) -> CliCommandCenter:
+        if hasattr(self, "_cli_command_center"):
+            return self._cli_command_center
+        else:
+            cmd = CliCommandCenter(self)
+            setattr(self, "_cli_command_center", cmd)
+            return cmd
 
     @property
     def model_center(self) -> ModelCenter:
@@ -130,5 +139,26 @@ class Unfazed(Starlette):
             self._ready = True
             self._loading = False
 
+    async def setup_cli(self):
+        if self._ready:
+            return
+
+        async with Lock():
+            if self._ready:
+                return
+
+            if self._loading:
+                raise RuntimeError("Unfazed is already loading")
+
+            self._loading = True
+
+            self.cli_command_center.setup()
+
+            self._ready = True
+            self._loading = False
+
     async def execute_command_from_argv(self):
         await run_in_threadpool(self.command_center.main)
+
+    async def execute_command_from_cli(self):
+        await run_in_threadpool(self.cli_command_center.main)

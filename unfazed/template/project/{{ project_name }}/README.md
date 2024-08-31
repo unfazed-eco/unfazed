@@ -10,7 +10,7 @@ cd {{project_name}}/src/backend
 
 docker-compose up -d 
 
-docker-compose exec {{project_name}} bash
+docker-compose exec unfazed bash
 
 # run command inside container
 
