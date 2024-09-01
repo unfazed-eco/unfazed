@@ -1,3 +1,5 @@
+import os
+
 UNFAZED_SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_launch",
@@ -9,8 +11,8 @@ UNFAZED_SETTINGS = {
             "default": {
                 "ENGINE": "unfazed.orm.tortoise.backends.mysql",
                 "CREDENTIALS": {
-                    "HOST": "mysql",
-                    "PORT": 3306,
+                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
+                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
                     "USER": "root",
                     "PASSWORD": "app",
                     "DATABASE": "test_app",
