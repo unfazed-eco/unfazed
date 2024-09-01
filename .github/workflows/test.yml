@@ -3,7 +3,7 @@ name: Test Unfazed
 
 on:
   push:
-    branches: ["main", "impl-action-test"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
