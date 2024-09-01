@@ -38,6 +38,9 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
           allow-prereleases: true
+      - name: Add mysql to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 mysql" | sudo tee -a /etc/hosts
       - name: "Install dependencies"
         run: |
           pip install poetry
