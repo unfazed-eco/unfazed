@@ -19,7 +19,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: app
         ports:
         - 3306
-        options: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
       redis:
         image: redis
         ports:
