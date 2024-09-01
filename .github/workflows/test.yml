@@ -42,9 +42,9 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false
           poetry install
+      - name: "Run Test"
+        run: make test
         env:
           MYSQL_HOST: "127.0.0.1"
           MYSQL_PORT: $
           MYSQL_PASSWORD: app
-      - name: "Run Test"
-        run: make test
