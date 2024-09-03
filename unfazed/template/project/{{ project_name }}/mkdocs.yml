@@ -1,0 +1,3 @@
+site_name: {{project_name}}
+nav:
+  - Home: index.md

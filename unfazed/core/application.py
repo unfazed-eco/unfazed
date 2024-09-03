@@ -107,7 +107,6 @@ class Unfazed(Starlette):
         middleware = self.user_middleware
         app = self.router
         for cls in reversed(middleware):
-            print(cls)
             app = cls(self, app)
         return app
 

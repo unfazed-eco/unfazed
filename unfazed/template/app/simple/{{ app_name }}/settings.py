@@ -8,5 +8,5 @@ class {{ app_name | capitalize }}Settings(BaseModel):
 
 
 
-{{ app_name }}_settings = settings["{{ app_name | capitalize }}_Settings"]
+# {{ app_name }}_settings = settings["{{ app_name | upper }}_SETTINGS"]
 

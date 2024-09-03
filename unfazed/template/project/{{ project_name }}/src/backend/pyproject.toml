@@ -1,0 +1,72 @@
+[tool.poetry]
+name = "{{project_name}}"
+version = "0.0.1"
+description = "A {{project_name}} project."
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+unfazed="^0.0.2b1"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.8.0"
+ruff = "^0.3.1"
+pytest = "^8.1.1"
+pytest-cov = "^4.1.0"
+pytest-asyncio = "^0.23.6"
+pytest-mock = "^3.14.0"
+asyncmy = "^0.2.9"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+
+
+[tool.pytest.ini_options]
+testpaths = [
+    "entry",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "# pragma: no cover",
+    "if TYPE_CHECKING:"
+]
+
+[tool.ruff.lint]
+ignore = [
+    "B006",
+    "B007",
+    "B009",
+    "B010",
+    "B026",
+    "B904",
+    "B905",
+    "C408",
+    "C901",
+    "E501",
+    "E714",
+]
+select = ["B", "C", "E", "F", "W", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+
+[tool.mypy]
+python_version = "3.12"
+exclude = ["migrations"]
+
+[[tool.mypy.overrides]]
+module = "migrations.*"
+ignore_errors = true
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
