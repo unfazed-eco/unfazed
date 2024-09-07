@@ -1,5 +1,4 @@
 import typing as t
-from asyncio import Lock
 
 from asgiref import typing as at
 from starlette.applications import Starlette
@@ -12,7 +11,7 @@ from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
-from unfazed.utils import import_string
+from unfazed.utils import import_string, unfazed_locker
 
 
 class Unfazed(Starlette):
@@ -110,51 +109,23 @@ class Unfazed(Starlette):
             app = cls(self, app)
         return app
 
+    @unfazed_locker
     async def setup(self) -> None:
-        if self._ready:
-            return
+        """
+        app center setup may be required for cache
 
-        async with Lock():
-            if self._ready:
-                return
+        so we setup cache first
+        """
+        self.setup_cache()
+        await self.app_center.setup()
+        self.setup_routes()
+        self.setup_middleware()
+        await self.command_center.setup()
+        await self.model_center.setup()
 
-            if self._loading:
-                raise RuntimeError("Unfazed is already loading")
-
-            self._loading = True
-
-            """
-            app center setup may be required for cache
-
-            so we setup cache first
-            """
-            self.setup_cache()
-            await self.app_center.setup()
-            self.setup_routes()
-            self.setup_middleware()
-            await self.command_center.setup()
-            await self.model_center.setup()
-
-            self._ready = True
-            self._loading = False
-
+    @unfazed_locker
     async def setup_cli(self):
-        if self._ready:
-            return
-
-        async with Lock():
-            if self._ready:
-                return
-
-            if self._loading:
-                raise RuntimeError("Unfazed is already loading")
-
-            self._loading = True
-
-            self.cli_command_center.setup()
-
-            self._ready = True
-            self._loading = False
+        self.cli_command_center.setup()
 
     async def execute_command_from_argv(self):
         await run_in_threadpool(self.command_center.main)

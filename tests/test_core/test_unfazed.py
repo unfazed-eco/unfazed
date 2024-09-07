@@ -49,3 +49,15 @@ async def test_loading_state(mocker: "MockerFixture") -> None:
     with patch.object(AppCenter, "setup", new=new_app_center_setup):
         with pytest.raises(RuntimeError):
             await asyncio.gather(unfazed.setup(), unfazed.setup())
+
+
+@pytest.mark.asyncio
+@mock_unfazed_settings(Setting)
+async def test_cliapp_luanch(mocker: "MockerFixture") -> None:
+    unfazed = Unfazed()
+
+    await unfazed.setup_cli()
+    assert unfazed.ready is True
+
+    await unfazed.setup_cli()
+    assert unfazed.ready is True

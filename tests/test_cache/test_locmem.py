@@ -25,6 +25,10 @@ async def test_locmem():
     await cache.incr("foo4")
     assert await cache.get("foo4") == 2
 
+    # test failed incr
+    with pytest.raises(ValueError):
+        await cache.incr("foo5")
+
     # test decr
     await cache.decr("foo4")
     assert await cache.get("foo4") == 1
@@ -32,6 +36,9 @@ async def test_locmem():
     # test delete
     await cache.delete("foo4")
     assert await cache.get("foo4") is None
+
+    # test delete non-exist key
+    await cache.delete("foo4") == False
 
     # test clear
     await cache.set("foo5", "bar")

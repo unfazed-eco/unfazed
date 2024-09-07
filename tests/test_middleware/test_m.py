@@ -30,5 +30,7 @@ async def test_middleware(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
 
     await unfazed.setup()
-
     assert len(unfazed.user_middleware) == 2
+
+    # test middleware stack
+    unfazed.build_middleware_stack()

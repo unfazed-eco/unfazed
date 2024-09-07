@@ -40,9 +40,6 @@ class LocMemCache(CacheBackend):
             return default
         key = self.make_key(key, version=version)
         async with self._lock:
-            if self._has_expired(key):
-                self._delete(key)
-                return default
             pickled = self._cache[key]
             self._cache.move_to_end(key, last=False)
         return pickle.loads(pickled)
@@ -70,9 +67,6 @@ class LocMemCache(CacheBackend):
         key = self.make_key(key, version=version)
 
         async with self._lock:
-            if self._has_expired(key):
-                self._delete(key)
-                raise ValueError(f"Key {key} not found")
             pickled = self._cache[key]
             value = pickle.loads(pickled)
             new_value = value + delta
@@ -117,7 +111,8 @@ class LocMemCache(CacheBackend):
             return False
         return True
 
-    async def delete(self, key: str, version=None) -> bool | None:
+    async def delete(self, key: str, version=None) -> bool:
+        
         key = self.make_key(key, version=version)
         async with self._lock:
             return self._delete(key)
