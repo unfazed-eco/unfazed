@@ -57,6 +57,8 @@ class Command(BaseCommand):
             new_root_rendered.mkdir(parents=True, exist_ok=True)
 
         cur_file = root.joinpath(file_path)
+        if file_path.endswith(".py.tpl"):
+            file_path = file_path[:-4]
         new_file = new_root_rendered.joinpath(file_path)
         with open(cur_file, "r") as cur_fh, open(new_file, "w") as new_fh:
             rendered_text = Template(cur_fh.read(), autoescape=True).render(**context)
