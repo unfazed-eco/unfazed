@@ -17,6 +17,7 @@ orjson = "^3.10.3"
 asgiref = "^3.8.1"
 tortoise-orm = "^0.21.6"
 aerich = "^0.7.2"
+redis = "^5.0.8"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.8.0"
