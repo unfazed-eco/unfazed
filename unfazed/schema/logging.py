@@ -5,7 +5,7 @@ import typing as t
 from pydantic import BaseModel, Field
 
 
-class _DefaultFormatter(BaseModel):
+class _DefaultFormatter(t.TypedDict):
     format: str | None = None
     datefmt: str | None = None
     style: str | None = None

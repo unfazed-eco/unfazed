@@ -9,8 +9,10 @@ from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.orm import ModelCenter
+from unfazed.protocol import BaseLifeSpan
 from unfazed.route import parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
@@ -113,6 +115,20 @@ class Unfazed(Starlette):
         log_center = LogCenter(self, config)
         log_center.setup()
 
+    def setup_lifespan(self):
+        if not self.settings.LIFESPAN:
+            return
+
+        for name in self.settings.LIFESPAN:
+            cls = import_string(name)
+            instance = cls(self)
+            if not isinstance(instance, BaseLifeSpan):
+                raise ValueError(f"{name} is not a valid lifespan")
+
+            lifespan_handler.register(name, instance)
+
+        self.router.lifespan_context = lifespan_context
+
     def build_middleware_stack(
         self,
     ) -> at.ASGIApplication:
@@ -129,6 +145,7 @@ class Unfazed(Starlette):
 
         so we setup cache first
         """
+        self.setup_lifespan()
         self.setup_logging()
         self.setup_cache()
         await self.app_center.setup()

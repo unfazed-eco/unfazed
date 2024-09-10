@@ -10,13 +10,13 @@ from unfazed.conf import UnfazedSettings
 def mock_unfazed_settings(model: UnfazedSettings):
     def outter(coro: t.Coroutine):
         @wraps(coro)
-        async def inner(mocker: MockerFixture):
+        async def inner(mocker: MockerFixture, *args):
             with patch(
                 "unfazed.core.Unfazed.settings",
                 new_callable=PropertyMock,
                 return_value=model,
             ):
-                return await coro(mocker)
+                return await coro(mocker, *args)
 
         return inner
 
