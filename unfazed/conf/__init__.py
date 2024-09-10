@@ -16,6 +16,7 @@ class UnfazedSettings(BaseModel):
     PROJECT_NAME: str | None = None
     DATABASE: Database | None = None
     CACHE: t.Dict[str, Cache] | None = None
+    LOGGING: t.Dict[str, t.Any] | None = None
 
 
 __all__ = ["UnfazedSettings", "settings"]

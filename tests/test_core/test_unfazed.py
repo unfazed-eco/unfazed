@@ -19,6 +19,28 @@ _Setting = {
     "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.core.routes",
     "INSTALLED_APPS": ["tests.apps.core.common"],
+    "LOGGING": {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "standard": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"},
+        },
+        "handlers": {
+            "default": {
+                "level": "INFO",
+                "formatter": "standard",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stdout",  # Default is stderr
+            },
+        },
+        "loggers": {
+            "common": {  # root logger
+                "handlers": ["default"],
+                "level": "WARNING",
+                "propagate": False,
+            },
+        },
+    },
 }
 
 Setting = UnfazedSettings(**_Setting)

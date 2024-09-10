@@ -10,8 +10,10 @@ from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.logging import LogCenter
 from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
+from unfazed.schema import LogConfig
 from unfazed.utils import import_string
 
 
@@ -101,6 +103,17 @@ class Unfazed(Starlette):
             cache = backend_cls(location, options)
             caches[alias] = cache
 
+    def setup_logging(self):
+        if not self.settings.LOGGING:
+            config = {}
+
+        else:
+            config = LogConfig(**self.settings.LOGGING).model_dump(
+                exclude_none=True, by_alias=True
+            )
+        log_center = LogCenter(self, config)
+        log_center.setup()
+
     def build_middleware_stack(
         self,
     ) -> at.ASGIApplication:
@@ -128,6 +141,7 @@ class Unfazed(Starlette):
 
             so we setup cache first
             """
+            self.setup_logging()
             self.setup_cache()
             await self.app_center.setup()
             self.setup_routes()
