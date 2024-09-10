@@ -12,12 +12,8 @@ from unfazed.conf import UnfazedSettings, settings
 from unfazed.logging import LogCenter
 from unfazed.orm import ModelCenter
 from unfazed.route import parse_urlconf
-<<<<<<< HEAD
-from unfazed.utils import import_string, unfazed_locker
-=======
 from unfazed.schema import LogConfig
-from unfazed.utils import import_string
->>>>>>> impl-logging
+from unfazed.utils import import_string, unfazed_locker
 
 
 class Unfazed(Starlette):
