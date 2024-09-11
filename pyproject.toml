@@ -15,9 +15,9 @@ click = "^8.1.7"
 uvicorn = "^0.28.0"
 orjson = "^3.10.3"
 asgiref = "^3.8.1"
-tortoise-orm = "^0.21.6"
-aerich = "^0.7.2"
 redis = "^5.0.8"
+tortoise-orm = {version = "^0.21.6", extras = ["tortoise"]}
+aerich = {version = "^0.7.2", extras = ["tortoise"]}
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.8.0"
