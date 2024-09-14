@@ -11,4 +11,10 @@ class DataBaseDriver(t.Protocol):
 
 @t.runtime_checkable
 class Model(t.Protocol):
+    async def save(self, *args, **kw): ...
+    async def create(self, *args, **kw): ...
+
+
+@t.runtime_checkable
+class QuerySet(t.Protocol):
     pass

@@ -5,6 +5,7 @@ from .lifespan import BaseLifeSpan
 from .middleware import MiddleWare
 from .orm import DataBaseDriver, Model
 from .route import Route
+from .serializer import BaseSerializer
 
 __all__ = [
     "MiddleWare",
@@ -15,4 +16,5 @@ __all__ = [
     "Model",
     "CacheBackend",
     "BaseLifeSpan",
+    "BaseSerializer",
 ]
