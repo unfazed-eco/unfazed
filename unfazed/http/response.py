@@ -6,8 +6,18 @@ from starlette.background import BackgroundTask
 from starlette.responses import Response
 
 
-class HttpResponse(Response):
+class HttpResponse[T](Response):
     media_type = "text/plain"
+
+    def __init__(
+        self,
+        content: T = None,
+        status_code: int = 200,
+        headers: t.Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+    ) -> None:
+        super().__init__(content, status_code, headers, media_type, background)
 
 
 class PlainTextResponse(HttpResponse):

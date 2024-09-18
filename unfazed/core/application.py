@@ -145,7 +145,6 @@ class Unfazed(Starlette):
 
         so we setup cache first
         """
-        self.setup_lifespan()
         self.setup_logging()
         self.setup_cache()
         await self.app_center.setup()
@@ -153,6 +152,7 @@ class Unfazed(Starlette):
         self.setup_middleware()
         await self.command_center.setup()
         await self.model_center.setup()
+        self.setup_lifespan()
 
     @unfazed_locker
     async def setup_cli(self):

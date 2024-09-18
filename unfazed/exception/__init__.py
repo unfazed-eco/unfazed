@@ -1,3 +1,8 @@
 from .orm import SignalNotAllowed
 
-__all__ = ["SignalNotAllowed"]
+
+class TypeHintRequired(Exception):
+    pass
+
+
+__all__ = ["SignalNotAllowed", "TypeHintRequired"]

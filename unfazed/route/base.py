@@ -36,6 +36,8 @@ def path(
     name: str = None,
     app_label: str = None,
     middlewares: t.Sequence[t.Type[MiddleWare]] = None,
+    ignore: bool = False,
+    tags: t.Union[str, t.List[str]] = None,
 ) -> Route | t.Sequence[Route]:
     """
     routes = [
@@ -56,6 +58,8 @@ def path(
                 name=name,
                 middleware=middlewares,
                 app_label=app_label,
+                ignore=ignore,
+                tags=tags,
             )
         else:
             raise ValueError(
