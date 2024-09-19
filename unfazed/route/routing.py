@@ -6,7 +6,7 @@ from starlette.routing import Route as StartletteRoute
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 
 if t.TYPE_CHECKING:
-    from unfazed.openapi.spec import Tag
+    pass
 
 
 class Route(StartletteRoute):
@@ -21,7 +21,7 @@ class Route(StartletteRoute):
         middleware: t.Sequence[Middleware] | None = None,
         app_label: str | None = None,
         ignore: bool = False,
-        tags: "Tag" | str | t.List["Tag"] | t.List[str] | None = None,
+        tags: t.List[str] | None = None,
     ) -> None:
         super().__init__(
             path,

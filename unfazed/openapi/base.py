@@ -16,7 +16,7 @@ from .spec import Tag
 
 
 class RouteInfo(BaseModel):
-    endpoint: str
+    endpoint: t.Callable
     methods: t.List[str]
 
     tags: t.List[Tag]
@@ -37,8 +37,13 @@ class RouteInfo(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
+        self.handle_methods()
         self.get_param_annotation()
         self.analyze()
+
+    def handle_methods(self):
+        if "HEAD" in self.methods:
+            self.methods.remove("HEAD")
 
     @property
     def iter_params(self):
@@ -193,7 +198,7 @@ class OpenApi:
             route_info = RouteInfo(
                 endpoint=route.endpoint,
                 method=route.methods[0],
-                tags=route.tags,
+                tags=[Tag(name=tag) for tag in route.tags],
                 path_parm_names=route.param_convertors.keys(),
             )
 
