@@ -17,6 +17,13 @@ class Model(_Model):
 
     _listeners = {}
 
+    if t.TYPE_CHECKING:
+
+        class Meta:
+            table: str
+            abstract: bool = False
+            unique_together = t.Tuple[t.Tuple[str]]
+
     @t.final
     @classmethod
     def register_listener(cls, signal: "Signals", listener: t.Callable) -> None:

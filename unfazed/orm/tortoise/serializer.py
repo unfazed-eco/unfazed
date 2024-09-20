@@ -1,22 +1,64 @@
 import typing as t
+from datetime import timedelta
 
 import pydantic
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
-from tortoise.models import Model
+from tortoise.fields import TimeDeltaField
+from tortoise.models import Field, Model
 
 from unfazed.serializer import BaseSerializer
+
+
+def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
+    description = field.describe(False)
+    python_type = description["python_type"]
+    # handle default
+    default_factory = None
+    if description["generated"]:
+        default = None
+    else:
+        default = field.default
+        if callable(default):
+            default_factory = default
+            default = ...
+        elif default is None and (not field.null):
+            default = ...  # required field
+
+        if description.get("auto_now") or description.get("auto_now_add"):
+            default = None  # handled by tortoise orm
+
+    # handle enum
+    if hasattr(field, "enum_type"):
+        python_type = field.enum_type
+        # clear constraints
+        description["constraints"] = {}
+
+    # handle timedelta
+    if description["field_type"] == TimeDeltaField:
+        python_type = timedelta
+
+    field_info = FieldInfo(
+        default=default,
+        default_factory=default_factory,
+        description=description["description"] or "",
+        title=description["name"] or "",
+        **description["constraints"],
+    )
+
+    return python_type, field_info
 
 
 class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
     def __new__(
         mcs,
-        name: str,
+        cls_name: str,
         bases: t.Tuple[t.Type],
         namespace: t.Dict[str, t.Any],
+        *args,
+        **kwargs,
     ) -> t.Self:
-        print("MetaClass", name, bases, namespace)
-        cls = super().__new__(mcs, name, bases, namespace)
+        cls = super().__new__(mcs, cls_name, bases, namespace, *args, **kwargs)
         thebase: "TSerializer" = None
         for base in bases:
             if base.__name__ == "TSerializer":
@@ -24,9 +66,9 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
                 break
 
         if thebase is None:
-            raise ValueError("BaseSerializer not found")
+            return cls
 
-        if not hasattr(namespace, "Meta"):
+        if "Meta" not in namespace:
             raise ValueError("Meta class not found")
 
         meta = namespace["Meta"]
@@ -35,17 +77,9 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
 
         model: Model = meta.model
 
-        # desc = model.describe(False)
         params: t.Dict[str, t.Tuple[t.Type, FieldInfo]] = {}
         for name, field in model._meta.fields_map.items():
-            description = field.describe(False)
-            field_info = FieldInfo(
-                default=field.default,
-                description=description["description"],
-                title=description["title"],
-            )
-
-            params[name] = (name, field_info)
+            params[name] = field_creator(field)
 
         for field in annotations:
             python_type = annotations[field]
@@ -56,7 +90,7 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
 
         cls.__doc__ = namespace.get("__doc__", meta.model.__doc__)
 
-        return create_model(name, __base__=cls, __module__=cls.__module__, **params)
+        return create_model(cls_name, __base__=cls, __module__=cls.__module__, **params)
 
 
 class TSerializer(BaseSerializer, metaclass=MetaClass):
