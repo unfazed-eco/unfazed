@@ -155,5 +155,37 @@ def test_resp_params():
         path_parm_names=r1.param_convertors.keys(),
     )
 
-
     assert ri1.response_models is None
+
+    r2 = Route(
+        path="/",
+        endpoint=endpoint5,
+        tags=["tag2"],
+    )
+
+    ri2 = RouteInfo(
+        endpoint=r2.endpoint,
+        methods=r2.methods,
+        tags=[s.Tag(name=t) for t in r2.tags],
+        path_parm_names=r2.param_convertors.keys(),
+    )
+
+    assert len(ri2.response_models) == 1
+    assert ri2.response_models[0].description == "response for endpoint5"
+
+    r3 = Route(
+        path="/",
+        endpoint=endpoint5,
+        tags=["tag2"],
+        responses=[s.Response(description="response in route")],
+    )
+    ri3 = RouteInfo(
+        endpoint=r3.endpoint,
+        methods=r3.methods,
+        tags=[s.Tag(name=t) for t in r3.tags],
+        path_parm_names=r3.param_convertors.keys(),
+        response_models=r3.responses,
+    )
+
+    assert len(ri3.response_models) == 1
+    assert ri3.response_models[0].description == "response in route"

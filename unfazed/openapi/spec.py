@@ -14,6 +14,7 @@ class Contact(BaseModel):
 
 class License(BaseModel):
     name: str
+    identifier: Optional[str] = None
     url: Optional[AnyUrl] = None
 
     model_config = ConfigDict(extra="allow")
@@ -21,6 +22,7 @@ class License(BaseModel):
 
 class Info(BaseModel):
     title: str
+    summary: Optional[str] = None
     description: Optional[str] = None
     termsOfService: Optional[str] = None
     contact: Optional[Contact] = None
@@ -171,6 +173,7 @@ class ParameterBase(BaseModel):
     required: Optional[bool] = None
     deprecated: Optional[bool] = None
     style: Optional[StyleEnum] = StyleEnum.Simple
+    allowEmptyValue: Optional[bool] = None
     # Serialization rules for simple scenarios
     explode: Optional[bool] = None
     allowReserved: Optional[bool] = None
@@ -362,11 +365,13 @@ class Tag(BaseModel):
 
 
 class OpenAPI(BaseModel):
-    openapi: str
+    openapi: str = "3.1.0"
     info: Info
+    jsonSchemaDialect: str | None = None
     servers: Optional[List[Server]] = None
     # Using Any for Specification Extensions
     paths: Optional[Dict[str, Union[PathItem, Any]]] = None
+    webhooks: Optional[Dict[str, Union[PathItem, Any]]] = None
     components: Optional[Components] = None
     security: Optional[List[Dict[str, List[str]]]] = None
     tags: Optional[List[Tag]] = None

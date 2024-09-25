@@ -29,7 +29,7 @@ class RouteInfo(BaseModel):
     cookie_params: t.List[p.Cookie] = Field(default_factory=list)
     body_params: t.List[p.Body] = Field(default_factory=list)
     # body_field: t.Optional[FieldInfo] = None
-    response_models: t.Optional[BaseModel] = None
+    response_models: t.Optional[t.List[BaseModel]] = None
     operation_id: t.Optional[str] = Field(default_factory=u._generate_random_string)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -55,15 +55,6 @@ class RouteInfo(BaseModel):
 
     def get_param_annotation(self):
         endpoint = self.endpoint
-
-        """
-
-        args:
-            a: int
-            b: BaseModel
-            c: str = "hello"
-        
-        """
         type_hints = t.get_type_hints(endpoint, include_extras=True)
 
         signature = inspect.signature(endpoint)
@@ -197,15 +188,19 @@ class OpenApi:
 
     @classmethod
     def create_schema(cls, routes: t.List[Route]) -> t.Dict:
-        openapi_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        unfazedsettings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
 
-        if not openapi_settings.OPENAPI:
+        if not unfazedsettings.OPENAPI:
             return
 
-        ret = s.OpenAPI(openapi="3.1.0", servers=openapi_settings.OPENAPI.servers)
+        info = s.Info(
+            title=unfazedsettings.PROJECT_NAME,
+            unfazedsettings=settings.VERSION,
+        )
+        ret = s.OpenAPI(info=info, servers=unfazedsettings.OPENAPI.servers)
 
         paths: t.Dict[str, t.Any] = {}
-        schemas: t.Dict[str, t.Any] = {}
+        components: t.Dict[str, t.Any] = {}
         tags: t.Dict[str, s.Tag] = {}
 
         for route in routes:
@@ -217,8 +212,17 @@ class OpenApi:
                 method=route.methods[0],
                 tags=[Tag(name=tag) for tag in route.tags],
                 path_parm_names=route.param_convertors.keys(),
+                response_models=route.responses,
             )
 
+            # handle openapi tags
+            endpoint_tags = route_info.tags
+
+            for tag in endpoint_tags:
+                if tag.name not in tags:
+                    tags[tag.name] = tag
+
+            # ----
             func_name = route.endpoint.__name__
 
             parameters = []
@@ -250,11 +254,6 @@ class OpenApi:
                 pass
 
             description = route_info.endpoint.__doc__ or f"endpoint for {func_name}"
-            endpoint_tags = route_info.tags
-
-            for tag in endpoint_tags:
-                if tag.name not in tags:
-                    tags[tag.name] = tag
 
             operation = s.Operation(
                 summary=func_name,

@@ -19,6 +19,7 @@ class UnfazedSettings(BaseModel):
     LOGGING: t.Dict[str, t.Any] | None = None
     LIFESPAN: t.Sequence[str] | None = None
     OPENAPI: OpenAPI | None = None
+    VERSION: str | None = None
 
 
 __all__ = ["UnfazedSettings", "settings"]
