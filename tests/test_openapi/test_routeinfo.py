@@ -1,98 +1,159 @@
+import typing as t
+
 from pydantic import BaseModel
 
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.openapi import RouteInfo
 from unfazed.openapi import params as p
-from unfazed.openapi.spec import Tag
+from unfazed.openapi import spec as s
 from unfazed.route import Route
 
 
-# test request
-async def view1(request: HttpRequest) -> HttpResponse:
-    pass
+class PathModel(BaseModel):
+    path3: str
+    path4: int
 
 
-async def view2(
+class QueryModel(BaseModel):
+    query3: str
+    query4: int
+
+
+class BodyModel(BaseModel):
+    body4: int
+    body5: str
+
+
+class HeaderModel(BaseModel):
+    header2: str
+    header3: int
+
+
+class CookieModel(BaseModel):
+    cookie2: str
+    cookie3: int
+
+
+async def endpoint(
     request: HttpRequest,
-    path1: str = p.Path(),
-    path2: int = p.Path(),
+    path1: str,
+    path2: t.Annotated[int, p.PathField()],
+    pathmodel: t.Annotated[PathModel, p.Path()],
 ) -> HttpResponse:
     pass
 
 
-async def view3(
+async def endpoint2(
     request: HttpRequest,
-    query1: str = p.Query(),
-    query2: str = p.Query(),
+    query1: str,
+    query2: t.Annotated[int, p.QueryField()],
+    querymodel: t.Annotated[QueryModel, p.Query()],
 ) -> HttpResponse:
     pass
 
 
-class Ctx(BaseModel):
-    name: str
-    age: int
-
-
-async def view4(
-    request: HttpRequest,
-    ctx: Ctx,
+async def endpoint3(
+    body1: BodyModel,
+    body2: t.Annotated[BodyModel, p.Body()],
+    body3: t.Annotated[str, p.BodyField()],
+    header1: t.Annotated[str, p.HeaderField()],
+    headermodel: t.Annotated[HeaderModel, p.Header()],
+    cookie1: t.Annotated[str, p.CookieField()],
+    cookiemodel: t.Annotated[CookieModel, p.Cookie()],
 ) -> HttpResponse:
     pass
 
 
-async def view5(request: HttpRequest, ctx: Ctx = p.Body()) -> HttpResponse:
-    pass
-
-
-async def view6(request: HttpRequest, token: str = p.Header()) -> HttpResponse:
-    pass
-
-
-async def view7(request: HttpRequest, token: str = p.Cookie()) -> HttpResponse:
-    pass
-
-
-# test response
-def test_request():
-    r1 = Route(path="/", endpoint=view1, tags=["tag1"])
+def test_request_params():
+    r1 = Route(
+        path="/{path1}/{path2}/{path3}/{path4}",
+        endpoint=endpoint,
+        tags=["tag1"],
+    )
 
     ri1 = RouteInfo(
         endpoint=r1.endpoint,
         methods=r1.methods,
-        tags=[Tag(name=tag) for tag in r1.tags],
+        tags=[s.Tag(name=t) for t in r1.tags],
         path_parm_names=r1.param_convertors.keys(),
     )
 
-    assert ri1.methods == ["GET"]
+    assert "path1" in ri1.params
+    assert "path2" in ri1.params
+    assert "pathmodel" in ri1.params
+
+    assert len(ri1.path_params) == 3
 
     r2 = Route(
-        path="/{path1}/{path2}",
-        endpoint=view2,
-        methods=["POST"],
+        path="/",
+        endpoint=endpoint2,
         tags=["tag2"],
     )
 
     ri2 = RouteInfo(
         endpoint=r2.endpoint,
         methods=r2.methods,
-        tags=[Tag(name=tag) for tag in r2.tags],
+        tags=[s.Tag(name=t) for t in r2.tags],
         path_parm_names=r2.param_convertors.keys(),
     )
 
-    assert ri2.methods == ["POST"]
-    assert ri2.path_parm_names == ["path1", "path2"]
+    assert "query1" in ri2.params
+    assert "query2" in ri2.params
+    assert "querymodel" in ri2.params
+
+    assert len(ri2.query_params) == 3
 
     r3 = Route(
         path="/",
-        endpoint=view3,
+        endpoint=endpoint3,
         tags=["tag3"],
     )
-
     ri3 = RouteInfo(
         endpoint=r3.endpoint,
         methods=r3.methods,
-        tags=[Tag(name=tag) for tag in r3.tags],
+        tags=[s.Tag(name=t) for t in r3.tags],
         path_parm_names=r3.param_convertors.keys(),
     )
 
-    print(ri3)
+    assert "body1" in ri3.params
+    assert "body2" in ri3.params
+    assert "body3" in ri3.params
+
+    assert len(ri3.body_params) == 3
+
+    assert "header1" in ri3.params
+    assert "headermodel" in ri3.params
+
+    assert len(ri3.header_params) == 2
+    assert "cookie1" in ri3.params
+    assert "cookiemodel" in ri3.params
+
+    assert len(ri3.cookie_params) == 2
+
+
+async def endpoint4(request: HttpRequest) -> HttpResponse:
+    pass
+
+
+async def endpoint5(
+    request: HttpRequest,
+) -> t.Annotated[HttpResponse, s.Response(description="response for endpoint5")]:
+    pass
+
+
+def test_resp_params():
+    r1 = Route(
+        path="/",
+        endpoint=endpoint4,
+        tags=["tag1"],
+    )
+
+    ri1 = RouteInfo(
+        endpoint=r1.endpoint,
+        methods=r1.methods,
+        tags=[s.Tag(name=t) for t in r1.tags],
+        path_parm_names=r1.param_convertors.keys(),
+    )
+
+
+    assert ri1.response_models is None

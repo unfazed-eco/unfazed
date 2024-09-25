@@ -3,7 +3,6 @@ import typing as t
 from itertools import chain
 
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.fields import FieldInfo
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest, HttpResponse
@@ -30,7 +29,7 @@ class RouteInfo(BaseModel):
     cookie_params: t.List[p.Cookie] = Field(default_factory=list)
     body_params: t.List[p.Body] = Field(default_factory=list)
     # body_field: t.Optional[FieldInfo] = None
-    response_models: t.Optional[t.Union[FieldInfo, BaseModel]] = None
+    response_models: t.Optional[BaseModel] = None
     operation_id: t.Optional[str] = Field(default_factory=u._generate_random_string)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -65,7 +64,7 @@ class RouteInfo(BaseModel):
             c: str = "hello"
         
         """
-        type_hints = t.get_type_hints(endpoint)
+        type_hints = t.get_type_hints(endpoint, include_extras=True)
 
         signature = inspect.signature(endpoint)
 
@@ -95,81 +94,99 @@ class RouteInfo(BaseModel):
 
         self.params = ret
 
-        # handle endpoint return
-        """
-        suported return type:
-
-            async def v1(request: HttpRequest):
-                return HttpResponse()
-
-            async def v2(request: HttpRequest) -> HttpResponse:
-                return HttpResponse()
-
-            async def v3(request: HttpRequest) -> HttpResponse[str]:
-                return HttpResponse()
-
-            async def v4(request: HttpRequest) -> HttpResponse[None]:
-                return HttpResponse()
-
-            async def v5(request: HttpRequest) -> HttpResponse["User"]:
-                return HttpResponse()
-
-            
-        """
-
         if "return" not in type_hints:
             raise ValueError(f"missing type hint for return in endpoint: {endpoint}")
 
+        # if set response_models at path("/", response_model=yourmodels)
+        # ignore return type
+        if self.response_models:
+            return
+
+        # handle return type
+        """
+        suported return type:
+
+            async def v1(request: HttpRequest) -> HttpResponse:
+                return HttpResponse()
+
+            async def v2(request: HttpRequest) -> Annotated[HttpResponse, meta1, meta2]:
+                return HttpResponse()
+        """
+
         _dict = type_hints["return"].__dict__
 
-        if "__origin__" in _dict:
+        # only support Annotated[HttpResponse, resp1, resp2]
+        if "__origin__" in _dict and "__metadata__" in _dict:
             origin = _dict["__origin__"]
             if HttpResponse not in getattr(origin, "__mro__", []):
                 raise ValueError(
-                    f"return type in {endpoint.__name__} need to be HttpResponse"
+                    f"return type in {endpoint.__name__} need inherited from HttpResponse"
                 )
-            args = _dict["__args__"]
 
-            for arg in list(args):
-                if not issubclass(arg, BaseModel):
-                    # TODO
-                    pass
+            for model in _dict["__metadata__"]:
+                if not isinstance(model, s.Response):
+                    raise ValueError(f"unsupported metadata: {model}")
+
+            self.response_models = _dict["__metadata__"]
 
     def analyze(self):
         for _, param in self.params.items():
             annotation = param.annotation
             default = param.default
 
-            if default == inspect.Parameter.empty:
-                # if annotation is BaseModel
-                # the param should be body
-                # or query
+            # TODO
+            # 特定的参数类型才能被作为 endpoint 的参数
 
-                if issubclass(annotation, BaseModel):
-                    default = p.Body[annotation]()
-
+            # args: str/int
+            if not hasattr(annotation, "_name"):
+                if param.name in self.path_parm_names:
+                    default = p.PathField()
+                    self.path_params.append(default)
+                elif default == inspect.Parameter.empty:
+                    if isinstance(annotation, t.Type) and issubclass(
+                        annotation, BaseModel
+                    ):
+                        default = p.Body()
+                        self.body_params.append(default)
+                    else:
+                        default = p.Query()
+                        self.query_params.append(default)
                 else:
-                    default = p.Query[annotation]()
+                    raise ValueError(f"unsupported type: {annotation}")
 
-            if not u._is_supported_types(annotation):
-                raise ValueError(
-                    f"unsupported type: {annotation}, currently only support {u.SUPPORTED_TYPES}"
-                )
+            # args: t.Annotated[PathModel, p.Path()]
+            elif annotation._name == "Annotated":
+                metadata = annotation.__metadata__
 
-            if param.name in self.path_parm_names:
-                self.path_params.append(default)
+                if not metadata:
+                    raise ValueError(f"missing metadata for {annotation}")
 
-            elif isinstance(default, p.Query):
-                self.query_params.append(default)
-
-            elif isinstance(default, p.Header):
-                self.header_params.append(default)
-
-            elif isinstance(default, p.Cookie):
-                self.cookie_params.append(default)
-
-            elif isinstance(default, (p.Body, p.Form)):
-                self.body_params.append(default)
+                # only support the first metadata
+                # TODO
+                # support formfiled and filefield
+                match metadata[0]:
+                    case p.Path():
+                        self.path_params.append(metadata[0])
+                    case p.Query():
+                        self.query_params.append(metadata[0])
+                    case p.Header():
+                        self.header_params.append(metadata[0])
+                    case p.Cookie():
+                        self.cookie_params.append(metadata[0])
+                    case p.Body():
+                        self.body_params.append(metadata[0])
+                    case p.PathField():
+                        self.path_params.append(metadata[0])
+                    case p.QueryField():
+                        self.query_params.append(metadata[0])
+                    case p.HeaderField():
+                        self.header_params.append(metadata[0])
+                    case p.CookieField():
+                        self.cookie_params.append(metadata[0])
+                    case p.BodyField():
+                        self.body_params.append(metadata[0])
+                    case _:
+                        raise ValueError(f"unsupported metadata: {metadata}")
 
             else:
                 raise ValueError(f"unknown param type: {default}")

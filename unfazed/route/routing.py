@@ -6,7 +6,7 @@ from starlette.routing import Route as StartletteRoute
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 
 if t.TYPE_CHECKING:
-    pass
+    from unfazed.openapi.spec import Response
 
 
 class Route(StartletteRoute):
@@ -22,6 +22,8 @@ class Route(StartletteRoute):
         app_label: str | None = None,
         ignore: bool = False,
         tags: t.List[str] | None = None,
+        responses: t.List["Response"] | None = None,
+        
     ) -> None:
         super().__init__(
             path,
@@ -36,6 +38,7 @@ class Route(StartletteRoute):
         # openapi features
         self.ignore = ignore
         self.tags = tags
+        self.responses = responses
 
     def load_middlewares(
         self, middlewares: t.Sequence[t.Type[MiddleWareProtocol]]

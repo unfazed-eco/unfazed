@@ -1,6 +1,35 @@
 import typing as t
 
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo, _Unset
+
+
+class Query(BaseModel):
+    pass
+
+
+class Body(BaseModel):
+    pass
+
+
+class Path(BaseModel):
+    pass
+
+
+class Header(BaseModel):
+    pass
+
+
+class Cookie(BaseModel):
+    pass
+
+
+class Form(BaseModel):
+    pass
+
+
+class File(BaseModel):
+    pass
 
 
 class Param(FieldInfo):
@@ -36,36 +65,36 @@ class Param(FieldInfo):
         )
 
 
-class Path(Param):
+class PathField(Param):
     in_: str = "path"
     style_: str = "form"
 
 
-class Query(Param):
+class QueryField(Param):
     in_: str = "query"
     style_: str = "simple"
 
 
-class Header(Param):
+class HeaderField(Param):
     style_: str = "simple"
     in_: str = "header"
 
 
-class Cookie(Param):
+class CookieField(Param):
     style_: str = "simple"
     in_: str = "cookie"
 
 
-class Body[T](Param):
+class BodyField(Param):
     in_: str = "body"
     style_: str = "simple"
 
 
-class Form[T](Param):
+class FormField(Param):
     in_: str = "form"
     style_: str = "simple"
 
 
-class File(Param):
+class FileField(Param):
     in_: str = "file"
     style_: str = "simple"
