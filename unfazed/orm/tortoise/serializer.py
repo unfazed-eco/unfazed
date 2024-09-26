@@ -96,18 +96,30 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
 class TSerializer(BaseSerializer, metaclass=MetaClass):
     @property
     def valid_data(self) -> t.Dict[str, t.Any]:
-        model: Model = self.Meta.model
+        write_fields = self.get_write_fields()
 
+        return {k: getattr(self, k) for k in write_fields}
+
+    def get_write_fields(self) -> t.List[str]:
         ret = []
-        for name, field in model._meta.fields_map.items():
-            if field.primary_key:
+        for name, field in self.Meta.model._meta.fields_map.items():
+            # skip
+            if field.pk or field.generated:
                 continue
+
+            if getattr(field, "auto_now", False) or getattr(
+                field, "auto_now_add", False
+            ):
+                continue
+
             ret.append(name)
+
+        return ret
 
     async def create(self, **kwargs: t.Any) -> t.Self:
         using_db = kwargs.pop("using_db", None)
         model: Model = self.Meta.model
-        ins = await model.create(using_db=using_db, **kwargs)
+        ins = await model.create(using_db=using_db, **self.valid_data)
 
         return await self.retrieve(ins)
 

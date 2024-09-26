@@ -205,5 +205,3 @@ def test_field_create() -> None:
 
     _, f12_field = field_creator(f12)
     assert MaxLen(max_length=255) in f12_field.metadata
-
-

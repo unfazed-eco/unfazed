@@ -5,7 +5,7 @@ UNFAZED_SETTINGS = {
     "PROJECT_NAME": "test_app_launch",
     "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.orm.routes",
-    "INSTALLED_APPS": ["tests.apps.orm.common"],
+    "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
     "DATABASE": {
         "CONNECTIONS": {
             "default": {

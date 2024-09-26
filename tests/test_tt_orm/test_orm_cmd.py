@@ -16,7 +16,7 @@ from unfazed.orm.tortoise.commands import (
 )
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio(scope="session")
 async def test_cmd(
     tmp_path: Path,
     use_test_db: t.Generator,  # create and drop test db
