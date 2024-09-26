@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
+from pydantic.fields import FieldInfo
 
 
 class Contact(BaseModel):
@@ -115,6 +116,10 @@ class Schema(BaseModel):
     deprecated: Optional[bool] = None
 
     model_config = ConfigDict(extra="allow")
+
+    @classmethod
+    def from_fieldinfo(cls, fieldinfo: FieldInfo) -> "Schema":
+        attrs = fieldinfo.__dict__
 
 
 class Example(BaseModel):
@@ -350,7 +355,6 @@ class Components(BaseModel):
     headers: Optional[Dict[str, Union[Header, Reference]]] = None
     securitySchemes: Optional[Dict[str, Union[SecurityScheme, Reference]]] = None
     links: Optional[Dict[str, Union[Link, Reference]]] = None
-    # Using Any for Specification Extensions
     callbacks: Optional[Dict[str, Union[Dict[str, PathItem], Reference, Any]]] = None
 
     model_config = ConfigDict(extra="allow")
@@ -369,7 +373,6 @@ class OpenAPI(BaseModel):
     info: Info
     jsonSchemaDialect: str | None = None
     servers: Optional[List[Server]] = None
-    # Using Any for Specification Extensions
     paths: Optional[Dict[str, Union[PathItem, Any]]] = None
     webhooks: Optional[Dict[str, Union[PathItem, Any]]] = None
     components: Optional[Components] = None

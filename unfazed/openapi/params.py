@@ -33,6 +33,9 @@ class File(BaseModel):
 
 
 class Param(FieldInfo):
+    in_: str = None
+    style_: str = None
+
     def __init__(
         self,
         default: t.Any = _Unset,

@@ -3,6 +3,7 @@ import typing as t
 from itertools import chain
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.fields import FieldInfo
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest, HttpResponse
@@ -23,11 +24,11 @@ class RouteInfo(BaseModel):
 
     params: t.Optional[t.Dict[str, inspect.Parameter]] = None
     # content_type: t.Optional[str] = None
-    path_params: t.List[p.Path] = Field(default_factory=list)
-    query_params: t.List[p.Query] = Field(default_factory=list)
-    header_params: t.List[p.Header] = Field(default_factory=list)
-    cookie_params: t.List[p.Cookie] = Field(default_factory=list)
-    body_params: t.List[p.Body] = Field(default_factory=list)
+    path_params: t.List[p.Path | p.PathField] = []
+    query_params: t.List[p.Query | p.QueryField] = []
+    header_params: t.List[p.Header | p.HeaderField] = []
+    cookie_params: t.List[p.Cookie | p.CookieField] = []
+    body_params: t.List[p.Body | p.BodyField] = []
     # body_field: t.Optional[FieldInfo] = None
     response_models: t.Optional[t.List[BaseModel]] = None
     operation_id: t.Optional[str] = Field(default_factory=u._generate_random_string)
@@ -44,13 +45,31 @@ class RouteInfo(BaseModel):
         if "HEAD" in self.methods:
             self.methods.remove("HEAD")
 
+    def flaten_params(
+        self, params: t.List[p.Param | BaseModel], in_: str, style_: str = "simple"
+    ) -> t.List[FieldInfo]:
+        ret: t.List[FieldInfo] = []
+        for param in params:
+            if isinstance(param, p.Param):
+                ret.append(param)
+            elif isinstance(param, BaseModel):
+                for field in param.model_fields.values():
+                    field.in_ = in_
+                    field.style_ = style_
+                    ret.append(field)
+            else:
+                raise ValueError(f"unsupported param: {param}")
+
+        return ret
+
     @property
     def iter_params(self):
         return chain(
-            self.path_params,
-            self.query_params,
-            self.header_params,
-            self.cookie_params,
+            self.flaten_params(self.path_params, in_="path"),
+            self.flaten_params(self.query_params, in_="query"),
+            self.flaten_params(self.header_params, in_="header"),
+            self.flaten_params(self.cookie_params, in_="cookie"),
+            self.flaten_params(self.body_params, in_="body"),
         )
 
     def get_param_annotation(self):
@@ -200,7 +219,7 @@ class OpenApi:
         ret = s.OpenAPI(info=info, servers=unfazedsettings.OPENAPI.servers)
 
         paths: t.Dict[str, t.Any] = {}
-        components: t.Dict[str, t.Any] = {}
+        schemas: t.Dict[str, t.Any] = {}
         tags: t.Dict[str, s.Tag] = {}
 
         for route in routes:
@@ -230,12 +249,12 @@ class OpenApi:
             for param in route_info.iter_params:
                 item = s.Parameter(
                     **{
-                        "in": param.in_,
+                        "in": param.in_,  # set in flaten_params
+                        "style": param.style_,  # set in flaten_params
                         "name": param.alias or param.title,
                         "required": param.is_required(),
-                        "schema_": s.Schema(param),
+                        "schema_": s.Schema(**u._generate_field_schema(param)),
                         "description": param.description,
-                        "style": param.style_,
                     }
                 )
                 parameters.append(item)
@@ -265,6 +284,8 @@ class OpenApi:
                 responses=responses,
             )
 
+            # TODO
+            # decide only support one method for one route
             for method in route_info.methods:
                 path_item = s.PathItem(**{method: operation})
                 paths[route.path] = path_item
