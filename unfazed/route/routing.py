@@ -87,7 +87,7 @@ class RouteDetail(BaseModel):
     header_params: t.Dict[str, t.Tuple[t.Type, p.Header | p.HeaderField]] = {}
     cookie_params: t.Dict[str, t.Tuple[t.Type, p.Cookie | p.CookieField]] = {}
     body_params: t.Dict[str, t.Tuple[t.Type, p.Body | p.BodyField]] = {}
-    response_models: t.Optional[t.List[BaseModel]] = None
+    response_models: t.Optional[t.List[p.ResponseSpec]] = None
     operation_id: t.Optional[str] = Field(default_factory=u._generate_random_string)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

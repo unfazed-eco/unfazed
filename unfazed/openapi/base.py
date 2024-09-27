@@ -5,6 +5,7 @@ from pydantic.fields import FieldInfo
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.route import Route
+from unfazed.route.params import ResponseSpec
 
 from . import spec as s
 
@@ -78,6 +79,9 @@ class OpenApi:
                 # TODO
                 # handle formdata currently only handle json
                 content_type = "applicaiton/json"
+                body_schema = route_details.body_model.model_json_schema(
+                    ref_template=DEFAULT_REF_TPL
+                )
                 media_type = s.MediaType(schema=body_schema)
                 content[content_type] = media_type
 
@@ -88,15 +92,26 @@ class OpenApi:
             )
 
             responses: t.Dict[str, s.Response] = {}
-            res_models = []
 
-            for model in res_models:
-                pass
+            for response in route_details.response_models:
+                response: ResponseSpec
+                response_schema = response.model.model_json_schema(
+                    ref_template=DEFAULT_REF_TPL
+                )
+                responses[response.code] = s.Response(
+                    description=response.description,
+                    content={
+                        response.content_type: s.MediaType(schema=response_schema)
+                    },
+                )
 
-            description = route_details.endpoint.__doc__ or f"endpoint for {func_name}"
+            description = (
+                route_details.endpoint.__doc__
+                or f"endpoint for {route_details.endpoint_name}"
+            )
 
             operation = s.Operation(
-                summary=func_name,
+                summary=route_details.endpoint_name,
                 tags=[t.name for t in endpoint_tags],
                 parameters=parameters,
                 description=description,
@@ -116,6 +131,6 @@ class OpenApi:
         ret.tags = list(tags.values())
         ret.paths = paths
 
-        cls.schema = ret.model_dump(exclude_none=True, by_alias=True)
+        cls.schema = ret.model_json_schema(by_alias=True)
 
         return cls.schema
