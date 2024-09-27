@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.openapi import RouteInfo
-from unfazed.openapi import params as p
+from unfazed.route import params as p
 from unfazed.openapi import spec as s
 from unfazed.route import Route
 
