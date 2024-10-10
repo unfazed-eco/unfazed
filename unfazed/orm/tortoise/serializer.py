@@ -9,6 +9,8 @@ from tortoise.models import Field, Model
 
 from unfazed.serializer import BaseSerializer
 
+from . import utils as u
+
 
 def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
     description = field.describe(False)
@@ -135,8 +137,9 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
         await instance.save(using_db=using_db)
         return await self.retrieve(instance)
 
-    async def retrieve(self, instance: Model, **kwargs: t.Any) -> BaseModel:
-        return self.model_validate(instance)
+    @classmethod
+    async def retrieve(cls, instance: Model, **kwargs: t.Any) -> BaseModel:
+        return cls.model_validate(u.model_to_dict(instance))
 
     async def destory(self, instance: Model, **kwargs: t.Any) -> None:
         using_db = kwargs.pop("using_db", None)

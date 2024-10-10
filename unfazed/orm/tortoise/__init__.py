@@ -1,4 +1,3 @@
-from . import fields
 from .driver import Driver
 from .models import Model
 from .relational import ForeignKeyField, ManyToManyField, OneToOneField
@@ -9,5 +8,4 @@ __all__ = [
     "ForeignKeyField",
     "ManyToManyField",
     "OneToOneField",
-    "fields",
 ]

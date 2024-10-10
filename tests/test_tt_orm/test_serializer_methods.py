@@ -78,3 +78,20 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
     new_ins = await car.create()
 
     assert new_ins.limited is True
+    assert new_ins.brand == Brand.BMW
+
+    # update
+
+    car.alias = "series 5"
+    car.version = 2
+    car_ins = await Car.filter(id=new_ins.id).first()
+
+    updated_ins = await car.update(car_ins)
+
+    assert updated_ins.alias == "series 5"
+    assert updated_ins.version == 2
+
+    # destroy
+    await car.destory(car_ins)
+
+    assert await Car.filter(id=updated_ins.id).count() == 0
