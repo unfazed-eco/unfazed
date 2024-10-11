@@ -6,7 +6,9 @@ from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 from tortoise.fields import TimeDeltaField
 from tortoise.models import Field, Model
+from tortoise.queryset import QuerySet
 
+from unfazed.schema import Result
 from unfazed.serializer import BaseSerializer
 
 from . import utils as u
@@ -139,8 +141,40 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
 
     @classmethod
     async def retrieve(cls, instance: Model, **kwargs: t.Any) -> BaseModel:
-        return cls.model_validate(u.model_to_dict(instance))
+        return cls.from_instance(instance)
 
-    async def destory(self, instance: Model, **kwargs: t.Any) -> None:
+    @classmethod
+    async def destroy(cls, instance: Model, **kwargs: t.Any) -> None:
         using_db = kwargs.pop("using_db", None)
         await instance.delete(using_db=using_db)
+
+    @classmethod
+    async def get_object(cls, ctx: BaseModel) -> Model:
+        model: Model = cls.Meta.model
+        if hasattr(ctx, "id"):
+            return await model.get(id=ctx.id)
+        else:
+            raise ValueError("id not found")
+
+    @classmethod
+    def get_queryset(cls, cond: t.Dict[str, t.Any], **kwargs: t.Any) -> QuerySet:
+        model: Model = cls.Meta.model
+        return model.filter(**cond)
+
+    @classmethod
+    async def list(cls, queryset: QuerySet, page: int, size: int, **kwargs) -> Result:
+        total = await queryset.count()
+
+        if page == 0 or size <= 0:
+            queryset = await queryset.all()
+        else:
+            queryset = await queryset.limit(size).offset((page - 1) * size)
+
+        return Result(
+            count=total,
+            data=[cls.from_instance(ins) for ins in queryset],
+        )
+
+    @classmethod
+    def from_instance(cls, instance: Model) -> BaseModel:
+        return cls.model_validate(u.model_to_dict(instance))
