@@ -1,7 +1,5 @@
 import typing as t
 
-import pytest
-
 from tests.decorators import mock_unfazed_settings
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
@@ -24,7 +22,6 @@ _Settings = {
 Settings = UnfazedSettings(**_Settings)
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(Settings)
 async def test_middleware(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()

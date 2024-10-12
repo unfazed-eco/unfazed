@@ -16,6 +16,7 @@ UNFAZED_SETTINGS = {
                     "USER": "root",
                     "PASSWORD": "app",
                     "DATABASE": "test_app",
+                    # "DATABASE": "app",
                 },
             }
         }

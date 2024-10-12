@@ -38,3 +38,74 @@ class Car(Model):
 
     class Meta:
         table = "car"
+
+
+# for test relationship
+class Student(Model):
+    id = f.BigIntField(primary_key=True)
+    name = f.CharField(max_length=100)
+    age = f.IntField()
+
+    class Meta:
+        table = "student"
+
+
+class Bag(Model):
+    id = f.BigIntField(primary_key=True)
+    student = f.ForeignKeyField(
+        "models.Student",
+        related_name="bags",
+        db_constraint=False,
+        on_delete=f.NO_ACTION,
+    )
+    name = f.CharField(max_length=100)
+
+    class Meta:
+        table = "bag"
+
+
+class Profile(Model):
+    id = f.BigIntField(primary_key=True)
+    nickname = f.CharField(max_length=100)
+    student = f.OneToOneField(
+        "models.Student",
+        related_name="profile",
+        on_delete=f.NO_ACTION,
+    )
+
+    class Meta:
+        table = "profile"
+
+
+class Course(Model):
+    id = f.BigIntField(primary_key=True)
+    name = f.CharField(max_length=100)
+    students = f.ManyToManyField(
+        "models.Student",
+        through="student_course_relation",
+        related_name="courses",
+        on_delete=f.NO_ACTION,
+        db_constraint=False,
+    )
+
+    class Meta:
+        table = "course"
+
+
+class StudentCourseRelation(Model):
+    id = f.BigIntField(primary_key=True)
+    student = f.ForeignKeyField(
+        "models.Student",
+        related_name="course_relations",
+        db_constraint=False,
+        on_delete=f.NO_ACTION,
+    )
+    course = f.ForeignKeyField(
+        "models.Course",
+        related_name="student_relations",
+        db_constraint=False,
+        on_delete=f.NO_ACTION,
+    )
+
+    class Meta:
+        table = "student_course_relation"

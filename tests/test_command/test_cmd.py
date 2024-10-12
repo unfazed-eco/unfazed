@@ -19,7 +19,6 @@ SETTINGS = {
 }
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.common"])
 )
@@ -32,7 +31,6 @@ async def test_cmd_common(mocker: "MockerFixture") -> None:
     await run_in_threadpool(cmd._callback)
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.wrong"])
 )
@@ -45,7 +43,6 @@ async def test_cmd_noasync(mocker: "MockerFixture") -> None:
         cmd._callback()
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(
     UnfazedSettings(**SETTINGS, INSTALLED_APPS=["tests.apps.cmd.wrong"])
 )

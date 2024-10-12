@@ -1,9 +1,6 @@
-import pytest
-
 from unfazed.cache.backends.redis import AsyncDefaultBackend
 
 
-@pytest.mark.asyncio
 async def test_redis_client():
     async with AsyncDefaultBackend(location="redis://redis:6379") as client:
         await client.flushdb()

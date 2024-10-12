@@ -1,9 +1,6 @@
-import pytest
-
 from unfazed.http import HttpRequest
 
 
-@pytest.mark.asyncio
 async def test_http_request():
     http_scope = {
         "type": "http",

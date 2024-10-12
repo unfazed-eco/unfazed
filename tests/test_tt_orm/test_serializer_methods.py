@@ -5,23 +5,24 @@ from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
-import pytest
+import pytest_asyncio
 from pydantic import BaseModel, Field
 
-from tests.apps.orm.serializer.models import Brand, Car, Color
+from tests.apps.orm.serializer.models import Brand, Car, Color, Student
 from unfazed.core import Unfazed
 from unfazed.orm.tortoise.commands import init_db, migrate
 from unfazed.orm.tortoise.serializer import TSerializer
 
 
-@pytest.fixture(scope="function")
-async def prepare_db(tmp_path: Path, use_test_db: t.Generator) -> None:
+@pytest_asyncio.fixture(scope="session")
+async def prepare_db(tmp_path_factory: Path) -> t.Any:
     # init unfazed
     os.environ["UNFAZED_SETTINGS_MODULE"] = "tests.apps.orm.settings"
     unfazed = Unfazed()
 
     await unfazed.setup()
 
+    tmp_path = tmp_path_factory.mktemp("orm")
     # create migrations
     root_path = tmp_path / "serializer"
     root_path.mkdir()
@@ -50,8 +51,8 @@ class CarSerializer(TSerializer):
         model = Car
 
 
-@pytest.mark.asyncio
 async def test_serializer_methods(prepare_db: t.Generator) -> None:
+    await Car.all().delete()
     # create
     car = CarSerializer(
         bits=b"bits",
@@ -237,3 +238,11 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
     ctx = UpdateCarSchema(id=new_car.id, version=101)
     await CarSerializer.destroy_from_ctx(ctx)
     assert await Car.filter(id=new_car.id).count() == 0
+
+
+async def test_relations(prepare_db: t.Generator) -> None:
+    s = await Student.create(id=1, name="student1", age=18)
+
+    assert s.age == 18
+
+    breakpoint()

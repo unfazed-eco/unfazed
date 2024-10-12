@@ -5,6 +5,7 @@ import pydantic
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 from tortoise.fields import TimeDeltaField
+from tortoise.fields.relational import OneToOneFieldInstance, RelationalField
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
 
@@ -14,7 +15,26 @@ from unfazed.serializer import BaseSerializer
 from . import utils as u
 
 
-def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
+def relational_field_creator(field: RelationalField) -> t.Tuple[t.Type, FieldInfo]:
+    # onetoone field
+    if isinstance(field, OneToOneFieldInstance):
+        return (
+            model_creator(field.model_name, field.related_model),
+            FieldInfo(default=None),
+        )
+
+    # elif isinstance(field, BackwardOneToOneRelation):
+    #     return (
+    #         model_creator(field.model_name, field.related_model),
+    #         FieldInfo(default=None),
+    #     )
+    # if isinstance(field, OneToOneFieldInstance):
+    #     return common_field_creator(field)
+
+    # elif
+
+
+def common_field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
     description = field.describe(False)
     python_type = description["python_type"]
     # handle default
@@ -53,6 +73,37 @@ def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
     return python_type, field_info
 
 
+def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
+    if isinstance(field, RelationalField):
+        return relational_field_creator(field)
+    else:
+        return common_field_creator(field)
+
+
+def model_creator(
+    name: str,
+    model: Model,
+    *,
+    namespace: t.Dict[str, t.Any] | None = None,
+    base: t.Type | None = None,
+    module: str | None = None,
+) -> t.Dict[str, t.Tuple[t.Type, FieldInfo]]:
+    namespace = namespace or {}
+    annotations = namespace.get("__annotations__", {})
+    params: t.Dict[str, t.Tuple[t.Type, FieldInfo]] = {}
+    for name, field in model._meta.fields_map.items():
+        params[name] = field_creator(field)
+
+    for field in annotations:
+        python_type = annotations[field]
+        pydantic_field = None
+        if field in namespace:
+            pydantic_field = namespace[field]
+        params[field] = (python_type, pydantic_field)
+
+    return create_model(name, __base__=base, __module__=module, **params)
+
+
 class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
     def __new__(
         mcs,
@@ -76,25 +127,16 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
             raise ValueError("Meta class not found")
 
         meta = namespace["Meta"]
-
-        annotations = namespace.get("__annotations__", {})
-
         model: Model = meta.model
-
-        params: t.Dict[str, t.Tuple[t.Type, FieldInfo]] = {}
-        for name, field in model._meta.fields_map.items():
-            params[name] = field_creator(field)
-
-        for field in annotations:
-            python_type = annotations[field]
-            pydantic_field = None
-            if field in namespace:
-                pydantic_field = namespace[field]
-            params[field] = (python_type, pydantic_field)
-
         cls.__doc__ = namespace.get("__doc__", meta.model.__doc__)
 
-        return create_model(cls_name, __base__=cls, __module__=cls.__module__, **params)
+        return model_creator(
+            cls_name,
+            model,
+            namespace=namespace,
+            base=cls,
+            module=cls.__module__,
+        )
 
 
 class TSerializer(BaseSerializer, metaclass=MetaClass):
@@ -120,6 +162,7 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
 
         return ret
 
+    @t.final
     async def create(self, **kwargs: t.Any) -> t.Self:
         using_db = kwargs.pop("using_db", None)
         model: Model = self.Meta.model
@@ -127,6 +170,7 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
 
         return await self.retrieve(ins)
 
+    @t.final
     async def update(self, instance: Model, **kwargs: t.Any) -> BaseModel:
         using_db = kwargs.pop("using_db", None)
 
@@ -139,10 +183,12 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
         await instance.save(using_db=using_db)
         return await self.retrieve(instance)
 
+    @t.final
     @classmethod
     async def retrieve(cls, instance: Model, **kwargs: t.Any) -> BaseModel:
         return cls.from_instance(instance)
 
+    @t.final
     @classmethod
     async def destroy(cls, instance: Model, **kwargs: t.Any) -> None:
         using_db = kwargs.pop("using_db", None)
@@ -161,6 +207,7 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
         model: Model = cls.Meta.model
         return model.filter(**cond)
 
+    @t.final
     @classmethod
     async def list(cls, queryset: QuerySet, page: int, size: int, **kwargs) -> Result:
         total = await queryset.count()
