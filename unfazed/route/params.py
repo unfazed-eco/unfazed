@@ -6,8 +6,8 @@ from pydantic.fields import FieldInfo
 
 # for endpoint signature
 class ResponseSpec(BaseModel):
-    model: BaseModel
-    content_type: str
+    model: t.Union[str, t.List, t.Type[BaseModel], t.Dict]
+    content_type: str = "application/json"
     code: str = "200"
     methods: t.List[str] = ["GET"]
 

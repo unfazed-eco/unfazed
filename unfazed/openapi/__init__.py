@@ -1,4 +1,3 @@
-from ..route import params
-from .base import OpenApi, RouteInfo
+from .base import OpenApi
 
-__all__ = ["OpenApi", "RouteInfo", "params"]
+__all__ = ["OpenApi"]

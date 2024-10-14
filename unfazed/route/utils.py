@@ -25,3 +25,7 @@ def _generate_field_schema(field: FieldInfo) -> t.Dict:
     )
 
     return temp_model.model_json_schema()["properties"]["temp"]
+
+
+def get_endpoint_name(endpoint: t.Coroutine) -> str:
+    return endpoint.__name__
