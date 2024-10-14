@@ -244,5 +244,3 @@ async def test_relations(prepare_db: t.Generator) -> None:
     s = await Student.create(id=1, name="student1", age=18)
 
     assert s.age == 18
-
-    breakpoint()

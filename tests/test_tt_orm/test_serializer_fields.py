@@ -5,8 +5,11 @@ from annotated_types import Ge, Le, MaxLen
 from pydantic import Field
 from tortoise import fields
 
+from tests.apps.orm.serializer.models import Student
 from unfazed.orm.tortoise import Model
-from unfazed.orm.tortoise.serializer import TSerializer, field_creator
+from unfazed.orm.tortoise.serializer import TSerializer, create_common_field
+
+# from tests.apps.orm.serializer.models import Student, Bag, Profile, Course
 
 
 class Sex(StrEnum):
@@ -124,9 +127,9 @@ def test_model_serializer_create() -> None:
     assert user.extra == "extra"
 
 
-def test_field_create() -> None:
+def test_create_common_fields() -> None:
     pk = fields.BigIntField(primary_key=True, description="primary key")
-    pk_type, pk_field = field_creator(pk)
+    pk_type, pk_field = create_common_field(pk)
 
     # dont test title field dependently
     assert pk_type == int
@@ -143,34 +146,34 @@ def test_field_create() -> None:
     f3 = fields.IntField(null=True)
     f4 = fields.IntField()
 
-    _, f1_field = field_creator(f1)
+    _, f1_field = create_common_field(f1)
 
     assert f1_field.default == 1
     assert f1_field.is_required() is False
 
-    _, f2_field = field_creator(f2)
+    _, f2_field = create_common_field(f2)
     assert f2_field.default_factory == gen_default
     assert f2_field.is_required() is False
 
-    _, f3_field = field_creator(f3)
+    _, f3_field = create_common_field(f3)
     assert f3_field.is_required() is False
 
-    _, f4_field = field_creator(f4)
+    _, f4_field = create_common_field(f4)
     assert f4_field.is_required() is True
 
     f5 = fields.DatetimeField(auto_now_add=True)
     f6 = fields.DatetimeField(auto_now=True)
     f7 = fields.DatetimeField()
 
-    _, f5_field = field_creator(f5)
+    _, f5_field = create_common_field(f5)
 
     assert f5_field.default is None
     assert f5_field.is_required() is False
 
-    _, f6_field = field_creator(f6)
+    _, f6_field = create_common_field(f6)
     assert f6_field.is_required() is False
 
-    _, f7_field = field_creator(f7)
+    _, f7_field = create_common_field(f7)
     assert f7_field.is_required() is True
 
     # test enum field
@@ -180,7 +183,7 @@ def test_field_create() -> None:
 
     f8 = fields.IntEnumField(enum_type=Country, default=Country.CN)
 
-    f8_type, f8_field = field_creator(f8)
+    f8_type, f8_field = create_common_field(f8)
     assert f8_type == Country
     assert f8_field.default == Country.CN
 
@@ -190,18 +193,28 @@ def test_field_create() -> None:
     f11 = fields.SmallIntField()
     f12 = fields.CharField(max_length=255)
 
-    _, f9_field = field_creator(f9)
+    _, f9_field = create_common_field(f9)
 
     assert Ge(ge=-2147483648) in f9_field.metadata
     assert Le(le=2147483647) in f9_field.metadata
 
-    _, f10_field = field_creator(f10)
+    _, f10_field = create_common_field(f10)
     assert Ge(ge=-9223372036854775808) in f10_field.metadata
     assert Le(le=9223372036854775807) in f10_field.metadata
 
-    _, f11_field = field_creator(f11)
+    _, f11_field = create_common_field(f11)
     assert Ge(ge=-32768) in f11_field.metadata
     assert Le(le=32767) in f11_field.metadata
 
-    _, f12_field = field_creator(f12)
+    _, f12_field = create_common_field(f12)
     assert MaxLen(max_length=255) in f12_field.metadata
+
+
+def test_create_relational_fields() -> None:
+    class StudentSerializer(TSerializer):
+        class Meta:
+            model = Student
+
+    print(StudentSerializer.model_fields)
+
+    raise NotImplementedError

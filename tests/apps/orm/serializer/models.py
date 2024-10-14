@@ -82,7 +82,6 @@ class Course(Model):
     name = f.CharField(max_length=100)
     students = f.ManyToManyField(
         "models.Student",
-        through="student_course_relation",
         related_name="courses",
         on_delete=f.NO_ACTION,
         db_constraint=False,
@@ -92,20 +91,20 @@ class Course(Model):
         table = "course"
 
 
-class StudentCourseRelation(Model):
-    id = f.BigIntField(primary_key=True)
-    student = f.ForeignKeyField(
-        "models.Student",
-        related_name="course_relations",
-        db_constraint=False,
-        on_delete=f.NO_ACTION,
-    )
-    course = f.ForeignKeyField(
-        "models.Course",
-        related_name="student_relations",
-        db_constraint=False,
-        on_delete=f.NO_ACTION,
-    )
+# class StudentCourseRelation(Model):
+#     id = f.BigIntField(primary_key=True)
+#     student = f.ForeignKeyField(
+#         "models.Student",
+#         related_name="course_relations",
+#         db_constraint=False,
+#         on_delete=f.NO_ACTION,
+#     )
+#     course = f.ForeignKeyField(
+#         "models.Course",
+#         related_name="student_relations",
+#         db_constraint=False,
+#         on_delete=f.NO_ACTION,
+#     )
 
-    class Meta:
-        table = "student_course_relation"
+#     class Meta:
+#         table = "student_course_relation"

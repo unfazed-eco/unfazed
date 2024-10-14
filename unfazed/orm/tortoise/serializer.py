@@ -5,7 +5,16 @@ import pydantic
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 from tortoise.fields import TimeDeltaField
-from tortoise.fields.relational import OneToOneFieldInstance, RelationalField
+from tortoise.fields.relational import (
+    BackwardFKRelation,
+    BackwardOneToOneRelation,
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    OneToOneFieldInstance,
+)
+
+# OneToOneFieldInstance,
+# RelationalField,
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
 
@@ -15,26 +24,81 @@ from unfazed.serializer import BaseSerializer
 from . import utils as u
 
 
-def relational_field_creator(field: RelationalField) -> t.Tuple[t.Type, FieldInfo]:
-    # onetoone field
-    if isinstance(field, OneToOneFieldInstance):
-        return (
-            model_creator(field.model_name, field.related_model),
-            FieldInfo(default=None),
-        )
+def create_m2m_field(field: ManyToManyFieldInstance) -> t.Tuple[t.Type, FieldInfo]:
+    model: Model = field.related_model
 
-    # elif isinstance(field, BackwardOneToOneRelation):
-    #     return (
-    #         model_creator(field.model_name, field.related_model),
-    #         FieldInfo(default=None),
-    #     )
-    # if isinstance(field, OneToOneFieldInstance):
-    #     return common_field_creator(field)
+    related_model_m2m_fields = model._meta.m2m_fields
+    skip_fields: t.List[str] = []
 
-    # elif
+    for m2m_field in list(related_model_m2m_fields):
+        if model._meta.fields_map[m2m_field].related_model == field.model:
+            skip_fields.append(m2m_field)
+            break
+
+    pydantic_model = create_model_from_tortoise(
+        model.__name__,
+        model,
+        skip_fields=skip_fields,
+        module=model.__module__,
+    )
+
+    return t.List[pydantic_model], FieldInfo(default=None)
 
 
-def common_field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
+def create_fk_field(field: ForeignKeyFieldInstance) -> t.Tuple[t.Type, FieldInfo]:
+    model = field.related_model
+    pydantic_model = create_model_from_tortoise(
+        model.__name__, model, skip_fields=[field.model_field_name]
+    )
+
+    return pydantic_model, FieldInfo(default=None)
+
+
+def create_bk_fk_field(field: BackwardFKRelation) -> t.Tuple[t.Type, FieldInfo]:
+    model: Model = field.related_model
+
+    related_model_fk_fields = model._meta.fk_fields
+    skip_fields: t.List[str] = []
+    for fk_field in list(related_model_fk_fields):
+        if model._meta.fields_map[fk_field].related_model == field.model:
+            skip_fields.append(fk_field)
+            break
+
+    pydantic_model = create_model_from_tortoise(
+        model.__name__, model, skip_fields=skip_fields
+    )
+
+    return t.List[pydantic_model], FieldInfo(default=None)
+
+
+def create_o2o_field(field: OneToOneFieldInstance) -> t.Tuple[t.Type, FieldInfo]:
+    model = field.related_model
+    pydantic_model = create_model_from_tortoise(
+        model.__name__, model, skip_fields=[field.model_field_name]
+    )
+
+    return pydantic_model, FieldInfo(default=None)
+
+
+def create_bk_o2o_field(field: BackwardOneToOneRelation) -> t.Tuple[t.Type, FieldInfo]:
+    model: Model = field.related_model
+
+    related_model_o2o_fields = model._meta.o2o_fields
+
+    skip_fields: t.List[str] = []
+    for o2o_field in list(related_model_o2o_fields):
+        if model._meta.fields_map[o2o_field].related_model == field.model:
+            skip_fields.append(o2o_field)
+            break
+
+    pydantic_model = create_model_from_tortoise(
+        model.__name__, model, skip_fields=skip_fields
+    )
+
+    return pydantic_model, FieldInfo(default=None)
+
+
+def create_common_field(field: Field) -> t.Tuple[t.Type, FieldInfo]:
     description = field.describe(False)
     python_type = description["python_type"]
     # handle default
@@ -73,26 +137,46 @@ def common_field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
     return python_type, field_info
 
 
-def field_creator(field: Field) -> t.Tuple[t.Type, FieldInfo]:
-    if isinstance(field, RelationalField):
-        return relational_field_creator(field)
-    else:
-        return common_field_creator(field)
-
-
-def model_creator(
-    name: str,
+def create_model_from_tortoise(
+    cls_name: str,
     model: Model,
     *,
     namespace: t.Dict[str, t.Any] | None = None,
     base: t.Type | None = None,
     module: str | None = None,
-) -> t.Dict[str, t.Tuple[t.Type, FieldInfo]]:
+    skip_fields: t.List[str] | None = None,
+) -> BaseModel:
     namespace = namespace or {}
     annotations = namespace.get("__annotations__", {})
     params: t.Dict[str, t.Tuple[t.Type, FieldInfo]] = {}
+    skip_fields = skip_fields or []
     for name, field in model._meta.fields_map.items():
-        params[name] = field_creator(field)
+        # avoid recursion
+        if name in skip_fields:
+            continue
+
+        if name in model._meta.db_fields:
+            params[name] = create_common_field(field)
+
+        elif name in model._meta.m2m_fields:
+            params[name] = create_m2m_field(field)
+
+        elif name in model._meta.fk_fields:
+            params[name] = create_fk_field(field)
+
+        elif name in model._meta.backward_fk_fields:
+            params[name] = create_bk_fk_field(field)
+
+        elif name in model._meta.o2o_fields:
+            params[name] = create_o2o_field(field)
+
+        elif name in model._meta.backward_o2o_fields:
+            params[name] = create_bk_o2o_field(field)
+
+        else:
+            raise ValueError(
+                f"Tortoise bug: unknown field {name} in model {model.__qualname__}"
+            )
 
     for field in annotations:
         python_type = annotations[field]
@@ -101,7 +185,7 @@ def model_creator(
             pydantic_field = namespace[field]
         params[field] = (python_type, pydantic_field)
 
-    return create_model(name, __base__=base, __module__=module, **params)
+    return create_model(cls_name, __base__=base, __module__=module, **params)
 
 
 class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
@@ -130,7 +214,7 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
         model: Model = meta.model
         cls.__doc__ = namespace.get("__doc__", meta.model.__doc__)
 
-        return model_creator(
+        return create_model_from_tortoise(
             cls_name,
             model,
             namespace=namespace,
