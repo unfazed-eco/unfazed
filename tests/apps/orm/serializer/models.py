@@ -71,6 +71,7 @@ class Profile(Model):
         "models.Student",
         related_name="profile",
         on_delete=f.NO_ACTION,
+        db_constraint=False,
     )
 
     class Meta:

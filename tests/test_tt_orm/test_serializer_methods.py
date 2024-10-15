@@ -8,7 +8,15 @@ from pathlib import Path
 import pytest_asyncio
 from pydantic import BaseModel, Field
 
-from tests.apps.orm.serializer.models import Brand, Car, Color, Student
+from tests.apps.orm.serializer.models import (
+    Bag,
+    Brand,
+    Car,
+    Color,
+    Course,
+    Profile,
+    Student,
+)
 from unfazed.core import Unfazed
 from unfazed.orm.tortoise.commands import init_db, migrate
 from unfazed.orm.tortoise.serializer import TSerializer
@@ -241,6 +249,68 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
 
 
 async def test_relations(prepare_db: t.Generator) -> None:
-    s = await Student.create(id=1, name="student1", age=18)
+    s1 = await Student.create(name="student1", age=18)
+    s2 = await Student.create(name="student2", age=19)
 
-    assert s.age == 18
+    c1 = await Course.create(name="course1")
+    await c1.students.add(s1)
+    await c1.students.add(s2)
+    c2 = await Course.create(name="course2")
+    await c2.students.add(s2)
+
+    await Bag.create(student=s1, name="bag1")
+    await Bag.create(student=s1, name="bag2")
+    await Bag.create(student=s2, name="bag3")
+
+    await Profile.create(student=s1, nickname="profile1")
+
+    class StudentSerializer(TSerializer):
+        class Meta:
+            model = Student
+
+    student = await Student.filter(id=s1.id).first()
+    await student.fetch_related(*["bags", "profile", "courses"])
+
+    student_serializer = StudentSerializer.model_validate(student)
+
+    assert student_serializer.name == "student1"
+    assert student_serializer.age == 18
+    assert student_serializer.bags[0].name == "bag1"
+    assert student_serializer.bags[1].name == "bag2"
+    assert student_serializer.profile.nickname == "profile1"
+
+    class CourseSerializer(TSerializer):
+        class Meta:
+            model = Course
+
+    course = await Course.filter(id=c1.id).first()
+    await course.fetch_related("students")
+
+    course_serializer = CourseSerializer.model_validate(course)
+
+    assert course_serializer.name == "course1"
+    assert course_serializer.students[0].name == "student1"
+    assert course_serializer.students[1].name == "student2"
+
+    class BagSerializer(TSerializer):
+        class Meta:
+            model = Bag
+
+    bag = await Bag.filter(student=s1).first()
+    await bag.fetch_related("student")
+
+    bag_serializer = BagSerializer.model_validate(bag)
+
+    assert bag_serializer.name == "bag1"
+    assert bag_serializer.student.name == "student1"
+
+    class ProfileSerializer(TSerializer):
+        class Meta:
+            model = Profile
+
+    profile = await Profile.filter(student=s1).first()
+    await profile.fetch_related("student")
+
+    assert profile.student.name == "student1"
+    assert profile.nickname == "profile1"
+

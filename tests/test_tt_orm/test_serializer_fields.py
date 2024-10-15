@@ -5,7 +5,7 @@ from annotated_types import Ge, Le, MaxLen
 from pydantic import Field
 from tortoise import fields
 
-from tests.apps.orm.serializer.models import Student
+from tests.apps.orm.serializer.models import Bag, Course, Profile, Student
 from unfazed.orm.tortoise import Model
 from unfazed.orm.tortoise.serializer import TSerializer, create_common_field
 
@@ -215,6 +215,98 @@ def test_create_relational_fields() -> None:
         class Meta:
             model = Student
 
-    print(StudentSerializer.model_fields)
+    # db fields
+    assert "id" in StudentSerializer.model_fields
+    assert "name" in StudentSerializer.model_fields
+    assert "age" in StudentSerializer.model_fields
 
-    raise NotImplementedError
+    # m2m fields
+    assert "courses" in StudentSerializer.model_fields
+
+    # fk fields
+    assert "bags" in StudentSerializer.model_fields
+
+    # one to one fields
+    assert "profile" in StudentSerializer.model_fields
+
+    # init model
+
+    student = StudentSerializer(
+        name="student1",
+        age=18,
+        courses=[
+            {"name": "course1"},
+            {"name": "course2"},
+        ],
+        bags=[
+            {"name": "bag1"},
+            {"name": "bag2"},
+        ],
+        profile={"nickname": "nick1"},
+    )
+
+    assert student.name == "student1"
+    assert len(student.courses) == 2
+    assert len(student.bags) == 2
+    assert student.profile.nickname == "nick1"
+
+    # relation fields default to None
+    student = StudentSerializer(name="student1", age=18)
+
+    assert student.name == "student1"
+    assert student.courses is None
+    assert student.bags is None
+    assert student.profile is None
+
+    # test profile serializer
+    class ProfileSerializer(TSerializer):
+        class Meta:
+            model = Profile
+
+    assert "id" in ProfileSerializer.model_fields
+    assert "nickname" in ProfileSerializer.model_fields
+    assert "student_id" not in ProfileSerializer.model_fields
+    assert "student" in ProfileSerializer.model_fields
+
+    profile = ProfileSerializer(
+        nickname="nick1", student={"name": "student1", "age": 18}
+    )
+
+    assert profile.nickname == "nick1"
+    assert profile.student.name == "student1"
+    assert profile.student.age == 18
+
+    # test bag serializer
+
+    class BagSerializer(TSerializer):
+        class Meta:
+            model = Bag
+
+    assert "id" in BagSerializer.model_fields
+    assert "name" in BagSerializer.model_fields
+    assert "student_id" not in BagSerializer.model_fields
+
+    bag = BagSerializer(name="bag1", student={"name": "student1", "age": 18})
+    assert bag.name == "bag1"
+    assert bag.student.name == "student1"
+    assert bag.student.age == 18
+
+    # test course serializer
+    class CourseSerializer(TSerializer):
+        class Meta:
+            model = Course
+
+    assert "id" in CourseSerializer.model_fields
+    assert "name" in CourseSerializer.model_fields
+    assert "students" in CourseSerializer.model_fields
+
+    course = CourseSerializer(
+        name="course1",
+        students=[
+            {"name": "student1", "age": 18},
+            {"name": "student2", "age": 19},
+        ],
+    )
+
+    assert course.name == "course1"
+    assert len(course.students) == 2
