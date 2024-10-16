@@ -495,9 +495,9 @@ class EndPointDefinition(BaseModel):
         if (
             self.body_params
             and len(self.body_params) == 1
-            and isinstance(self.body_params[0], BaseModel)
+            and isinstance(list(self.body_params.values())[0], BaseModel)
         ):
-            self.body_model = self.body_params[0]
+            self.body_model = list(self.body_params.values())[0]
 
         else:
             self.body_model = self.create_param_model(
