@@ -269,9 +269,8 @@ async def test_relations(prepare_db: t.Generator) -> None:
             model = Student
 
     student = await Student.filter(id=s1.id).first()
-    await student.fetch_related(*["bags", "profile", "courses"])
 
-    student_serializer = StudentSerializer.model_validate(student)
+    student_serializer = await StudentSerializer.retrieve(student)
 
     assert student_serializer.name == "student1"
     assert student_serializer.age == 18
@@ -284,9 +283,8 @@ async def test_relations(prepare_db: t.Generator) -> None:
             model = Course
 
     course = await Course.filter(id=c1.id).first()
-    await course.fetch_related("students")
 
-    course_serializer = CourseSerializer.model_validate(course)
+    course_serializer = await CourseSerializer.retrieve(course)
 
     assert course_serializer.name == "course1"
     assert course_serializer.students[0].name == "student1"
@@ -297,9 +295,8 @@ async def test_relations(prepare_db: t.Generator) -> None:
             model = Bag
 
     bag = await Bag.filter(student=s1).first()
-    await bag.fetch_related("student")
 
-    bag_serializer = BagSerializer.model_validate(bag)
+    bag_serializer = await BagSerializer.retrieve(bag)
 
     assert bag_serializer.name == "bag1"
     assert bag_serializer.student.name == "student1"
@@ -309,8 +306,20 @@ async def test_relations(prepare_db: t.Generator) -> None:
             model = Profile
 
     profile = await Profile.filter(student=s1).first()
-    await profile.fetch_related("student")
 
-    assert profile.student.name == "student1"
-    assert profile.nickname == "profile1"
+    profile_serializer = await ProfileSerializer.retrieve(profile)
 
+    assert profile_serializer.student.name == "student1"
+    assert profile_serializer.nickname == "profile1"
+
+    # list_from_ctx
+
+    ret = await StudentSerializer.list_from_ctx({"id": s1.id}, page=1, size=2)
+
+    assert ret.count == 1
+    assert len(ret.data) == 1
+
+    assert ret.data[0].name == "student1"
+    assert ret.data[0].age == 18
+    assert ret.data[0].bags[0].name == "bag1"
+    assert ret.data[0].bags[1].name == "bag2"

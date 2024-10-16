@@ -307,11 +307,10 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
 
         return ret
 
-    def get_fetch_fields(self) -> t.List[str]:
+    @classmethod
+    def get_fetch_fields(cls) -> t.List[str]:
         return [
-            ele
-            for ele in self.Meta.model._meta.fetch_fields
-            if ele in self.Meta.include
+            ele for ele in cls.Meta.model._meta.fetch_fields if ele in cls.Meta.include
         ]
 
     @t.final
@@ -338,10 +337,10 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
     @t.final
     @classmethod
     async def retrieve(cls, instance: Model, **kwargs: t.Any) -> BaseModel:
-        # fetch_relations = kwargs.pop("fetch_relations", True)
-        # fetch_fields = cls.get_fetch_fields()
-        # if fetch_relations and fetch_fields:
-        #     await instance.fetch_related(*fetch_fields)
+        fetch_relations = kwargs.pop("fetch_relations", True)
+        fetch_fields = cls.get_fetch_fields()
+        if fetch_relations and fetch_fields:
+            await instance.fetch_related(*fetch_fields)
         return cls.from_instance(instance)
 
     @t.final
@@ -361,6 +360,10 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
     @classmethod
     def get_queryset(cls, cond: t.Dict[str, t.Any], **kwargs: t.Any) -> QuerySet:
         model: Model = cls.Meta.model
+        fetch_relations = kwargs.pop("fetch_relations", True)
+        fetch_fields = cls.get_fetch_fields()
+        if fetch_relations and fetch_fields:
+            return model.filter(**cond).prefetch_related(*fetch_fields)
         return model.filter(**cond)
 
     @t.final
@@ -381,4 +384,4 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
     @classmethod
     def from_instance(cls, instance: Model) -> BaseModel:
         # make sure set from_attributes=True
-        return cls.model_validate(instance)
+        return cls.model_validate(instance, from_attributes=True)

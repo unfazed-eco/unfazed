@@ -1,8 +1,7 @@
 import enum
 
+from tortoise import Model
 from tortoise import fields as f
-
-from unfazed.orm.tortoise import Model
 
 
 class Brand(enum.StrEnum):

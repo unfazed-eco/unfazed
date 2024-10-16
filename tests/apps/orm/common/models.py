@@ -1,9 +1,7 @@
-from tortoise import fields
-
-from unfazed.orm import tortoise as tt
+from tortoise import Model, fields
 
 
-class User(tt.Model):
+class User(Model):
     id = fields.IntField(primary_key=True)
     username = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255)
