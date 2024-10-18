@@ -2,7 +2,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
-from pydantic.fields import FieldInfo
 
 
 class Contact(BaseModel):
@@ -28,7 +27,7 @@ class Info(BaseModel):
     termsOfService: Optional[str] = None
     contact: Optional[Contact] = None
     license: Optional[License] = None
-    version: str
+    version: str | None = None
 
     model_config = ConfigDict(extra="allow")
 
@@ -50,7 +49,7 @@ class Server(BaseModel):
 
 
 class Reference(BaseModel):
-    ref: str = Field(alias="$ref")
+    ref: str = Field(serialization_alias="$ref")
 
     model_config = ConfigDict(extra="allow")
 
@@ -117,9 +116,9 @@ class Schema(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    @classmethod
-    def from_fieldinfo(cls, fieldinfo: FieldInfo) -> "Schema":
-        attrs = fieldinfo.__dict__
+    # @classmethod
+    # def from_fieldinfo(cls, fieldinfo: FieldInfo) -> "Schema":
+    #     attrs = fieldinfo.__dict__
 
 
 class Example(BaseModel):

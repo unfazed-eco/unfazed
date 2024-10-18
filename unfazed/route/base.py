@@ -52,7 +52,7 @@ def path(
         )
 
     if endpoint:
-        if inspect.iscoroutinefunction(endpoint):
+        if inspect.isfunction(endpoint):
             return Route(
                 path,
                 endpoint,
@@ -64,9 +64,7 @@ def path(
                 tags=tags,
             )
         else:
-            raise ValueError(
-                f"endpoint {endpoint.__name__} must be a coroutine function"
-            )
+            raise ValueError(f"endpoint {endpoint.__name__} must be a function")
 
     elif routes:
         ret = []

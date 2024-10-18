@@ -51,9 +51,8 @@ async def endpoint1(
     request: HttpRequest,
     pth1: t.Annotated[Pth1, p.Path()],
     pth2: t.Annotated[Pth2, p.Path()],
-    path5: t.Annotated[str, p.PathField(default="foo")],
-    q1: int = 1,
-    path6: str = "bar",
+    path5: t.Annotated[str, p.Path(default="foo")],
+    path6: str,
 ) -> t.Annotated[JsonResponse[RespE1], p.ResponseSpec(model=RespE1)]:
     r = RespE1(
         path1=pth1.path1,
@@ -80,13 +79,15 @@ async def test_path():
     assert "pth2" in definition.params
     assert "path5" in definition.params
     assert "path6" in definition.params
-    assert "pth1" in definition.path_params and definition.path_params["pth1"] == (
-        Pth1,
-        ...,
+    assert (
+        "pth1" in definition.path_params
+        and definition.path_params["pth1"][0] == Pth1
+        and isinstance(definition.path_params["pth1"][1], p.Path)
     )
-    assert "pth2" in definition.path_params and definition.path_params["pth2"] == (
-        Pth2,
-        ...,
+    assert (
+        "pth2" in definition.path_params
+        and definition.path_params["pth2"][0] == Pth2
+        and isinstance(definition.path_params["pth1"][1], p.Path)
     )
     assert (
         "path5" in definition.path_params
@@ -94,11 +95,8 @@ async def test_path():
         and definition.path_params["path5"][1].default == "foo"
     )
     assert (
-        "path6" in definition.path_params
-        and definition.path_params["path6"][0] is str
-        and definition.path_params["path6"][1].default == "bar"
+        "path6" in definition.path_params and definition.path_params["path6"][0] is str
     )
-    assert "q1" not in definition.path_params
 
     pathmodel: BaseModel = definition.path_model
     for ele in ["path1", "path2", "path3", "path4", "path5", "path6"]:
@@ -144,8 +142,8 @@ async def endpoint2(
     request: HttpRequest,
     qry1: t.Annotated[Qry1, p.Query()],
     qry2: t.Annotated[Qry2, p.Query()],
-    query5: t.Annotated[str, p.QueryField(default="foo")],
-    query6: str = "bar",
+    query5: t.Annotated[str, p.Query(default="foo")],
+    query6: str,
 ) -> t.Annotated[JsonResponse[RespE2], p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
@@ -172,13 +170,15 @@ async def test_query():
     assert "qry2" in definition.params
     assert "query5" in definition.params
     assert "query6" in definition.params
-    assert "qry1" in definition.query_params and definition.query_params["qry1"] == (
-        Qry1,
-        ...,
+    assert (
+        "qry1" in definition.query_params
+        and definition.query_params["qry1"][0] == Qry1
+        and isinstance(definition.query_params["qry1"][1], p.Query)
     )
-    assert "qry2" in definition.query_params and definition.query_params["qry2"] == (
-        Qry2,
-        ...,
+    assert (
+        "qry2" in definition.query_params
+        and definition.query_params["qry2"][0] == Qry2
+        and isinstance(definition.query_params["qry2"][1], p.Query)
     )
     assert (
         "query5" in definition.query_params
@@ -188,13 +188,7 @@ async def test_query():
     assert (
         "query6" in definition.query_params
         and definition.query_params["query6"][0] is str
-        and definition.query_params["query6"][1].default == "bar"
     )
-
-    # assert "qry1" in definition.query_model.model_fields
-    # assert "qry2" in definition.query_model.model_fields
-    # assert "query5" in definition.query_model.model_fields
-    # assert "query6" in definition.query_model.model_fields
 
     querymodel = definition.query_model
     for ele in ["query1", "query2", "query3", "query4", "query5", "query6"]:
@@ -239,7 +233,7 @@ async def endpoint3(
     request: HttpRequest,
     hdr1: t.Annotated[Hdr1, p.Header()],
     hdr2: t.Annotated[Hdr2, p.Header()],
-    header5: t.Annotated[str, p.HeaderField(default="foo")],
+    header5: t.Annotated[str, p.Header(default="foo")],
 ) -> t.Annotated[JsonResponse[RespE3], p.ResponseSpec(model=RespE3)]:
     r = RespE3(
         header1=hdr1.header1,
@@ -265,14 +259,16 @@ async def test_header():
     assert "hdr2" in definition.params
     assert "header5" in definition.params
 
-    assert "hdr1" in definition.header_params and definition.header_params["hdr1"] == (
-        Hdr1,
-        ...,
+    assert (
+        "hdr1" in definition.header_params
+        and definition.header_params["hdr1"][0] == Hdr1
+        and isinstance(definition.header_params["hdr1"][1], p.Header)
     )
 
-    assert "hdr2" in definition.header_params and definition.header_params["hdr2"] == (
-        Hdr2,
-        ...,
+    assert (
+        "hdr2" in definition.header_params
+        and definition.header_params["hdr2"][0] == Hdr2
+        and isinstance(definition.header_params["hdr2"][1], p.Header)
     )
 
     assert (
@@ -329,7 +325,7 @@ async def endpoint4(
     request: HttpRequest,
     ck1: t.Annotated[Ckie1, p.Cookie()],
     ck2: t.Annotated[Ckie2, p.Cookie()],
-    cookie5: t.Annotated[str, p.CookieField(default="foo")],
+    cookie5: t.Annotated[str, p.Cookie(default="foo")],
 ) -> t.Annotated[JsonResponse[RespE4], p.ResponseSpec(model=RespE4)]:
     r = RespE4(
         cookie1=ck1.cookie1,
@@ -355,14 +351,16 @@ async def test_cookie():
     assert "ck2" in definition.params
     assert "cookie5" in definition.params
 
-    assert "ck1" in definition.cookie_params and definition.cookie_params["ck1"] == (
-        Ckie1,
-        ...,
+    assert (
+        "ck1" in definition.cookie_params
+        and definition.cookie_params["ck1"][0] == Ckie1
+        and isinstance(definition.cookie_params["ck1"][1], p.Cookie)
     )
 
-    assert "ck2" in definition.cookie_params and definition.cookie_params["ck2"] == (
-        Ckie2,
-        ...,
+    assert (
+        "ck2" in definition.cookie_params
+        and definition.cookie_params["ck2"][0] == Ckie2
+        and isinstance(definition.cookie_params["ck2"][1], p.Cookie)
     )
 
     assert (
@@ -423,7 +421,7 @@ async def endpoint5(
     bd1: t.Annotated[Body1, p.Body()],
     bd2: t.Annotated[Body2, p.Body()],
     bd3: Body3,
-    body6: t.Annotated[str, p.BodyField(default="foo")],
+    body6: t.Annotated[str, p.Body(default="foo")],
 ) -> t.Annotated[JsonResponse[RespE5], p.ResponseSpec(model=RespE5)]:
     r = RespE5(
         body1=bd1.body1,
@@ -451,20 +449,18 @@ async def test_body():
     assert "bd3" in definition.params
     assert "body6" in definition.params
 
-    assert "bd1" in definition.body_params and definition.body_params["bd1"] == (
-        Body1,
-        ...,
+    assert (
+        "bd1" in definition.body_params
+        and definition.body_params["bd1"][0] == Body1
+        and isinstance(definition.body_params["bd1"][1], p.Body)
     )
 
-    assert "bd2" in definition.body_params and definition.body_params["bd2"] == (
-        Body2,
-        ...,
+    assert (
+        "bd2" in definition.body_params
+        and definition.body_params["bd2"][0] == Body2
+        and isinstance(definition.body_params["bd2"][1], p.Body)
     )
-
-    assert "bd3" in definition.body_params and definition.body_params["bd3"] == (
-        Body3,
-        ...,
-    )
+    assert "bd3" in definition.body_params and definition.body_params["bd3"][0] == Body3
 
     assert (
         "body6" in definition.body_params

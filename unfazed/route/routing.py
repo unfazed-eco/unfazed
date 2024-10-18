@@ -4,16 +4,19 @@ import typing as t
 from asgiref.typing import ASGIReceiveCallable, ASGISendCallable, HTTPScope
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware import Middleware
 from starlette.routing import Route as StartletteRoute
 from starlette.routing import compile_path
 
 from unfazed.http import HttpRequest
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
-from unfazed.type import HttpMethods
+from unfazed.type import HttpMethod
 
 from . import params as p
 from . import utils as u
+
+SUPPOTED_REQUEST_TYPE = t.Union[str, int, float, t.List, BaseModel]
 
 
 class Route(StartletteRoute):
@@ -22,7 +25,7 @@ class Route(StartletteRoute):
         path: str,
         endpoint: t.Callable[..., t.Any],
         *,
-        methods: t.List[HttpMethods] | None = None,
+        methods: t.List[HttpMethod] | None = None,
         name: str | None = None,
         include_in_schema: bool = True,
         middleware: t.Sequence[Middleware] | None = None,
@@ -31,10 +34,10 @@ class Route(StartletteRoute):
         response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
-            raise ValueError("Routed paths must start with '/'")
+            raise ValueError(f"route `{endpoint.__name__}` paths must start with '/'")
 
         if not inspect.isfunction(endpoint):
-            raise ValueError("Endpoint must be a async function")
+            raise ValueError(f"Endpoint `{endpoint.__name__}` must be a async function")
 
         self.path = path
         self.endpoint = endpoint
@@ -42,14 +45,18 @@ class Route(StartletteRoute):
         self.include_in_schema = include_in_schema
 
         if methods is None:
-            self.methods = ["GET", "HEAD"]
+            self.methods = {"GET", "HEAD"}
         else:
-            self.methods = {method.upper() for method in methods}
+            methods = set([method.upper() for method in methods])
             if "GET" in self.methods:
                 self.methods.add("HEAD")
 
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 
+        # load app_label as tags
+        if not tags:
+            if app_label:
+                tags = [app_label]
         self.tags = tags or []
         self.response_models = response_models
 
@@ -80,7 +87,7 @@ class Route(StartletteRoute):
 
         self.endpoint_definition = EndPointDefinition(
             endpoint=self.endpoint,
-            methods=self.methods,
+            methods=list(self.methods),
             tags=self.tags,
             path_parm_names=self.param_convertors.keys(),
             response_models=self.response_models,
@@ -97,18 +104,22 @@ class EndpointHandler:
     ) -> t.Any:
         request = HttpRequest(scope, receive, send)
 
-        kwargs, error_list = self.solve_params(request)
+        kwargs, error_list = await self.solve_params(request)
 
         if error_list:
             raise ExceptionGroup(
                 f"failed to solve params for {self.endpoint_difinition.endpoint_name}",
                 error_list,
             )
-        response = await self.endpoint(request, **kwargs)
+
+        if inspect.iscoroutinefunction(self.endpoint):
+            response = await self.endpoint(request, **kwargs)
+        else:
+            response = await run_in_threadpool(self.endpoint, request, **kwargs)
 
         await response(scope, receive, send)
 
-    def solve_params(
+    async def solve_params(
         self, request: HttpRequest
     ) -> t.Tuple[t.Dict[str, t.Any], t.List[Exception]]:
         params: t.Dict[str, t.Any] = {}
@@ -138,10 +149,18 @@ class EndpointHandler:
                 error_list.append(cookie_err)
 
         if self.endpoint_difinition.body_model:
-            body_params, body_err = self._slove_body_params(request)
-            params.update(body_params)
-            if body_err:
-                error_list.append(body_err)
+            if self.endpoint_difinition.body_type == "json":
+                body_params, body_err = self._slove_body_params(request)
+                params.update(body_params)
+                if body_err:
+                    error_list.append(body_err)
+
+            # handle formdata
+            else:
+                form_params, form_err = await self._slove_form_params(request)
+                params.update(form_params)
+                if form_err:
+                    error_list.append(form_err)
 
         return params, error_list
 
@@ -217,6 +236,13 @@ class EndpointHandler:
             request.json(),
         )
 
+    async def _slove_form_params(self, request: HttpRequest):
+        return self._solve_params(
+            self.endpoint_difinition.body_model,
+            self.endpoint_difinition.body_params,
+            await request._get_form(),
+        )
+
 
 class EndPointDefinition(BaseModel):
     endpoint: t.Callable
@@ -229,11 +255,13 @@ class EndPointDefinition(BaseModel):
     response_models: t.Optional[t.List[p.ResponseSpec]] = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
-    path_params: t.Dict[str, t.Tuple[t.Type, p.Path | p.PathField]] = {}
-    query_params: t.Dict[str, t.Tuple[t.Type, p.Query | p.QueryField]] = {}
-    header_params: t.Dict[str, t.Tuple[t.Type, p.Header | p.HeaderField]] = {}
-    cookie_params: t.Dict[str, t.Tuple[t.Type, p.Cookie | p.CookieField]] = {}
-    body_params: t.Dict[str, t.Tuple[t.Type, p.Body | p.BodyField]] = {}
+    path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
+    query_params: t.Dict[str, t.Tuple[t.Type, p.Query]] = {}
+    header_params: t.Dict[str, t.Tuple[t.Type, p.Header]] = {}
+    cookie_params: t.Dict[str, t.Tuple[t.Type, p.Cookie]] = {}
+    body_params: t.Dict[str, t.Tuple[t.Type, p.Body | p.Form | p.File]] = {}
+
+    body_type: t.Optional[t.Literal["json", "form"]] = None
 
     # stage 3: create path, query, header, cookie, body models
     path_model: t.Type[BaseModel] | None = None
@@ -242,7 +270,7 @@ class EndPointDefinition(BaseModel):
     cookie_model: t.Type[BaseModel] | None = None
     body_model: t.Type[BaseModel] | None = None
 
-    operation_id: t.Optional[str] = Field(default_factory=u._generate_random_string)
+    operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -256,14 +284,14 @@ class EndPointDefinition(BaseModel):
         # stage 3
         self.build_models()
 
-    def _convert_args_to_params(self) -> t.Dict[str, t.Any]:
+    def _convert_args_to_params(self) -> t.Dict[str, inspect.Parameter]:
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
 
         signature = inspect.signature(endpoint)
 
         # handle endpoint params
-        ret: t.Dict[str, t.Any] = {}
+        ret: t.Dict[str, inspect.Parameter] = {}
         for args, param in signature.parameters.items():
             if param.kind in [
                 inspect.Parameter.VAR_KEYWORD,
@@ -284,6 +312,26 @@ class EndPointDefinition(BaseModel):
             if param.name not in type_hints:
                 raise ValueError(
                     f"missing type hint for {param.name} in endpoint: {self.endpoint_name}"
+                )
+
+            if param.default != inspect.Parameter.empty:
+                raise ValueError(
+                    f"endpoint {self.endpoint_name} should not have default value, use Annotated instead"
+                    "change `{param.name}: {param.annotation} = {param.default}` "
+                    "to `{param.name}: Annotated[{param.annotation}, Field(default={param.default})]`"
+                )
+
+            if (
+                hasattr(param.annotation, "_name")
+                and param.annotation._name == "Annotated"
+            ):
+                origin_cls = param.annotation.__origin__
+            else:
+                origin_cls = param.annotation
+            if not issubclass(origin_cls, SUPPOTED_REQUEST_TYPE):
+                raise ValueError(
+                    f"unsupported type hint for `{param.name}` in endpoint: {self.endpoint.__name__}"
+                    "supported types are: str, int, float, list, BaseModel"
                 )
 
             ret[args] = param
@@ -318,56 +366,40 @@ class EndPointDefinition(BaseModel):
 
         # only support Annotated[HttpResponse, resp1, resp2]
         if "__origin__" in _dict and "__metadata__" in _dict:
-            # TODO
-            # origin = _dict["__origin__"]
-            # if HttpResponse not in getattr(origin, "__mro__", []):
-            # if not issubclass(origin.__class__, HttpResponse):
-            #     raise ValueError(
-            #         f"return type in {endpoint.__name__} need inherited from HttpResponse"
-            #     )
-
+            response_models = []
             for model in _dict["__metadata__"]:
-                if not isinstance(model, p.ResponseSpec):
-                    raise ValueError(f"unsupported metadata: {model}")
+                if isinstance(model, p.ResponseSpec):
+                    response_models.append(model)
 
-            self.response_models = _dict["__metadata__"]
+            self.response_models = response_models
 
     def handle_signature(self):
         self._convert_args_to_params()
         self._convert_return_to_response()
 
     def dispatch_params(self):
+        has_body_field = False
+        has_form_field = False
         for _, param in self.params.items():
             annotation = param.annotation
-            default = param.default
-
-            # TODO
-            # 特定的参数类型才能被作为 endpoint 的参数
 
             # async def endpoint(request: Request, q: str, path: int, ctx: Item) -> Response
             if not hasattr(annotation, "_name"):
                 if param.name in self.path_parm_names:
-                    self.path_params[param.name] = (
-                        annotation,
-                        p.PathField(default=default),
-                    )
+                    self.path_params[param.name] = (annotation, p.Path())
 
                 else:
                     if isinstance(annotation, t.Type) and issubclass(
                         annotation, BaseModel
                     ):
-                        if default == inspect.Parameter.empty:
-                            self.body_params[param.name] = (annotation, ...)
-                        else:
-                            self.body_params[param.name] = (
-                                annotation,
-                                default,
+                        if has_form_field:
+                            raise ValueError(
+                                f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
                             )
+                        self.body_params[param.name] = (annotation, p.Body())
+                        has_body_field = True
                     else:
-                        self.query_params[param.name] = (
-                            annotation,
-                            p.QueryField(default=default),
-                        )
+                        self.query_params[param.name] = (annotation, p.Query())
 
             # async def endpoint(request: Request, ctx: t.Annotated[PathModel, p.Path()]) -> Response
             elif annotation._name == "Annotated":
@@ -379,69 +411,38 @@ class EndPointDefinition(BaseModel):
                         f"{self.endpoint_name} missing metadata for {annotation}"
                     )
 
-                # TODO
-                # support formfiled and filefield
-
                 # only support the first metadata
                 model_or_field = metadata[0]
 
                 if isinstance(model_or_field, p.Path):
-                    if not issubclass(origin, BaseModel):
-                        raise ValueError(
-                            f"endpoint {self.endpoint_name} with wrong signature "
-                            "for param {param.name}, it should be inherited by BaseModel"
-                        )
-                    self.path_params[param.name] = (origin, ...)
-
-                elif isinstance(model_or_field, p.Query):
-                    if not issubclass(origin, BaseModel):
-                        raise ValueError(
-                            f"endpoint {self.endpoint_name} with wrong signature "
-                            "for param {param.name}, it should be inherited by BaseModel"
-                        )
-
-                    self.query_params[param.name] = (origin, ...)
-
-                elif isinstance(model_or_field, p.Header):
-                    if not issubclass(origin, BaseModel):
-                        raise ValueError(
-                            f"endpoint {self.endpoint_name} with wrong signature "
-                            "for param {param.name}, it should be inherited by BaseModel"
-                        )
-
-                    self.header_params[param.name] = (origin, ...)
-
-                elif isinstance(model_or_field, p.Cookie):
-                    if not issubclass(origin, BaseModel):
-                        raise ValueError(
-                            f"endpoint {self.endpoint_name} with wrong signature "
-                            "for param {param.name}, it should be inherited by BaseModel"
-                        )
-
-                    self.cookie_params[param.name] = (origin, ...)
-
-                elif isinstance(model_or_field, p.Body):
-                    if not issubclass(origin, BaseModel):
-                        raise ValueError(
-                            f"endpoint {self.endpoint_name} with wrong signature "
-                            "for param {param.name}, it should be inherited by BaseModel"
-                        )
-
-                    self.body_params[param.name] = (origin, ...)
-
-                elif isinstance(model_or_field, p.PathField):
                     self.path_params[param.name] = (origin, model_or_field)
 
-                elif isinstance(model_or_field, p.QueryField):
+                elif isinstance(model_or_field, p.Query):
                     self.query_params[param.name] = (origin, model_or_field)
 
-                elif isinstance(model_or_field, p.HeaderField):
+                elif isinstance(model_or_field, p.Header):
                     self.header_params[param.name] = (origin, model_or_field)
 
-                elif isinstance(model_or_field, p.CookieField):
+                elif isinstance(model_or_field, p.Cookie):
                     self.cookie_params[param.name] = (origin, model_or_field)
 
-                elif isinstance(model_or_field, p.BodyField):
+                elif isinstance(model_or_field, p.Body):
+                    if has_form_field:
+                        raise ValueError(
+                            f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                        )
+                    self.body_params[param.name] = (origin, model_or_field)
+                    has_body_field = True
+
+                elif isinstance(model_or_field, p.Form):
+                    if has_body_field:
+                        raise ValueError(
+                            f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                        )
+                    self.body_params[param.name] = (origin, model_or_field)
+                    has_form_field = True
+
+                elif isinstance(model_or_field, p.File):
                     self.body_params[param.name] = (origin, model_or_field)
 
                 else:
@@ -453,6 +454,10 @@ class EndPointDefinition(BaseModel):
                 raise ValueError(
                     f"Unsupported type hints for {param.name} in {self.endpoint_name}"
                 )
+        if has_body_field:
+            self.body_type = "json"
+        if has_form_field:
+            self.body_type = "form"
 
     def handle_methods(self):
         # for openapi
@@ -475,7 +480,7 @@ class EndPointDefinition(BaseModel):
             self.query_params,
             f"{self.endpoint.__name__.capitalize()}QueryModel",
             "query",
-            "simple",
+            "form",
         )
 
         self.header_model = self.create_param_model(
@@ -489,21 +494,14 @@ class EndPointDefinition(BaseModel):
             self.cookie_params,
             f"{self.endpoint.__name__.capitalize()}CookieModel",
             "cookie",
-            "simple",
+            "form",
         )
 
-        if (
-            self.body_params
-            and len(self.body_params) == 1
-            and isinstance(list(self.body_params.values())[0], BaseModel)
-        ):
-            self.body_model = list(self.body_params.values())[0]
+        self.body_model = self.create_param_model(
+            self.body_params, f"{self.endpoint.__name__.capitalize()}BodyModel"
+        )
 
-        else:
-            self.body_model = self.create_param_model(
-                self.body_params, f"{self.endpoint.__name__.capitalize()}BodyModel"
-            )
-
+    @property
     def param_models(self) -> t.List[BaseModel | None]:
         return [
             self.path_model,
@@ -514,7 +512,7 @@ class EndPointDefinition(BaseModel):
 
     def create_param_model(
         self,
-        params: t.Dict[str, t.Tuple[t.Type, BaseModel | FieldInfo]],
+        params: t.Dict[str, t.Tuple[t.Type, p.Param]],
         model_name: str,
         in_: str | None = None,
         style_: str | None = None,
@@ -530,40 +528,61 @@ class EndPointDefinition(BaseModel):
 
         fields: t.List[str] = []
         bases: t.List[BaseModel] = []
-        field_difinitions: t.Dict[str, FieldInfo] = {}
+        field_difinitions: t.Dict[str, p.Param] = {}
 
         for name, define in params.items():
-            annotation: t.Type = define[0]
+            annotation: t.Type
+            fieldinfo: p.Param
+
+            annotation, fieldinfo = define
 
             if issubclass(annotation, BaseModel):
-                for field_name in annotation.model_fields:
+                for field_name, field in annotation.model_fields.items():
                     if field_name in fields:
                         raise ValueError(f"field {field_name} already exists")
 
                     fields.append(field_name)
 
+                    if not field.alias:
+                        field.alias = field_name
+
+                    if not field.title:
+                        field.title = field_name
+
                 bases.append(annotation)
 
+                if hasattr(field, "media_type"):
+                    json_schema_extra["media_type"] = fieldinfo.media_type
+
+            # field info
             else:
                 if name in fields:
-                    raise ValueError(f"field {name} already exists")
+                    raise ValueError(
+                        f"Error for {self.endpoint_name}: field {name} already exists"
+                    )
 
                 fields.append(name)
 
+                if not fieldinfo.alias:
+                    fieldinfo.alias = name
+
+                if not fieldinfo.title:
+                    fieldinfo.title = name
+
                 field_difinitions[name] = define
 
-        # TODO
-        # config_dict = ConfigDict()
-        # for base in bases:
-        #     config_dict.update(base.model_config)
+        config_dict = ConfigDict()
+        for base in bases:
+            config_dict.update(base.model_config)
 
-        # if "json_schema_extra" in config_dict:
-        #     config_dict["json_schema_extra"].update(json_schema_extra)
-        # else:
-        #     config_dict["json_schema_extra"] = json_schema_extra
+        if "json_schema_extra" in config_dict:
+            config_dict["json_schema_extra"].update(json_schema_extra)
+        else:
+            config_dict["json_schema_extra"] = json_schema_extra
+
+        field_difinitions["model_config"] = config_dict
         return create_model(
             model_name,
             __base__=tuple(bases) or None,
-            # __config__=config_dict,
             **field_difinitions,
         )

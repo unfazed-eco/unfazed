@@ -1,3 +1,5 @@
 import typing as t
 
-type HttpMethods = t.Literal["GET", "POST", "PATCH", "DELETE", "HEAD"]
+type HttpMethod = t.Literal[
+    "GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS", "PUT", "TRACE"
+]

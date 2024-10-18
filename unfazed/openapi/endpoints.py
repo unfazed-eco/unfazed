@@ -12,7 +12,7 @@ async def redoc(request: HttpRequest) -> HttpResponse:
     unfazed_settings = settings.get("UNFAZED", {})
     context = {
         "title": unfazed_settings.get("PROJECT_NAME", "Unfazed"),
-        "openapi_url": "/openapi.json",
+        "openapi_url": "/openapi/openapi.json",
     }
 
     html_path = os.path.join(os.path.dirname(__file__), "template/index.html")
@@ -22,6 +22,4 @@ async def redoc(request: HttpRequest) -> HttpResponse:
 
 
 async def openapi_json(request: HttpRequest) -> JsonResponse:
-    if OpenApi.schema is None:
-        OpenApi.create_schema()
     return JsonResponse(OpenApi.schema)

@@ -6,67 +6,50 @@ from pydantic.fields import FieldInfo
 
 # for endpoint signature
 class ResponseSpec(BaseModel):
-    model: t.Union[str, t.List, t.Type[BaseModel], t.Dict]
+    model: t.Type[BaseModel]
     content_type: str = "application/json"
     code: str = "200"
-    methods: t.List[str] = ["GET"]
-
-
-class Query(BaseModel):
-    pass
-
-
-class Body(BaseModel):
-    pass
-
-
-class Path(BaseModel):
-    pass
-
-
-class Header(BaseModel):
-    pass
-
-
-class Cookie(BaseModel):
-    pass
-
-
-class Form(BaseModel):
-    pass
-
-
-class File(BaseModel):
-    pass
+    description: str = ""
 
 
 class Param(FieldInfo):
+    def __init__(self, **kwargs):
+        self.example = kwargs.get("example", None)
+        super().__init__(**kwargs)
+
+
+class Path(Param):
     pass
 
 
-class PathField(Param):
+class Query(Param):
     pass
 
 
-class QueryField(Param):
+class Header(Param):
     pass
 
 
-class HeaderField(Param):
+class Cookie(Param):
     pass
 
 
-class CookieField(Param):
-    pass
+class Body(Param):
+    def __init__(self, **kwargs):
+        kwargs["media_type"] = "application/json"
+        super().__init__(**kwargs)
+        self.media_type = "application/json"
 
 
-class BodyField(Param):
-    pass
+class Form(Param):
+    def __init__(self, **kwargs):
+        kwargs["media_type"] = "application/x-www-form-urlencoded"
+        super().__init__(**kwargs)
+        self.media_type = "application/x-www-form-urlencoded"
 
 
-class FormField(Param):
-    pass
-
-
-class FileField(Param):
-    pass
+class File(Param):
+    def __init__(self, **kwargs):
+        kwargs["media_type"] = "multipart/form-data"
+        super().__init__(**kwargs)
+        self.media_type = "multipart/form-data"
