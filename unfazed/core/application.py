@@ -11,6 +11,7 @@ from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
+from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
 from unfazed.orm import ModelCenter
 from unfazed.protocol import BaseLifeSpan
@@ -134,6 +135,13 @@ class Unfazed(Starlette):
     def setup_openapi(self):
         if not self.settings.OPENAPI:
             return
+
+        OpenApi.create_schema(
+            self.router.routes,
+            self.settings.PROJECT_NAME,
+            self.settings.VERSION,
+            self.settings.OPENAPI,
+        )
         for pattern in patterns:
             self.router.routes.append(pattern)
 

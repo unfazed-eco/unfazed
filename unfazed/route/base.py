@@ -19,10 +19,10 @@ def include(route_path: str) -> t.Sequence[Route]:
     for route in patterns:
         if not isinstance(route, Route):
             raise ValueError(
-                f"error for {route_path}: routes should be a list of Route"
+                f"Error for {route_path}: routes should be a list of Route"
             )
 
-        route.app_label = app_label
+        route.update_label(app_label)
 
     return patterns
 
@@ -36,7 +36,7 @@ def path(
     name: str = None,
     app_label: str = None,
     middlewares: t.Sequence[t.Type[MiddleWare]] = None,
-    include_in_schema: bool = False,
+    include_in_schema: bool = True,
     tags: t.Union[str, t.List[str]] = None,
 ) -> Route | t.Sequence[Route]:
     """

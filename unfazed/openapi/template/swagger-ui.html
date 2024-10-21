@@ -2,15 +2,15 @@
 <html>
 
 <head>
-    <link type="text/css" rel="stylesheet" href="https://dl.dir.freefiremobile.com/common/web_event/common/npm/swagger-ui-dist@3/swagger-ui.css">
-    <link rel="shortcut icon" href="https://www.openapis.org/wp-content/uploads/sites/3/2016/11/favicon.png">
+    <link type="text/css" rel="stylesheet" href='{{ swagger_ui_css }}'>
+    <link rel="shortcut icon" href='{{ swagger_ui_favicon }}'>
     <title>{{title}}</title>
 </head>
 
 <body>
     <div id="swagger-ui">
     </div>
-    <script src="https://dl.dir.freefiremobile.com/common/web_event/common/npm/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script src='{{ swagger_ui_js }}'></script>
     <!-- `SwaggerUIBundle` is now available on the page -->
     <script>
         const ui = SwaggerUIBundle({

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <!-- Include ReDoc via CDN -->
+    <script src='{{ redoc_js }}'></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ReDoc container -->
+    <redoc spec-url='{{ redoc_spec }}'></redoc>
+
+    <!-- Optional: Customizing ReDoc appearance -->
+    <script>
+        Redoc.init('{{ redoc_spec }}', {
+            scrollYOffset: '60',
+            theme: {
+                colors: {
+                    primary: {
+                        main: '#dd5522'
+                    }
+                },
+                typography: {
+                    fontFamily: 'Arial'
+                }
+            }
+        }, document.querySelector('redoc'));
+    </script>
+</body>
+
+</html>

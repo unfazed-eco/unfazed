@@ -8,7 +8,7 @@ async def main() -> None:
     root_path = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(root_path)
     os.environ.setdefault(
-        "UNFAZED_SETTINGS_MODULE", "playground.myapp.backend.settings"
+        "UNFAZED_SETTINGS_MODULE", "tests.apps.openapi.backend.settings"
     )
     try:
         from unfazed.core import Unfazed
@@ -23,6 +23,7 @@ async def main() -> None:
 
     unfazed = Unfazed()
     await unfazed.setup()
+    print(f"routes: {unfazed.router.routes}")
     await unfazed.execute_command_from_argv()
 
 

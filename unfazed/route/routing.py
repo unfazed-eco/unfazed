@@ -48,8 +48,9 @@ class Route(StartletteRoute):
             self.methods = {"GET", "HEAD"}
         else:
             methods = set([method.upper() for method in methods])
-            if "GET" in self.methods:
-                self.methods.add("HEAD")
+            if "GET" in methods:
+                methods.add("HEAD")
+            self.methods = methods
 
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 
@@ -81,6 +82,7 @@ class Route(StartletteRoute):
                 self.app = cls(app=self.app, *args, **kwargs)
 
     def update_path(self, new_path: str) -> None:
+        self.path = new_path
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             new_path
         )
@@ -92,6 +94,11 @@ class Route(StartletteRoute):
             path_parm_names=self.param_convertors.keys(),
             response_models=self.response_models,
         )
+
+    def update_label(self, app_label: str) -> None:
+        self.app_label = app_label
+        if not self.tags:
+            self.tags = [app_label]
 
 
 class EndpointHandler:

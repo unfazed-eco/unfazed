@@ -27,18 +27,20 @@ class OpenApi:
                 tags[name] = s.Tag(name=name)
 
     @classmethod
+    def get_reponse_schema_name(cls, route: Route, response: ResponseSpec) -> str:
+        definition = route.endpoint_definition
+        return f"{definition.endpoint_name}.{response.model.__name__}.{response.code}"
+
+    @classmethod
     def create_pathitem_from_route(cls, route: Route) -> t.Tuple[s.PathItem, t.Dict]:
         definition = route.endpoint_definition
 
         # ----
         endpoint_name = definition.endpoint_name
-        endpoint_tags = [s.Tag(name=t.name) for t in definition.tags]
+        endpoint_tags = [s.Tag(name=t) for t in definition.tags]
 
         # handle parameters
-        # TODO
-        # support Enum type
         parameters = []
-        schemas: t.Dict[str, t.Any] = {}
 
         for _model in definition.param_models:
             if not _model:
@@ -50,6 +52,8 @@ class OpenApi:
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra = model.model_config.get("json_schema_extra", {})
+                example = json_schema_extra.get("example")
+                examples = json_schema_extra.get("examples")
                 item = s.Parameter(
                     **{
                         "in": json_schema_extra["in_"],
@@ -58,8 +62,8 @@ class OpenApi:
                         "required": fieldinfo.is_required(),
                         "schema_": s.Schema(**json_schema["properties"][name]),
                         "description": fieldinfo.description,
-                        "example": fieldinfo.example,
-                        "examples": fieldinfo.examples,
+                        "example": example,
+                        "examples": examples,
                     }
                 )
                 parameters.append(item)
@@ -95,10 +99,8 @@ class OpenApi:
 
         for response in definition.response_models:
             response: ResponseSpec
-            response_schema = response.model.model_json_schema(
-                ref_template=DEFAULT_REF_TPL
-            )
-            resp_model_name = f"{definition.endpoint_name}.{response.model.__name__}.{response.code}.{definition.operation_id}"
+
+            resp_model_name = cls.get_reponse_schema_name(route, response)
             json_schema_extra = model.model_config.get("json_schema_extra", {})
             example = json_schema_extra.get("example")
             examples = json_schema_extra.get("examples")
@@ -108,8 +110,6 @@ class OpenApi:
                 description=response.description,
                 content={response.content_type: media_type},
             )
-
-            schemas[resp_model_name] = response_schema
 
         description = (
             definition.endpoint.__doc__ or f"endpoint for {definition.endpoint_name}"
@@ -130,7 +130,29 @@ class OpenApi:
             method_map[method.lower()] = operation
         path_item = s.PathItem(**method_map)
 
-        return path_item, schemas
+        return path_item
+
+    @classmethod
+    def create_schema_from_route_resp_model(cls, route: Route) -> t.Dict[str, t.Any]:
+        definition = route.endpoint_definition
+
+        schemas: t.Dict[str, t.Any] = {}
+
+        for response in definition.response_models:
+            response: ResponseSpec
+
+            response_schema = response.model.model_json_schema(
+                ref_template=DEFAULT_REF_TPL
+            )
+
+            if "$defs" in response_schema:
+                nested_model_schema = response_schema.pop("$defs")
+                schemas.update(nested_model_schema)
+
+            resp_model_name = cls.get_reponse_schema_name(route, response)
+            schemas[resp_model_name] = response_schema
+
+        return schemas
 
     @classmethod
     def create_openapi_model(
@@ -148,7 +170,7 @@ class OpenApi:
             version=version,
         )
         ret = s.OpenAPI(
-            info=info, servers=[s.Server(url=url) for url in openapi_setting.servers]
+            info=info, servers=[i.model_dump() for i in openapi_setting.servers]
         )
 
         paths: t.Dict[str, t.Any] = {}
@@ -160,7 +182,8 @@ class OpenApi:
                 continue
 
             cls.create_tags_from_route(route, tags)
-            pathitem, temp_schemas = cls.create_pathitem_from_route(route)
+            temp_schemas = cls.create_schema_from_route_resp_model(route)
+            pathitem = cls.create_pathitem_from_route(route)
             paths[route.path] = pathitem
             schemas.update(temp_schemas)
 
@@ -172,8 +195,14 @@ class OpenApi:
         return ret
 
     @classmethod
-    def create_schema(cls, routes: t.List[Route]) -> t.Dict:
-        ret = cls.create_openapi_model(routes)
-        cls.schema = ret.model_json_schema(by_alias=True)
+    def create_schema(
+        cls,
+        routes: t.List[Route],
+        project_name: str,
+        version: str,
+        openapi_setting: OpenAPISettingModel | None = None,
+    ) -> t.Dict:
+        ret = cls.create_openapi_model(routes, project_name, version, openapi_setting)
+        cls.schema = ret.model_dump(by_alias=True, exclude_none=True)
 
         return cls.schema

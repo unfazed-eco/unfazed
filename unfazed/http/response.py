@@ -34,6 +34,10 @@ class PlainTextResponse(HttpResponse[T]):
     pass
 
 
+class HtmlResponse(HttpResponse[str]):
+    media_type = "text/html"
+
+
 class JsonResponse(HttpResponse[T]):
     media_type = "application/json"
 
