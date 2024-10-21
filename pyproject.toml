@@ -15,19 +15,19 @@ click = "^8.1.7"
 uvicorn = "^0.28.0"
 orjson = "^3.10.3"
 asgiref = "^3.8.1"
-tortoise-orm = "^0.21.6"
-aerich = "^0.7.2"
 redis = "^5.0.8"
+tortoise-orm = {version = "^0.21.6", extras = ["tortoise"]}
+aerich = {version = "^0.7.2", extras = ["tortoise"]}
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.8.0"
 ruff = "^0.3.1"
 pytest = "^8.1.1"
 pytest-cov = "^4.1.0"
-pytest-asyncio = "^0.23.6"
 pytest-mock = "^3.14.0"
 asyncmy = "^0.2.9"
 pymysql = "^1.1.1"
+pytest-asyncio = "^0.24.0"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -41,6 +41,8 @@ build-backend = "poetry.core.masonry.api"
 unfazed-cli = "unfazed.cli:main"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 testpaths = [
     "tests",
 ]

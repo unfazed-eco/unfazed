@@ -36,7 +36,6 @@ _Settings = {
 }
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(UnfazedSettings(**_Settings))
 async def test_cache_setup(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()

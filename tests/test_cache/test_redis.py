@@ -1,3 +1,4 @@
+
 import os
 
 import pytest
@@ -5,7 +6,6 @@ import pytest
 from unfazed.cache.backends.redis import AsyncDefaultBackend
 
 
-@pytest.mark.asyncio
 async def test_redis_client():
     redis_host = os.environ.get("REDIS_HOST", "redis")
     async with AsyncDefaultBackend(location=f"redis://{redis_host}:6379") as client:

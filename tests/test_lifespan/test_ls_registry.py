@@ -44,7 +44,7 @@ class HelloLifeSpan2(BaseLifeSpan):
 
 SETTINGS = {
     "DEBUG": True,
-    "PROJECT_NAME": "test_lifespan",
+    "PROJECT_NAME": "test_serializer",
     "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "LIFESPAN": [
         "tests.test_lifespan.test_ls_registry.HelloLifeSpan",
@@ -52,7 +52,6 @@ SETTINGS = {
 }
 
 
-@pytest.mark.asyncio
 async def test_registry() -> None:
     with patch(
         "unfazed.core.Unfazed.settings",
@@ -89,7 +88,6 @@ SETTINGS2 = {
 }
 
 
-@pytest.mark.asyncio
 async def test_failed() -> None:
     with patch(
         "unfazed.core.Unfazed.settings",
@@ -112,7 +110,6 @@ SETTINGS3 = {
 }
 
 
-@pytest.mark.asyncio
 async def test_empty_state() -> None:
     with patch(
         "unfazed.core.Unfazed.settings",

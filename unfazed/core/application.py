@@ -75,8 +75,8 @@ class Unfazed(Starlette):
     def model_center(self) -> ModelCenter:
         if self._model_center is None:
             self._model_center = ModelCenter(
+                self,
                 self.settings.DATABASE,
-                self.app_center,
             )
         return self._model_center
 

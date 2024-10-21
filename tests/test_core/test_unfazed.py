@@ -46,7 +46,6 @@ _Setting = {
 Setting = UnfazedSettings(**_Setting)
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(Setting)
 async def test_app_launch(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
@@ -59,7 +58,6 @@ async def test_app_launch(mocker: "MockerFixture") -> None:
     assert unfazed.ready is True
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(Setting)
 async def test_loading_state(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
@@ -73,7 +71,6 @@ async def test_loading_state(mocker: "MockerFixture") -> None:
             await asyncio.gather(unfazed.setup(), unfazed.setup())
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(Setting)
 async def test_cliapp_luanch(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()

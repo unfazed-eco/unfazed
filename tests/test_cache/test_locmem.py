@@ -5,7 +5,6 @@ import pytest
 from unfazed.cache.backends.locmem import LocMemCache
 
 
-@pytest.mark.asyncio
 async def test_locmem():
     cache = LocMemCache("test", {"MAX_ENTRIES": 10, "PREFIX": "test"})
 

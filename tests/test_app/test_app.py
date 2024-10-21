@@ -18,7 +18,6 @@ SETTINGS = {
 }
 
 
-@pytest.mark.asyncio
 @mock_unfazed_settings(UnfazedSettings(**SETTINGS))
 async def test_installed_apps(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()

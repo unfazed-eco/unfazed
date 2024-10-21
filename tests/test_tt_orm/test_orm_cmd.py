@@ -1,10 +1,9 @@
 import os
-import typing as t
 from pathlib import Path
 
-import pytest
-
-from unfazed.command.internal import (
+from unfazed.const import UNFAZED_SETTINGS_MODULE
+from unfazed.core import Unfazed
+from unfazed.orm.tortoise.commands import (
     downgrade,
     heads,
     history,
@@ -12,15 +11,9 @@ from unfazed.command.internal import (
     migrate,
     upgrade,
 )
-from unfazed.const import UNFAZED_SETTINGS_MODULE
-from unfazed.core import Unfazed
 
 
-@pytest.mark.asyncio(loop_scope="module")
-async def test_cmd(
-    tmp_path: Path,
-    use_test_db: t.Generator,  # create and drop test db
-) -> None:
+async def test_cmd(tmp_path: Path) -> None:
     os.environ[UNFAZED_SETTINGS_MODULE] = "tests.apps.orm.settings"
     unfazed = Unfazed()
     await unfazed.setup()
