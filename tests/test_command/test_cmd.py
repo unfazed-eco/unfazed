@@ -67,3 +67,12 @@ async def test_cmd_failed(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
     with pytest.raises(TypeError):
         await unfazed.setup()
+
+
+@pytest.mark.asyncio
+async def test_cli_cmd() -> None:
+    unfazed = Unfazed()
+    await unfazed.setup_cli()
+
+    assert "startproject" in unfazed.cli_command_center.commands
+    assert "_ignore" not in unfazed.cli_command_center.commands

@@ -11,21 +11,13 @@ class SettingsProxy:
 
     def __init__(self) -> None:
         self.storage = Local(self.thread_critical)
+        self._settingskv = None
 
     @property
     def settingskv(self) -> None:
-        return u.import_setting(self.unfazed_settings_module)
-
-    def validate_settingskv(self) -> None:
-        for key, value in self.settingskv.items():
-            if not isinstance(value, dict):
-                raise ValueError(
-                    f"Value of key {key} in {self.unfazed_settings_module} module must be a dictionary"
-                )
-            if not hasattr(value, "CLIENT_CLASS"):
-                raise ValueError(
-                    f"Value of key {key} in {self.unfazed_settings_module} module must have a client_class attribute"
-                )
+        if self._settingskv is None:
+            self._settingskv = u.import_setting(self.unfazed_settings_module)
+        return self._settingskv
 
     def __getitem__(self, alias: str) -> BaseModel:
         try:

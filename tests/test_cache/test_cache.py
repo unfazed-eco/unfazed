@@ -48,3 +48,7 @@ async def test_cache_setup(mocker: "MockerFixture") -> None:
 
     assert default_cache.prefix == "unfazed_cache1"
     assert other_cache.prefix == "unfazed_cache2"
+
+    # test non-exist cache
+    with pytest.raises(KeyError):
+        caches["non-exist"]

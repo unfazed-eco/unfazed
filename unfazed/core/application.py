@@ -1,5 +1,4 @@
 import typing as t
-from asyncio import Lock
 
 from asgiref import typing as at
 from starlette.applications import Starlette
@@ -10,9 +9,15 @@ from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.lifespan import lifespan_context, lifespan_handler
+from unfazed.logging import LogCenter
+from unfazed.openapi import OpenApi
+from unfazed.openapi.routes import patterns
 from unfazed.orm import ModelCenter
+from unfazed.protocol import BaseLifeSpan
 from unfazed.route import parse_urlconf
-from unfazed.utils import import_string
+from unfazed.schema import LogConfig
+from unfazed.utils import import_string, unfazed_locker
 
 
 class Unfazed(Starlette):
@@ -101,6 +106,45 @@ class Unfazed(Starlette):
             cache = backend_cls(location, options)
             caches[alias] = cache
 
+    def setup_logging(self):
+        if not self.settings.LOGGING:
+            config = {}
+
+        else:
+            config = LogConfig(**self.settings.LOGGING).model_dump(
+                exclude_none=True, by_alias=True
+            )
+        log_center = LogCenter(self, config)
+        log_center.setup()
+
+    def setup_lifespan(self):
+        lifespan_handler.unfazed = self
+        lifespan_handler.register_internal()
+
+        lifespan_list = self.settings.LIFESPAN or []
+
+        for name in lifespan_list:
+            cls = import_string(name)
+            instance = cls(self)
+            if not isinstance(instance, BaseLifeSpan):
+                raise ValueError(f"{name} is not a valid lifespan")
+            lifespan_handler.register(name, instance)
+
+        self.router.lifespan_context = lifespan_context
+
+    def setup_openapi(self):
+        if not self.settings.OPENAPI:
+            return
+
+        OpenApi.create_schema(
+            self.router.routes,
+            self.settings.PROJECT_NAME,
+            self.settings.VERSION,
+            self.settings.OPENAPI,
+        )
+        for pattern in patterns:
+            self.router.routes.append(pattern)
+
     def build_middleware_stack(
         self,
     ) -> at.ASGIApplication:
@@ -110,51 +154,26 @@ class Unfazed(Starlette):
             app = cls(self, app)
         return app
 
+    @unfazed_locker
     async def setup(self) -> None:
-        if self._ready:
-            return
+        """
+        app center setup may be required for cache
 
-        async with Lock():
-            if self._ready:
-                return
+        so we setup cache first
+        """
+        self.setup_logging()
+        self.setup_cache()
+        await self.app_center.setup()
+        self.setup_routes()
+        self.setup_middleware()
+        await self.command_center.setup()
+        await self.model_center.setup()
+        self.setup_lifespan()
+        self.setup_openapi()
 
-            if self._loading:
-                raise RuntimeError("Unfazed is already loading")
-
-            self._loading = True
-
-            """
-            app center setup may be required for cache
-
-            so we setup cache first
-            """
-            self.setup_cache()
-            await self.app_center.setup()
-            self.setup_routes()
-            self.setup_middleware()
-            await self.command_center.setup()
-            await self.model_center.setup()
-
-            self._ready = True
-            self._loading = False
-
+    @unfazed_locker
     async def setup_cli(self):
-        if self._ready:
-            return
-
-        async with Lock():
-            if self._ready:
-                return
-
-            if self._loading:
-                raise RuntimeError("Unfazed is already loading")
-
-            self._loading = True
-
-            self.cli_command_center.setup()
-
-            self._ready = True
-            self._loading = False
+        self.cli_command_center.setup()
 
     async def execute_command_from_argv(self):
         await run_in_threadpool(self.command_center.main)

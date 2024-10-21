@@ -39,7 +39,7 @@ def import_setting(env: str) -> t.Mapping[str, t.Any]:
     """
     settings_module = os.environ.get(env)
     if not settings_module:
-        raise Exception(f"environment variable {env} is not set")
+        raise ValueError(f"environment variable {env} is not set")
     try:
         settingskv = import_module(settings_module).__dict__
     except ImportError:
