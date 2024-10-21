@@ -1,3 +1,9 @@
 from .orm import SignalNotAllowed
+from .route import ParameterError
 
-__all__ = ["SignalNotAllowed"]
+
+class TypeHintRequired(Exception):
+    pass
+
+
+__all__ = ["SignalNotAllowed", "TypeHintRequired", "ParameterError"]

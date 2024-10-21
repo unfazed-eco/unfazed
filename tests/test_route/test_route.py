@@ -5,7 +5,7 @@ import pytest
 from tests.decorators import mock_unfazed_settings
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
-from unfazed.route import include, parse_urlconf, path
+from unfazed.route import Route, include, parse_urlconf, path
 
 if t.TYPE_CHECKING:
     from pytest_mock import MockerFixture  # pragma: no cover
@@ -75,3 +75,14 @@ def test_parse_urlconf():
 
     with pytest.raises(ValueError):
         parse_urlconf(import_path, app_center)
+
+
+def test_raises():
+    with pytest.raises(ValueError):
+        Route("foo", endpoint=int)
+
+    class Foo:
+        pass
+
+    with pytest.raises(ValueError):
+        Route("/foo", endpoint=Foo)

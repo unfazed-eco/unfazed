@@ -6,7 +6,7 @@ from asgiref.typing import ASGIApplication
 from unfazed.protocol import BaseLifeSpan
 
 if t.TYPE_CHECKING:
-    pass  # pragma: no cover
+    from unfazed.core import Unfazed
 
 
 class State(t.Dict):
@@ -17,10 +17,24 @@ class LifeSpanHandler:
     def __init__(self):
         self.lifespan: t.Dict[str, BaseLifeSpan] = {}
 
+        self.unfazed: "Unfazed" | None = None
+
     def register(self, name: str, lifespan: BaseLifeSpan) -> None:
         if name in self.lifespan:
-            raise ValueError(f"{name} already registered")
+            raise ValueError(f"lifespan {name} already registered")
         self.lifespan[name] = lifespan
+
+    def register_internal(self) -> None:
+        # if not self.unfazed:
+        #     raise ValueError("unfazed instance not set in lifespan handler")
+
+        # internals = {
+        #     "__openapi": openapi.OpenApiLifeSpan(self.unfazed),
+        #     "__logging": logging.LogClean(self.unfazed),
+        # }
+
+        # self.lifespan.update(internals)
+        pass
 
     def get(self, name: str) -> BaseLifeSpan:
         return self.lifespan.get(name)

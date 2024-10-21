@@ -1,5 +1,11 @@
 from .request import HttpRequest
-from .response import HttpResponse, JsonResponse, PlainTextResponse, RedirctResponse
+from .response import (
+    HtmlResponse,
+    HttpResponse,
+    JsonResponse,
+    PlainTextResponse,
+    RedirctResponse,
+)
 
 __all__ = [
     "HttpRequest",
@@ -7,4 +13,5 @@ __all__ = [
     "JsonResponse",
     "PlainTextResponse",
     "RedirctResponse",
+    "HtmlResponse",
 ]
