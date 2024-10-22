@@ -1,7 +1,7 @@
 from .cache import CacheOptions
 from .common import CanBeImported, Domain
 from .conf import InstalledApps, Middlewares
-from .route import HttpMethod
+from .route import SUPPOTED_REQUEST_TYPE, HttpMethod
 
 __all__ = [
     "Middlewares",
@@ -10,4 +10,5 @@ __all__ = [
     "CacheOptions",
     "Domain",
     "HttpMethod",
+    "SUPPOTED_REQUEST_TYPE",
 ]
