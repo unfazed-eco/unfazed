@@ -13,7 +13,6 @@ if t.TYPE_CHECKING:
 SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_install",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.app.routes",
 }
 

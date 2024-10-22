@@ -14,7 +14,6 @@ if t.TYPE_CHECKING:
 SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_command_center",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.cmd.routes",
 }
 

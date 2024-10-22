@@ -7,7 +7,6 @@ UNFAZED_SETTINGS = {
     "DEBUG": True if DEPLOY != "prod" else False,
     "DEPLOY": DEPLOY,
     "PROJECT_NAME": PROJECT_NAME,
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "entry.routes",
     "INSTALLED_APPS": [],
     "DATABASE": {

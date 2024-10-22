@@ -45,7 +45,6 @@ class HelloLifeSpan2(BaseLifeSpan):
 SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_serializer",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "LIFESPAN": [
         "tests.test_lifespan.test_ls_registry.HelloLifeSpan",
     ],
@@ -80,7 +79,6 @@ async def test_registry() -> None:
 SETTINGS2 = {
     "DEBUG": True,
     "PROJECT_NAME": "test_lifespan",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "LIFESPAN": [
         "tests.test_lifespan.test_ls_registry.HelloLifeSpan",
         "tests.test_lifespan.test_ls_registry.HelloLifeSpan",
@@ -103,7 +101,6 @@ async def test_failed() -> None:
 SETTINGS3 = {
     "DEBUG": True,
     "PROJECT_NAME": "test_lifespan",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "LIFESPAN": [
         "tests.test_lifespan.test_ls_registry.HelloLifeSpan2",
     ],

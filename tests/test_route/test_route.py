@@ -14,7 +14,6 @@ if t.TYPE_CHECKING:
 SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_setup_routes",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
 }
 
 

@@ -10,7 +10,6 @@ if t.TYPE_CHECKING:
 _Settings = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_launch",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.middleware.routes",
     "MIDDLEWARE": [
         "tests.apps.middleware.middleware.set_session.SetSessionMiddleware",

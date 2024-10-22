@@ -16,7 +16,6 @@ if t.TYPE_CHECKING:
 _Setting = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_launch",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.core.routes",
     "INSTALLED_APPS": ["tests.apps.core.common"],
     "LOGGING": {

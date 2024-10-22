@@ -66,7 +66,7 @@ async def test_start_cmd(tmp_path: Path) -> None:
 
     assert (be_path / "simpleapp").exists()
     assert (be_path / "simpleapp" / "models.py").exists()
-    assert (be_path / "simpleapp" / "views.py").exists()
+    assert (be_path / "simpleapp" / "endpoints.py").exists()
     assert (be_path / "simpleapp" / "routes.py").exists()
     assert (be_path / "simpleapp" / "serializers.py").exists()
     assert (be_path / "simpleapp" / "services.py").exists()
@@ -90,7 +90,7 @@ async def test_start_cmd(tmp_path: Path) -> None:
     assert (be_path / "complexapp" / "schema" / "response" / "__init__.py").exists()
     assert (be_path / "complexapp" / "serializers" / "__init__.py").exists()
     assert (be_path / "complexapp" / "services" / "__init__.py").exists()
-    assert (be_path / "complexapp" / "views" / "__init__.py").exists()
+    assert (be_path / "complexapp" / "endpoints" / "__init__.py").exists()
     assert (be_path / "complexapp" / "admin.py").exists()
     assert (be_path / "complexapp" / "app.py").exists()
     assert (be_path / "complexapp" / "settings.py").exists()
