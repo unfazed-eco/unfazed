@@ -131,3 +131,6 @@ class BaseAppConfig:
 
     async def ready(self):
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def __str__(self) -> str:
+        return self.name

@@ -1,3 +1,3 @@
-from .base import BaseHttpMiddleware
+from .base import BaseHttpMiddleware, RequestResponseEndpoint
 
-__all__ = ["BaseHttpMiddleware"]
+__all__ = ["BaseHttpMiddleware", "RequestResponseEndpoint"]

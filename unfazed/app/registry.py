@@ -39,3 +39,7 @@ class AppCenter:
     def __iter__(self) -> t.Iterator[t.Tuple[str, BaseAppConfig]]:
         for key, value in self._store.items():
             yield (key, value)
+
+    @property
+    def store(self) -> t.Dict[str, BaseAppConfig]:
+        return self._store

@@ -178,3 +178,13 @@ class Unfazed(Starlette):
 
     async def execute_command_from_cli(self):
         await run_in_threadpool(self.cli_command_center.main)
+
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return {
+            "settings": self.settings.model_dump(),
+            "routes": self.router.routes,
+            "apps": self.app_center.store,
+            "middlewares": self.user_middleware,
+            "lifespan": lifespan_handler.lifespan,
+            "commands": self.command_center.commands,
+        }
