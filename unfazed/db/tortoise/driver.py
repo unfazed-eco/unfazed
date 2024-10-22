@@ -40,11 +40,11 @@ class Driver(DataBaseDriver):
 
     def list_aerich_command(self) -> t.List[Command]:
         ret = []
-        internal_command_dir = Path(unfazed.__path__[0] + "/orm/tortoise/commands")
+        internal_command_dir = Path(unfazed.__path__[0] + "/db/tortoise/commands")
         for command_file in internal_command_dir.glob("*.py"):
             command_name = command_file.stem
 
-            path = f"unfazed.orm.tortoise.commands.{command_name}.Command"
+            path = f"unfazed.db.tortoise.commands.{command_name}.Command"
             command = Command(path=path, stem=command_name, label="aerich.command")
 
             ret.append(command)

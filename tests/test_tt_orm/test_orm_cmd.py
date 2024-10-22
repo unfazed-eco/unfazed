@@ -3,7 +3,7 @@ from pathlib import Path
 
 from unfazed.const import UNFAZED_SETTINGS_MODULE
 from unfazed.core import Unfazed
-from unfazed.orm.tortoise.commands import (
+from unfazed.db.tortoise.commands import (
     downgrade,
     heads,
     history,

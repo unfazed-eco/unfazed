@@ -8,7 +8,7 @@ UNFAZED_SETTINGS = {
     "DATABASE": {
         "CONNECTIONS": {
             "default": {
-                "ENGINE": "unfazed.orm.tortoise.backends.mysql",
+                "ENGINE": "unfazed.db.tortoise.backends.mysql",
                 "CREDENTIALS": {
                     "HOST": os.environ.get("MYSQL_HOST", "mysql"),
                     "PORT": int(os.environ.get("MYSQL_PORT", 3306)),

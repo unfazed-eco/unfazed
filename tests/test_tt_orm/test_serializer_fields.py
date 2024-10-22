@@ -6,9 +6,7 @@ from pydantic import Field
 from tortoise import Model, fields
 
 from tests.apps.orm.serializer.models import Bag, Course, Profile, Student
-from unfazed.orm.tortoise.serializer import TSerializer, create_common_field
-
-# from tests.apps.orm.serializer.models import Student, Bag, Profile, Course
+from unfazed.db.tortoise.serializer import TSerializer, create_common_field
 
 
 class Sex(StrEnum):

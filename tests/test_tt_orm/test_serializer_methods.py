@@ -18,8 +18,8 @@ from tests.apps.orm.serializer.models import (
     Student,
 )
 from unfazed.core import Unfazed
-from unfazed.orm.tortoise.commands import init_db, migrate
-from unfazed.orm.tortoise.serializer import TSerializer
+from unfazed.db.tortoise.commands import init_db, migrate
+from unfazed.db.tortoise.serializer import TSerializer
 
 
 @pytest_asyncio.fixture(scope="session")

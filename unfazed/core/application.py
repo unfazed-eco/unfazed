@@ -13,7 +13,7 @@ from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.orm import ModelCenter
+from unfazed.db import ModelCenter
 from unfazed.protocol import BaseLifeSpan
 from unfazed.route import parse_urlconf
 from unfazed.schema import LogConfig

@@ -1,2 +1,2 @@
-# from unfazed.orm import tortoise as tt
+# from tortoise.models import Model
 
