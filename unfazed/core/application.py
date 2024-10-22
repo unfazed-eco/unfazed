@@ -21,8 +21,6 @@ from unfazed.utils import import_string, unfazed_locker
 
 
 class Unfazed(Starlette):
-    version = "0.0.1"
-
     def __init__(
         self,
         debug: bool = False,
