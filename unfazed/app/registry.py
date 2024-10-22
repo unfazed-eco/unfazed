@@ -19,7 +19,7 @@ class AppCenter:
             if app_path in self._store:
                 raise RuntimeError(f"App with path {app_path} is already loaded")
             temp_app = self.load_app(app_path)
-
+            await temp_app.ready()
             self._store[temp_app.name] = temp_app
 
         return None

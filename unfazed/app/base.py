@@ -30,7 +30,7 @@ class BaseAppConfig:
 
         from unfazed.app import BaseAppConfig
         class AppConfig(BaseAppConfig):
-            def ready(self):
+            async def ready(self):
                 print("AppConfig is ready!")
         ```
 
@@ -129,5 +129,5 @@ class BaseAppConfig:
 
         return app_cls(unfazed, module)
 
-    def ready(self):
+    async def ready(self):
         raise NotImplementedError("Subclasses must implement this method.")

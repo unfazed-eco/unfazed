@@ -1,3 +1,3 @@
 class AppConfig:
-    def ready(self):
+    async def ready(self):
         print("AppConfig is ready!")
