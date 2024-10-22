@@ -9,13 +9,13 @@ from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.db import ModelCenter
 from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.db import ModelCenter
 from unfazed.protocol import BaseLifeSpan
-from unfazed.route import parse_urlconf
+from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
 
@@ -24,7 +24,7 @@ class Unfazed(Starlette):
     def __init__(
         self,
         debug: bool = False,
-        routes: t.Sequence[p.Route] | None = None,
+        routes: t.Sequence[Route] | None = None,
         middlewares: t.Sequence[p.MiddleWare] | None = None,
     ) -> None:
         self._ready = False
