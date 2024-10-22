@@ -1,11 +1,26 @@
+import typing as t
+
+from .base import Doc
 from .cache import CacheOptions
-from .common import CanBeImported, Domain
-from .conf import InstalledApps, Middlewares
-from .route import SUPPOTED_REQUEST_TYPE, HttpMethod
+from .http import SUPPOTED_REQUEST_TYPE, HttpMethod
+
+CanBeImported = t.Annotated[
+    str,
+    Doc(
+        description="can be imported by unfazed.utils.import_string",
+        example="unfazed.core.Unfazed",
+    ),
+]
+Domain = t.Annotated[
+    str,
+    Doc(
+        description="host:port",
+        example="127.0.0.1:9527",
+    ),
+]
+
 
 __all__ = [
-    "Middlewares",
-    "InstalledApps",
     "CanBeImported",
     "CacheOptions",
     "Domain",

@@ -1,6 +1,6 @@
 import typing as t
 
-from unfazed.type import InstalledApps
+from unfazed.type import CanBeImported
 
 from .base import BaseAppConfig
 
@@ -9,7 +9,9 @@ if t.TYPE_CHECKING:
 
 
 class AppCenter:
-    def __init__(self, unfazed: "Unfazed", installed_apps: InstalledApps) -> None:
+    def __init__(
+        self, unfazed: "Unfazed", installed_apps: t.List[CanBeImported]
+    ) -> None:
         self.unfazed = unfazed
         self.installed_apps = installed_apps
         self._store: t.Dict[str, BaseAppConfig] = {}
