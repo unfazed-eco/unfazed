@@ -37,7 +37,7 @@ async def test_locmem():
     assert await cache.get("foo4") is None
 
     # test delete non-exist key
-    await cache.delete("foo4") == False
+    assert await cache.delete("foo4") is False
 
     # test clear
     await cache.set("foo5", "bar")

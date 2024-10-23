@@ -1,7 +1,4 @@
-
 import os
-
-import pytest
 
 from unfazed.cache.backends.redis import AsyncDefaultBackend
 

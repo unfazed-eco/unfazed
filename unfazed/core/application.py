@@ -23,9 +23,11 @@ from unfazed.utils import import_string, unfazed_locker
 class Unfazed(Starlette):
     def __init__(
         self,
+        *,
         debug: bool = False,
         routes: t.Sequence[Route] | None = None,
         middlewares: t.Sequence[p.MiddleWare] | None = None,
+        settings: UnfazedSettings | None = None,
     ) -> None:
         self._ready = False
         self._loading = False
@@ -33,12 +35,15 @@ class Unfazed(Starlette):
         self._app_center: AppCenter = None
         self._command_center: CommandCenter = None
         self._model_center: ModelCenter = None
+        self._settings = settings
 
         super().__init__(debug=debug, routes=routes, middleware=middlewares)
 
     @property
     def settings(self) -> UnfazedSettings:
-        return settings["UNFAZED_SETTINGS"]
+        if not self._settings:
+            self._settings = settings["UNFAZED_SETTINGS"]
+        return self._settings
 
     @property
     def ready(self) -> bool:
