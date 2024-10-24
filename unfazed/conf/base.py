@@ -35,6 +35,7 @@ class SettingsProxy:
                 client_str = f"{app}.settings.{alias.capitalize()}Settings"
 
         return u.import_string(client_str)
+    
 
     def __getitem__(self, alias: str) -> BaseModel:
         try:

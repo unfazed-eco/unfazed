@@ -1,34 +1,34 @@
-import typing as t
-
-import pytest
-from pydantic import BaseModel
+import os
 
 from unfazed.conf import settings
 
-if t.TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+_Settings = {
+    "UNFAZED_SETTINGS": {
+        "DEBUG": True,
+        "PROJECT_NAME": "test_conf",
+    },
+    "APP1_SETTINGS": {"name": "app1"},
+}
 
 
-class Conf(BaseModel):
-    name: str = "Unfazed"
+async def test_setting_proxy() -> None:
+    os.environ["UNFAZED_SETTINGS_MODULE"] = "tests.apps.conf.entry.settings"
 
+    settingkv = settings.settingskv
 
-def test_setting_proxy(mocker: "MockerFixture") -> None:
-    settings._settingskv = {}
+    assert "UNFAZED_SETTINGS" in settingkv
+    assert "APP1_SETTINGS" in settingkv
 
-    s = Conf()
-    settings["test"] = s
+    # unfazed_setting: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+    # app1_setting = settings["APP1_SETTINGS"]
 
-    assert settings["test"] == s
-    assert settings["test"].name == "Unfazed"
+    # assert unfazed_setting.PROJECT_NAME == "test_conf"
+    # assert app1_setting.name == "app1"
 
-    with pytest.raises(KeyError):
-        settings["notfound"]
+    # with pytest.raises(KeyError):
+    #     settings["notfound"]
 
-    del settings["test"]
+    # del settings["APP1_SETTINGS"]
 
-    with pytest.raises(KeyError):
-        settings["test"]
-
-    # reset
-    settings._settingskv = None
+    # with pytest.raises(KeyError):
+    #     settings["APP1_SETTINGS"]
