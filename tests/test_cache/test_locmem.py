@@ -52,3 +52,14 @@ async def test_locmem():
         await cache.set(f"foo{i}", f"bar{i}")
 
     assert await cache.get("foo0") is None
+
+    await cache.close()
+
+    assert cache._cache == {}
+
+
+async def test_without_option():
+    cache = LocMemCache("test")
+
+    await cache.set("foo", "bar")
+    assert await cache.get("foo") == "bar"

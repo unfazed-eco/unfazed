@@ -1,5 +1,4 @@
 import os
-import typing as T
 import typing as t
 from datetime import datetime
 from functools import partial
@@ -176,7 +175,7 @@ class RangeFileHandler:
     def last_modified(self) -> str:
         tz = ZoneInfo("GMT")
         modified = int(self.stat.st_mtime)
-        
+
         return datetime.fromtimestamp(modified, tz).strftime("%a, %d %b %Y %H:%M:%S %Z")
 
     @property

@@ -5,7 +5,7 @@ from asyncio import Lock
 from collections import OrderedDict
 
 from unfazed.protocol import CacheBackend
-from unfazed.type import CacheOptions
+from unfazed.schema import LocOptions
 
 # Global in-memory store of cache data. Keyed by name, to provide
 # multiple named local memory caches.
@@ -17,10 +17,15 @@ _locks = {}
 class LocMemCache(CacheBackend):
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
-    def __init__(self, location: str, options: CacheOptions) -> None:
-        self.prefix = options.get("PREFIX", location)
-        self.version = options.get("VERSION", 1)
-        self.max_entries = options.get("MAX_ENTRIES", 300)
+    def __init__(
+        self, location: str, options: t.Dict[str, t.Any] | None = None
+    ) -> None:
+        if options is None:
+            options = {}
+        options_model = LocOptions(**options)
+        self.prefix = options_model.PREFIX or location
+        self.version = options_model.VERSION
+        self.max_entries = options_model.MAX_ENTRIES
 
         self._cache = _caches.setdefault(location, OrderedDict())
         self._expire_info = _expire_info.setdefault(location, {})
@@ -112,7 +117,6 @@ class LocMemCache(CacheBackend):
         return True
 
     async def delete(self, key: str, version=None) -> bool:
-        
         key = self.make_key(key, version=version)
         async with self._lock:
             return self._delete(key)
@@ -121,3 +125,11 @@ class LocMemCache(CacheBackend):
         async with self._lock:
             self._cache.clear()
             self._expire_info.clear()
+
+    async def close(self) -> None:
+        async with self._lock:
+            self._cache.clear()
+            self._expire_info.clear()
+            del _caches[self.prefix]
+            del _expire_info[self.prefix]
+            del _locks[self.prefix]

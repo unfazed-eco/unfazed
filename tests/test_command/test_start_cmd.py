@@ -7,7 +7,6 @@ from unfazed.command.internal.startproject import Command as StartProjectCommand
 from unfazed.core import Unfazed
 
 
-@pytest.mark.asyncio
 async def test_start_cmd(tmp_path: Path) -> None:
     unfazed = Unfazed()
     project_path = tmp_path / "start_cmd"
@@ -97,7 +96,6 @@ async def test_start_cmd(tmp_path: Path) -> None:
     assert (be_path / "complexapp" / "tests" / "test_all.py").exists()
 
 
-@pytest.mark.asyncio
 async def test_failed_startapp(tmp_path: Path) -> None:
     unfazed = Unfazed()
 
@@ -121,7 +119,6 @@ async def test_failed_startapp(tmp_path: Path) -> None:
         )
 
 
-@pytest.mark.asyncio
 async def test_failed_startprj(tmp_path: Path) -> None:
     unfazed = Unfazed()
 

@@ -12,7 +12,7 @@ if t.TYPE_CHECKING:
 
 _Settings = {
     "DEBUG": True,
-    "PROJECT_NAME": "test_app_launch",
+    "PROJECT_NAME": "test_app_cache",
     "CACHE": {
         "default": {
             "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
