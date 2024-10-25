@@ -28,14 +28,14 @@ class SettingsProxy:
         else:
             # extract from settingskv or try to guess from alias
             alias_settings_kv = self.settingskv[alias]
-            if "CLIENT_CLASS" not in alias_settings_kv:
+            if "CLIENT_CLASS" in alias_settings_kv:
                 client_str = alias_settings_kv["CLIENT_CLASS"]
             else:
                 app = alias.lower().replace("_", ".").rsplit(".", 1)[0]
-                client_str = f"{app}.settings.{alias.capitalize()}Settings"
+                alias_prefix = alias.rsplit("_", 1)[0]
+                client_str = f"{app}.settings.{alias_prefix.capitalize()}Settings"
 
         return u.import_string(client_str)
-    
 
     def __getitem__(self, alias: str) -> BaseModel:
         try:
@@ -57,6 +57,9 @@ class SettingsProxy:
 
     def __delitem__(self, alias: str) -> None:
         delattr(self.storage, alias)
+
+    def clear(self) -> None:
+        self.storage = Local(self.thread_critical)
 
 
 settings = SettingsProxy()

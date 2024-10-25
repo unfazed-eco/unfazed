@@ -5,6 +5,7 @@ from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 import pytest_asyncio
 from pydantic import BaseModel, Field
 
@@ -17,16 +18,37 @@ from tests.apps.orm.serializer.models import (
     Profile,
     Student,
 )
+from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.db.tortoise.commands import init_db, migrate
 from unfazed.db.tortoise.serializer import TSerializer
+
+_Settings = {
+    "DEBUG": True,
+    "PROJECT_NAME": "test_app_db",
+    "ROOT_URLCONF": "tests.apps.orm.routes",
+    "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
+    "DATABASE": {
+        "CONNECTIONS": {
+            "default": {
+                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "CREDENTIALS": {
+                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
+                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
+                    "USER": "root",
+                    "PASSWORD": "app",
+                    "DATABASE": "test_app",
+                },
+            }
+        }
+    },
+}
 
 
 @pytest_asyncio.fixture(scope="session")
 async def prepare_db(tmp_path_factory: Path) -> t.Any:
     # init unfazed
-    os.environ["UNFAZED_SETTINGS_MODULE"] = "tests.apps.orm.settings"
-    unfazed = Unfazed()
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
 
     await unfazed.setup()
 
@@ -133,7 +155,7 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
 
     # get object
     class Ctx(BaseModel):
-        id: int
+        id: int = -1
         version: int
 
     ctx = Ctx(id=new_car.id, version=1)
@@ -142,6 +164,14 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
 
     assert car.id == new_car.id
     assert car.version == new_car.version
+
+    # failed get object
+    with pytest.raises(ValueError):
+
+        class WrongCtx(BaseModel):
+            version: int
+
+        await CarSerializer.get_object(WrongCtx(version=1))
 
     # get queryset
     queryset = await CarSerializer.get_queryset({"id": new_car.id})
@@ -173,6 +203,10 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
 
     assert ret.count == 4
     assert len(ret.data) == 2
+
+    ret2 = await CarSerializer.list(Car.filter(version__gt=5), page=0, size=0)
+    assert ret2.count == 4
+    assert len(ret2.data) == 4
 
     # list from ctx
     ret = await CarSerializer.list_from_ctx({"version__gt": 5}, page=1, size=2)

@@ -8,7 +8,8 @@ from unfazed import protocol as p
 from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
-from unfazed.conf import UnfazedSettings, settings
+from unfazed.conf import UnfazedSettings
+from unfazed.conf import settings as settings_proxy
 from unfazed.db import ModelCenter
 from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
@@ -41,8 +42,8 @@ class Unfazed(Starlette):
 
     @property
     def settings(self) -> UnfazedSettings:
-        if not self._settings:
-            self._settings = settings["UNFAZED_SETTINGS"]
+        if self._settings is None:
+            self._settings = settings_proxy["UNFAZED_SETTINGS"]
         return self._settings
 
     @property

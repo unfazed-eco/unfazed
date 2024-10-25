@@ -1,6 +1,7 @@
 from datetime import timedelta
 from enum import Enum, StrEnum
 
+import pytest
 from annotated_types import Ge, Le, MaxLen
 from pydantic import Field
 from tortoise import Model, fields
@@ -42,6 +43,7 @@ class User(Model):
 class UserSerializer(TSerializer):
     class Meta:
         model = User
+        exclude = ["is_active"]
 
 
 class UserSerializer2(TSerializer):
@@ -55,13 +57,19 @@ class UserSerializer2(TSerializer):
         model = User
 
 
+class UserSerializer3(TSerializer):
+    class Meta:
+        model = User
+        include = ["height"]
+
+
 def test_model_serializer_create() -> None:
     fields = UserSerializer.model_fields
 
     # test fields has beed created
     assert "id" in fields
     assert "bits" in fields
-    assert "is_active" in fields
+    # assert "is_active" in fields
     assert "is_superuser" in fields
     assert "sex" in fields
     assert "year" in fields
@@ -80,7 +88,7 @@ def test_model_serializer_create() -> None:
     user = UserSerializer(
         id=1,
         bits=b"bits",
-        is_active=True,
+        # is_active=True,
         is_superuser=True,
         sex=Sex.MALE,
         year="2021-01-01",
@@ -122,6 +130,11 @@ def test_model_serializer_create() -> None:
 
     assert user.height == 11
     assert user.extra == "extra"
+
+    # test valid data
+
+    ins = UserSerializer3(height=1)
+    assert ins.valid_data == {"height": 1}
 
 
 def test_create_common_fields() -> None:
@@ -307,3 +320,35 @@ def test_create_relational_fields() -> None:
 
     assert course.name == "course1"
     assert len(course.students) == 2
+
+    # test no model
+
+
+def test_meta() -> None:
+    with pytest.raises(ValueError):
+
+        class NoModelSerializer(TSerializer):
+            class Meta:
+                foo = "bar"
+
+    # test include exclude conflict
+    with pytest.raises(ValueError):
+
+        class IncludeExcludeConfict(TSerializer):
+            class Meta:
+                model = Student
+                include = ["name"]
+                exclude = ["name"]
+
+    class IncludeSerializer(TSerializer):
+        class Meta:
+            model = Student
+            include = ["name"]
+
+    assert "name" in IncludeSerializer.Meta.include
+    assert "age" in IncludeSerializer.Meta.exclude
+
+    with pytest.raises(ValueError):
+
+        class NoMetaSerializer(TSerializer):
+            pass

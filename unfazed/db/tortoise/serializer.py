@@ -10,9 +10,7 @@ from tortoise.fields.relational import (
     BackwardOneToOneRelation,
     ForeignKeyFieldInstance,
     ManyToManyFieldInstance,
-    ManyToManyRelation,
     OneToOneFieldInstance,
-    ReverseRelation,
 )
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
@@ -179,13 +177,9 @@ def create_model_from_tortoise(
             params[name] = create_o2o_field(field)
             relation_created_fields.append(field.source_field)
 
-        elif name in model._meta.backward_o2o_fields:
-            params[name] = create_bk_o2o_field(field)
-
         else:
-            raise ValueError(
-                f"Tortoise bug: unknown field {name} in model {model.__qualname__}"
-            )
+            # backward_o2o_fields
+            params[name] = create_bk_o2o_field(field)
 
     # delete fields created by relation
     for field_name in relation_created_fields:
@@ -207,13 +201,17 @@ def create_model_from_tortoise(
 
 def prepare_meta_config(cls_name: str, meta: t.Any) -> Model:
     if not hasattr(meta, "model"):
-        raise ValueError(f"model not found in class {cls_name}")
+        raise ValueError(
+            f"Unfazed.Serializer Error: model not found in class {cls_name}"
+        )
 
     include = getattr(meta, "include", set())
     exclude = getattr(meta, "exclude", set())
 
     if include and exclude:
-        raise ValueError(f"include and exclude cannot be used together for {cls_name}")
+        raise ValueError(
+            f"Unfazed.Serializer Error: include and exclude cannot be used together for {cls_name}"
+        )
 
     model = meta.model
     if include:
@@ -246,7 +244,9 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
             return cls
 
         if "Meta" not in namespace:
-            raise ValueError(f"Meta class not found for {cls_name}")
+            raise ValueError(
+                f"Unfazed.Serializer Error: Meta class not found for {cls_name}"
+            )
 
         meta = namespace["Meta"]
 
@@ -267,17 +267,6 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
 
 
 class TSerializer(BaseSerializer, metaclass=MetaClass):
-    # noinspection PyMethodParameters
-    @pydantic.field_validator("*")  # It is a classmethod!
-    def _tortoise_convert(cls, value: t.Any):  # pylint: disable=E0213
-        # Computed fields
-        if callable(value):
-            return value()
-        # Convert ManyToManyRelation to list
-        if isinstance(value, (ManyToManyRelation, ReverseRelation)):
-            return list(value)
-        return value
-
     @property
     def valid_data(self) -> t.Dict[str, t.Any]:
         write_fields = self.get_write_fields()

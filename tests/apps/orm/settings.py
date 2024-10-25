@@ -2,7 +2,7 @@ import os
 
 UNFAZED_SETTINGS = {
     "DEBUG": True,
-    "PROJECT_NAME": "test_app_launch",
+    "PROJECT_NAME": "test_app_db",
     "ROOT_URLCONF": "tests.apps.orm.routes",
     "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
     "DATABASE": {

@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from unfazed.const import UNFAZED_SETTINGS_MODULE
+import pytest
+
+from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.db.tortoise.commands import (
     downgrade,
@@ -12,11 +14,39 @@ from unfazed.db.tortoise.commands import (
     upgrade,
 )
 
+_Settings = {
+    "DEBUG": True,
+    "PROJECT_NAME": "test_app_db",
+    "ROOT_URLCONF": "tests.apps.orm.routes",
+    "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
+    "DATABASE": {
+        "CONNECTIONS": {
+            "default": {
+                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "CREDENTIALS": {
+                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
+                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
+                    "USER": "root",
+                    "PASSWORD": "app",
+                    "DATABASE": "test_app",
+                },
+            }
+        }
+    },
+}
+
+
+@pytest.fixture
+async def unfazed() -> Unfazed:
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+    await unfazed.setup()
+    return unfazed
+
 
 async def test_cmd(tmp_path: Path) -> None:
-    os.environ[UNFAZED_SETTINGS_MODULE] = "tests.apps.orm.settings"
-    unfazed = Unfazed()
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
     await unfazed.setup()
+
     root_path = tmp_path / "orm"
     root_path.mkdir()
 
