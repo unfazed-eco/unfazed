@@ -65,7 +65,6 @@ async def endpoint1(
     return JsonResponse(r)
 
 
-@pytest.mark.asyncio
 async def test_path():
     route = Route(
         path="/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}",
@@ -156,7 +155,6 @@ async def endpoint2(
     return JsonResponse(r)
 
 
-@pytest.mark.asyncio
 async def test_query():
     route = Route(
         path="/",
@@ -245,7 +243,6 @@ async def endpoint3(
     return JsonResponse(r)
 
 
-@pytest.mark.asyncio
 async def test_header():
     route = Route(
         path="/",
@@ -434,7 +431,7 @@ async def endpoint5(
     return JsonResponse(r)
 
 
-@pytest.mark.asyncio
+
 async def test_body():
     route = Route(
         path="/",

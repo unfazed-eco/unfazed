@@ -1,0 +1,12 @@
+class AsgiType:
+    HTTP_START = "http.response.start"
+    HTTP_BODY = "http.response.body"
+    HTTP_END = "http.response.end"
+    HTTP_ERROR = "http.response.error"
+    LIFE_SPAN_STARTUP = "lifespan.startup"
+    LIFE_SPAN_SHUTDOWN = "lifespan.shutdown"
+    WS_CONNECT = "websocket.connect"
+    WS_ACCEPT = "websocket.accept"
+    WS_RECEIVE = "websocket.receive"
+    WS_SEND = "websocket.send"
+    WS_DISCONNECT = "websocket.disconnect"

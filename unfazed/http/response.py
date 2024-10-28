@@ -13,19 +13,13 @@ from starlette.concurrency import iterate_in_threadpool
 from starlette.responses import Response
 from zoneinfo import ZoneInfo
 
-T = t.TypeVar(
-    "T",
-    t.Dict,
-    t.List,
-    str,
-    bytes,
-    BaseModel,
-)
-
 Content = t.Union[str, bytes, memoryview]
 SyncContentStream = t.Iterable[Content]
 AsyncContentStream = t.AsyncIterable[Content]
 ContentStream = t.Union[AsyncContentStream, SyncContentStream]
+
+
+T = t.TypeVar("T", t.Dict, t.List, str, bytes, BaseModel, ContentStream)
 
 
 class HttpResponse[T](Response):
@@ -211,7 +205,6 @@ def parse_request(
 ) -> t.Tuple[int, int, int]:
     header_if_range = headers.get("If-Range", None)
     header_range = headers.get("Range", None)
-    # log.info(f"header_if_range = {header_if_range}, header_range = {header_range}")
 
     range_start, range_end = 0, handler.file_size
 
@@ -264,13 +257,14 @@ class FileResponse(StreamingResponse):
     ) -> None:
         handler = RangeFileHandler(path, filename, chunk_size)
         range_start, range_end, status_code = parse_request(handler, headers)
+        self.status_code = status_code
         handler.set_range(range_start, range_end)
-        headers = self.build_headers(handler)
+        resp_headers = self.build_headers(handler)
 
         super().__init__(
             handler,
             status_code,
-            headers,
+            resp_headers,
             background=background,
             media_type="application/octet-stream",
         )
@@ -280,7 +274,7 @@ class FileResponse(StreamingResponse):
             "ETag": handler.etag,
             "Accept-Ranges": "bytes",
             "Last-Modified": handler.last_modified,
-            "Content-Length": handler.content_length,
+            "Content-Length": str(handler.content_length),
             "Content-Type": "application/octet-stream",
             "Content-Disposition": f"attachment; filename={handler.file_name}",
         }

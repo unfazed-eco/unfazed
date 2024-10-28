@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
 
+from unfazed.exception import TypeHintRequired
 from unfazed.http import HttpRequest
 from unfazed.type import SUPPOTED_REQUEST_TYPE
 
@@ -261,7 +262,7 @@ class EndPointDefinition(BaseModel):
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
         if "return" not in type_hints:
-            raise ValueError(
+            raise TypeHintRequired(
                 f"missing type hint for return in endpoint: {self.endpoint_name}"
             )
 

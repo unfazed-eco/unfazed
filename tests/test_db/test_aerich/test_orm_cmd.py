@@ -58,6 +58,9 @@ async def test_cmd(tmp_path: Path) -> None:
 
     await cmd.handle(**{"safe": True, "location": migrations_path})
 
+    # with pytest.raises(FileExistsError):
+    #     await cmd.handle(**{"safe": True, "location": migrations_path})
+
     # check there must be a file under root_path / models
     models_path = migrations_path / "models"
     assert models_path.exists()

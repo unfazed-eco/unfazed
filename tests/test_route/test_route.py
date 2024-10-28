@@ -1,15 +1,8 @@
-import typing as t
-
 import pytest
 
-from tests.decorators import mock_unfazed_settings
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.route import Route, include, parse_urlconf, path
-
-if t.TYPE_CHECKING:
-    from pytest_mock import MockerFixture  # pragma: no cover
-
 
 SETTINGS = {
     "DEBUG": True,
@@ -17,9 +10,8 @@ SETTINGS = {
 }
 
 
-@mock_unfazed_settings(UnfazedSettings(**SETTINGS))
-async def test_setup_routes(mocker: "MockerFixture"):
-    unfazed = Unfazed()
+async def test_setup_routes():
+    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
 
     unfazed.settings.ROOT_URLCONF = "tests.apps.route.routes"
     unfazed.settings.INSTALLED_APPS = ["tests.apps.route.common"]
@@ -52,10 +44,6 @@ def test_path():
     with pytest.raises(ValueError):
         subpaths = [path("/bar", endpoint=view)]
         path("/foo", endpoint=view, routes=subpaths)
-
-    # test endpoint is not a coroutine
-    with pytest.raises(ValueError):
-        path("/foo", endpoint=int)
 
     # test routes is not a list of Route
     with pytest.raises(ValueError):

@@ -30,7 +30,7 @@ def include(route_path: str) -> t.Sequence[Route]:
 def path(
     path: str,
     *,
-    endpoint: t.Coroutine | None = None,
+    endpoint: t.Callable | None = None,
     routes: t.Sequence[Route] | None = None,
     methods: t.Sequence[str] = None,
     name: str = None,
