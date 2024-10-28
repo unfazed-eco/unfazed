@@ -1,6 +1,7 @@
 from .cache import CacheBackend
 from .command import Command
 from .conf import Settings
+from .asgi import ASGIType
 from .lifespan import BaseLifeSpan
 from .middleware import MiddleWare
 from .orm import DataBaseDriver, Model, QuerySet
@@ -16,4 +17,5 @@ __all__ = [
     "BaseLifeSpan",
     "BaseSerializer",
     "QuerySet",
+    "ASGIType",
 ]

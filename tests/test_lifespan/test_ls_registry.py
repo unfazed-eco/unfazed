@@ -52,28 +52,23 @@ SETTINGS = {
 
 
 async def test_registry() -> None:
-    with patch(
-        "unfazed.core.Unfazed.settings",
-        new_callable=PropertyMock,
-        return_value=UnfazedSettings(**SETTINGS),
-    ):
-        unfazed = Unfazed()
-        lifespan_handler.clear()
-        await unfazed.setup()
+    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
+    lifespan_handler.clear()
+    await unfazed.setup()
 
-        hello_life_span = lifespan_handler.get(
-            "tests.test_lifespan.test_ls_registry.HelloLifeSpan"
-        )
+    hello_life_span = lifespan_handler.get(
+        "tests.test_lifespan.test_ls_registry.HelloLifeSpan"
+    )
 
-        # use uvicorn to trigger startup and shutdown
-        config = Config(app=unfazed)
-        uvicorn_ls = LifespanOn(config)
+    # use uvicorn to trigger startup and shutdown
+    config = Config(app=unfazed)
+    uvicorn_ls = LifespanOn(config)
 
-        await uvicorn_ls.startup()
-        assert hello_life_span.count == 2
+    await uvicorn_ls.startup()
+    assert hello_life_span.count == 2
 
-        await uvicorn_ls.shutdown()
-        assert hello_life_span.count == 3
+    await uvicorn_ls.shutdown()
+    assert hello_life_span.count == 3
 
 
 SETTINGS2 = {
@@ -108,24 +103,19 @@ SETTINGS3 = {
 
 
 async def test_empty_state() -> None:
-    with patch(
-        "unfazed.core.Unfazed.settings",
-        new_callable=PropertyMock,
-        return_value=UnfazedSettings(**SETTINGS3),
-    ):
-        unfazed = Unfazed()
-        lifespan_handler.clear()
-        await unfazed.setup()
-        hello_life_span = lifespan_handler.get(
-            "tests.test_lifespan.test_ls_registry.HelloLifeSpan2"
-        )
+    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS3))
+    lifespan_handler.clear()
+    await unfazed.setup()
+    hello_life_span = lifespan_handler.get(
+        "tests.test_lifespan.test_ls_registry.HelloLifeSpan2"
+    )
 
-        # use uvicorn to trigger startup and shutdown
-        config = Config(app=unfazed)
-        uvicorn_ls = LifespanOn(config)
+    # use uvicorn to trigger startup and shutdown
+    config = Config(app=unfazed)
+    uvicorn_ls = LifespanOn(config)
 
-        await uvicorn_ls.startup()
-        assert hello_life_span.count == 2
+    await uvicorn_ls.startup()
+    assert hello_life_span.count == 2
 
-        await uvicorn_ls.shutdown()
-        assert hello_life_span.count == 3
+    await uvicorn_ls.shutdown()
+    assert hello_life_span.count == 3

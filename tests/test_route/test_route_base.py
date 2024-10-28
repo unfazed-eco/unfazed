@@ -73,4 +73,6 @@ def test_route():
     with pytest.raises(ValueError):
         Route("/foo", "foo")
 
-    Route("/foo", view, middleware=[Middleware1])
+    route = Route("/foo", view, middleware=[Middleware1])
+
+    assert route.app.__class__ == Middleware1

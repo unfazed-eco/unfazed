@@ -13,6 +13,8 @@ from starlette.concurrency import iterate_in_threadpool
 from starlette.responses import Response
 from zoneinfo import ZoneInfo
 
+from unfazed.protocol import ASGIType
+
 Content = t.Union[str, bytes, memoryview]
 SyncContentStream = t.Iterable[Content]
 AsyncContentStream = t.AsyncIterable[Content]
@@ -93,13 +95,13 @@ class StreamingResponse(HttpResponse[ContentStream]):
     async def listen_for_disconnect(self, receive: ASGIReceiveCallable) -> None:
         while True:
             message = await receive()
-            if message["type"] == "http.disconnect":
+            if message["type"] == ASGIType.HTTP_DISCONNECT:
                 break
 
     async def stream_response(self, send: ASGISendCallable) -> None:
         await send(
             {
-                "type": "http.response.start",
+                "type": ASGIType.HTTP_RESPONSE_START,
                 "status": self.status_code,
                 "headers": self.raw_headers,
             }
@@ -107,9 +109,13 @@ class StreamingResponse(HttpResponse[ContentStream]):
         async for chunk in self.body_iterator:
             if not isinstance(chunk, (bytes, memoryview)):
                 chunk = chunk.encode(self.charset)
-            await send({"type": "http.response.body", "body": chunk, "more_body": True})
+            await send(
+                {"type": ASGIType.HTTP_RESPONSE_BODY, "body": chunk, "more_body": True}
+            )
 
-        await send({"type": "http.response.body", "body": b"", "more_body": False})
+        await send(
+            {"type": ASGIType.HTTP_RESPONSE_BODY, "body": b"", "more_body": False}
+        )
 
     async def __call__(
         self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable

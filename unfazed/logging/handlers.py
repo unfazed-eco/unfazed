@@ -45,7 +45,7 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
             return False
         if self.stream is None:  # delay was set...
-            self.stream = self._open()
+            self.stream = self._open()  # pragma: no cover  # TODO: add test
         if self.maxBytes > 0:  # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  # due to non-posix-compliant Windows feature

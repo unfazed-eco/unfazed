@@ -10,8 +10,12 @@ from .base import OpenApi
 
 class OpenApiService:
     @classmethod
+    def get_settings(cls) -> UnfazedSettings:
+        return settings["UNFAZED_SETTINGS"]  # pragma: no cover
+
+    @classmethod
     def get_docs(cls):
-        unfazed_setting: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        unfazed_setting: UnfazedSettings = cls.get_settings()
 
         openapi_setting = unfazed_setting.OPENAPI
         return cls._get_docs(
@@ -50,7 +54,7 @@ class OpenApiService:
 
     @classmethod
     def get_redoc(cls):
-        unfazed_setting: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        unfazed_setting: UnfazedSettings = cls.get_settings()
 
         openapi_setting = unfazed_setting.OPENAPI
         return cls._get_redoc(

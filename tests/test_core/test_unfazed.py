@@ -71,7 +71,7 @@ async def test_loading_state(mocker: "MockerFixture") -> None:
 
 
 @mock_unfazed_settings(Setting)
-async def test_cliapp_luanch(mocker: "MockerFixture") -> None:
+async def test_cliapp_launch(mocker: "MockerFixture") -> None:
     unfazed = Unfazed()
 
     await unfazed.setup_cli()

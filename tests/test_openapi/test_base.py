@@ -1,7 +1,6 @@
 import typing as t
 
 from pydantic import BaseModel
-from pytest_mock import MockerFixture
 
 from unfazed.http import HttpRequest, JsonResponse
 from unfazed.openapi import OpenApi
@@ -22,8 +21,14 @@ class Hdr(BaseModel):
     token3: str
 
 
+class Body1(BaseModel):
+    name: str
+    age: int
+
+
 class Resp(BaseModel):
     message: str
+    ctx: Ctx
 
 
 async def endpoint1(
@@ -33,11 +38,19 @@ async def endpoint1(
     return JsonResponse(data)
 
 
-def test_openapi_create(mocker: MockerFixture):
-    route = Route("/endpoint1", endpoint=endpoint1)
+async def endpoint2(
+    request: HttpRequest, ctx: Body1
+) -> t.Annotated[JsonResponse[Resp], ResponseSpec(model=Resp)]:
+    data = Resp(message="Hello, World!")
+    return JsonResponse(data)
+
+
+def test_openapi_create():
+    route = Route("/endpoint1", endpoint=endpoint1, tags=["tag1"])
+    route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
 
     ret = OpenApi.create_openapi_model(
-        [route],
+        [route, route2],
         project_name="myproject",
         version="1.0.0",
         openapi_setting=OpenAPI(
@@ -58,7 +71,7 @@ def test_openapi_create(mocker: MockerFixture):
     assert ret.servers[0].description == "dev"
 
     # paths
-    assert len(ret.paths) == 1
+    assert len(ret.paths) == 2
     assert "/endpoint1" in ret.paths
     pathitem = ret.paths["/endpoint1"]
 
@@ -85,3 +98,39 @@ def test_openapi_create(mocker: MockerFixture):
     content = response.content["application/json"]
 
     assert content.schema_.ref is not None
+
+    # test create schema result type
+    schema = OpenApi.create_schema(
+        [route, route2],
+        project_name="myproject",
+        version="1.0.0",
+        openapi_setting=OpenAPI(
+            servers=[{"url": "http://localhost:8000", "description": "dev"}]
+        ),
+    )
+
+    assert isinstance(schema, dict)
+
+    # no openapi settings
+    ret = OpenApi.create_openapi_model(
+        [route, route2],
+        project_name="myproject",
+        version="1.0.0",
+    )
+
+    assert ret is None
+
+    # include_in_schema
+    route3 = Route(
+        "/endpoint3", endpoint=endpoint1, tags=["tag1"], include_in_schema=False
+    )
+    ret = OpenApi.create_openapi_model(
+        [route3],
+        project_name="myproject",
+        version="1.0.0",
+        openapi_setting=OpenAPI(
+            servers=[{"url": "http://localhost:8000", "description": "dev"}]
+        ),
+    )
+
+    assert len(ret.paths) == 0
