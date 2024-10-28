@@ -1,23 +1,8 @@
 import pytest
 
-from unfazed.conf import UnfazedSettings
-from unfazed.core import Unfazed
+from unfazed.http import HttpRequest, HttpResponse
+from unfazed.middleware import BaseHttpMiddleware
 from unfazed.route import Route, include, parse_urlconf, path
-
-SETTINGS = {
-    "DEBUG": True,
-    "PROJECT_NAME": "test_setup_routes",
-}
-
-
-async def test_setup_routes():
-    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
-
-    unfazed.settings.ROOT_URLCONF = "tests.apps.route.routes"
-    unfazed.settings.INSTALLED_APPS = ["tests.apps.route.common"]
-    await unfazed.setup()
-
-    assert len(unfazed.routes) == 4
 
 
 class TestInclude:
@@ -35,19 +20,30 @@ def test_include():
     with pytest.raises(ValueError):
         include(import_path)
 
+    import_path = "tests.apps.route.routes"
+
+    patterns = include(import_path)
+
+    assert len(patterns) == 4
+
+
+async def view(request: HttpRequest) -> HttpResponse:
+    return "Hello, World!"
+
 
 def test_path():
     # test both endpoint and routes provided
-    async def view(request):
-        pass
-
     with pytest.raises(ValueError):
-        subpaths = [path("/bar", endpoint=view)]
-        path("/foo", endpoint=view, routes=subpaths)
+        subpaths = path("/bar", endpoint=view)
+        path("/foo", endpoint=view, routes=[subpaths])
 
     # test routes is not a list of Route
     with pytest.raises(ValueError):
         path("/foo", routes=[1, 2, 3])
+
+    # endpoint is not a function
+    with pytest.raises(ValueError):
+        path("/foo", endpoint="foo")
 
 
 def test_parse_urlconf():
@@ -64,12 +60,17 @@ def test_parse_urlconf():
         parse_urlconf(import_path, app_center)
 
 
-def test_raises():
-    with pytest.raises(ValueError):
-        Route("foo", endpoint=int)
+class Middleware1(BaseHttpMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        return response
 
-    class Foo:
-        pass
+
+def test_route():
+    with pytest.raises(ValueError):
+        Route("foo", view)
 
     with pytest.raises(ValueError):
-        Route("/foo", endpoint=Foo)
+        Route("/foo", "foo")
+
+    Route("/foo", view, middleware=[Middleware1])

@@ -70,7 +70,7 @@ class EndpointHandler:
 
         if self.endpoint_definition.body_model:
             if self.endpoint_definition.body_type == "json":
-                body_params, body_err = self._slove_body_params(request)
+                body_params, body_err = await self._slove_body_params(request)
                 params.update(body_params)
                 if body_err:
                     error_list.append(body_err)
@@ -99,9 +99,17 @@ class EndpointHandler:
         except Exception as err:
             ret_err = err
 
-        for name, definition in endpoint_params.items():
-            annotation = definition[0]
+        if ret_err:
+            return ret, ret_err
 
+        for name, definition in endpoint_params.items():
+            annotation, fieldinfo = definition
+
+            # create default value
+            if fieldinfo.default:
+                ret[name] = fieldinfo.default
+
+            # override default value if request has value
             if issubclass(annotation, BaseModel):
                 ret[name] = annotation(**request_params)
 
@@ -147,13 +155,14 @@ class EndpointHandler:
             request.cookies,
         )
 
-    def _slove_body_params(
+    async def _slove_body_params(
         self, request: HttpRequest
     ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
+        data = await request.json()
         return self._solve_params(
             self.endpoint_definition.body_model,
             self.endpoint_definition.body_params,
-            request.json(),
+            data,
         )
 
     async def _slove_form_params(self, request: HttpRequest):
@@ -191,7 +200,6 @@ class EndPointDefinition(BaseModel):
     body_model: t.Type[BaseModel] | None = None
 
     operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data):
@@ -217,10 +225,6 @@ class EndPointDefinition(BaseModel):
                 inspect.Parameter.VAR_KEYWORD,
                 inspect.Parameter.VAR_POSITIONAL,
             ]:
-                continue
-
-            # skip param `self`
-            if param.name == "self":
                 continue
 
             # skip unfazed request
@@ -292,33 +296,10 @@ class EndPointDefinition(BaseModel):
         for _, param in self.params.items():
             annotation = param.annotation
 
-            # async def endpoint(request: Request, q: str, path: int, ctx: Item) -> Response
-            if not hasattr(annotation, "_name"):
-                if param.name in self.path_parm_names:
-                    self.path_params[param.name] = (annotation, p.Path())
-
-                else:
-                    if isinstance(annotation, t.Type) and issubclass(
-                        annotation, BaseModel
-                    ):
-                        if has_form_field:
-                            raise ValueError(
-                                f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
-                            )
-                        self.body_params[param.name] = (annotation, p.Body())
-                        has_body_field = True
-                    else:
-                        self.query_params[param.name] = (annotation, p.Query())
-
             # async def endpoint(request: Request, ctx: t.Annotated[PathModel, p.Path()]) -> Response
-            elif annotation._name == "Annotated":
+            if hasattr(annotation, "_name") and annotation._name == "Annotated":
                 metadata = annotation.__metadata__
                 origin = annotation.__origin__
-
-                if not metadata:
-                    raise ValueError(
-                        f"{self.endpoint_name} missing metadata for {annotation}"
-                    )
 
                 # only support the first metadata
                 model_or_field = metadata[0]
@@ -360,9 +341,23 @@ class EndPointDefinition(BaseModel):
                     )
 
             else:
-                raise ValueError(
-                    f"Unsupported type hints for {param.name} in {self.endpoint_name}"
-                )
+                # async def endpoint(request: Request, q: str, path: int, ctx: Item) -> Response
+                if param.name in self.path_parm_names:
+                    self.path_params[param.name] = (annotation, p.Path())
+
+                else:
+                    if isinstance(annotation, t.Type) and issubclass(
+                        annotation, BaseModel
+                    ):
+                        if has_form_field:
+                            raise ValueError(
+                                f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                            )
+                        self.body_params[param.name] = (annotation, p.Body())
+                        has_body_field = True
+                    else:
+                        self.query_params[param.name] = (annotation, p.Query())
+
         if has_body_field:
             self.body_type = "json"
         if has_form_field:
@@ -444,6 +439,8 @@ class EndPointDefinition(BaseModel):
             fieldinfo: p.Param
 
             annotation, fieldinfo = define
+            if hasattr(fieldinfo, "media_type"):
+                json_schema_extra["media_type"] = fieldinfo.media_type
 
             if issubclass(annotation, BaseModel):
                 for field_name, field in annotation.model_fields.items():
@@ -460,9 +457,6 @@ class EndPointDefinition(BaseModel):
 
                 bases.append(annotation)
 
-                if hasattr(field, "media_type"):
-                    json_schema_extra["media_type"] = fieldinfo.media_type
-
             # field info
             else:
                 if name in fields:
@@ -478,7 +472,7 @@ class EndPointDefinition(BaseModel):
                 if not fieldinfo.title:
                     fieldinfo.title = name
 
-                field_difinitions[name] = define
+                field_difinitions[name] = (annotation, fieldinfo)
 
         config_dict = ConfigDict()
         for base in bases:

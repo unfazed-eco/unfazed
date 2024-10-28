@@ -155,7 +155,7 @@ class Unfazed(Starlette):
         middleware = self.user_middleware
         app = self.router
         for cls in reversed(middleware):
-            app = cls(self, app)
+            app = cls(app)
         return app
 
     @unfazed_locker

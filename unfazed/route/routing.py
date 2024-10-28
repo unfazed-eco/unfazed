@@ -31,7 +31,7 @@ class Route(StartletteRoute):
             raise ValueError(f"route `{endpoint.__name__}` paths must start with '/'")
 
         if not inspect.isfunction(endpoint):
-            raise ValueError(f"Endpoint `{endpoint.__name__}` must be a async function")
+            raise ValueError(f"Endpoint `{endpoint}` must be a async function")
 
         self.path = path
         self.endpoint = endpoint
@@ -72,8 +72,8 @@ class Route(StartletteRoute):
         self, middlewares: t.Sequence[t.Type[MiddleWareProtocol]]
     ) -> None:
         if middlewares is not None:
-            for cls, args, kwargs in reversed(middlewares):
-                self.app = cls(app=self.app, *args, **kwargs)
+            for cls in reversed(middlewares):
+                self.app = cls(app=self.app)
 
     def update_path(self, new_path: str) -> None:
         self.path = new_path

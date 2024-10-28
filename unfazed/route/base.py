@@ -64,9 +64,9 @@ def path(
                 tags=tags,
             )
         else:
-            raise ValueError(f"endpoint {endpoint.__name__} must be a function")
+            raise ValueError(f"endpoint {endpoint} must be a function")
 
-    elif routes:
+    else:
         ret = []
         for route in routes:
             if not isinstance(route, Route):

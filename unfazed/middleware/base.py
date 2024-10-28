@@ -5,15 +5,11 @@ from starlette.middleware.base import BaseHTTPMiddleware as StarletteBaseHTTPMid
 
 from unfazed.http import HttpRequest, HttpResponse
 
-if t.TYPE_CHECKING:
-    from unfazed.core import Unfazed  # pragma: no cover
-
 RequestResponseEndpoint = t.Callable[[HttpRequest], t.Awaitable[HttpResponse]]
 
 
 class BaseHttpMiddleware(StarletteBaseHTTPMiddleware):
-    def __init__(self, unfazed: "Unfazed", app: at.ASGIApplication) -> None:
-        self.unfazed = unfazed
+    def __init__(self, app: at.ASGIApplication) -> None:
         self.app = app
 
     async def dispatch(
