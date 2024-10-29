@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from .orm import Model, QuerySet
 
 if t.TYPE_CHECKING:
-    from unfazed.schema import Result
+    from unfazed.schema import Result  # pragma: no cover
 
 
 class BaseSerializer(ABC):

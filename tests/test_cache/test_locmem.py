@@ -2,11 +2,35 @@ import asyncio
 
 import pytest
 
-from unfazed.cache.backends.locmem import LocMemCache
+from unfazed.cache import caches
+from unfazed.conf import UnfazedSettings
+from unfazed.core import Unfazed
+
+_Settings = {
+    "DEBUG": True,
+    "PROJECT_NAME": "test_loc_cache",
+    "CACHE": {
+        "loc1": {
+            "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unfazed_cache1",
+            "OPTIONS": {
+                "MAX_ENTRIES": 10,
+                "PREFIX": "unfazed_cache1",
+            },
+        },
+        "loc2": {
+            "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unfazed_cache2",
+        },
+    },
+}
 
 
 async def test_locmem():
-    cache = LocMemCache("test", {"MAX_ENTRIES": 10, "PREFIX": "test"})
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+    await unfazed.setup()
+
+    cache = caches["loc1"]
 
     # test set and get
     await cache.set("foo", "bar")
@@ -37,7 +61,7 @@ async def test_locmem():
     assert await cache.get("foo4") is None
 
     # test delete non-exist key
-    await cache.delete("foo4") == False
+    assert await cache.delete("foo4") is False
 
     # test clear
     await cache.set("foo5", "bar")
@@ -52,3 +76,17 @@ async def test_locmem():
         await cache.set(f"foo{i}", f"bar{i}")
 
     assert await cache.get("foo0") is None
+
+    await cache.close()
+
+    assert cache._cache == {}
+
+
+async def test_without_option():
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+    await unfazed.setup()
+
+    cache = caches["loc2"]
+
+    await cache.set("foo", "bar")
+    assert await cache.get("foo") == "bar"

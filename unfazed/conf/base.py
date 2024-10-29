@@ -1,3 +1,5 @@
+import typing as t
+
 from asgiref.local import Local
 from pydantic import BaseModel
 
@@ -19,6 +21,22 @@ class SettingsProxy:
             self._settingskv = u.import_setting(self.unfazed_settings_module)
         return self._settingskv
 
+    def guess_client_cls(self, alias: str) -> t.Type[BaseModel]:
+        if alias == "UNFAZED_SETTINGS":
+            client_str = "unfazed.conf.UnfazedSettings"
+
+        else:
+            # extract from settingskv or try to guess from alias
+            alias_settings_kv = self.settingskv[alias]
+            if "CLIENT_CLASS" in alias_settings_kv:
+                client_str = alias_settings_kv["CLIENT_CLASS"]
+            else:
+                app = alias.lower().replace("_", ".").rsplit(".", 1)[0]
+                alias_prefix = alias.rsplit("_", 1)[0]
+                client_str = f"{app}.settings.{alias_prefix.capitalize()}Settings"
+
+        return u.import_string(client_str)
+
     def __getitem__(self, alias: str) -> BaseModel:
         try:
             return getattr(self.storage, alias)
@@ -28,12 +46,8 @@ class SettingsProxy:
                 raise KeyError(
                     f"Key {alias} not found in {self.unfazed_settings_module} module"
                 )
-
-        client_str = self.settingskv[alias]["CLIENT_CLASS"]
-        client_cls = u.import_string(client_str)
-
+        client_cls = self.guess_client_cls(alias)
         client = client_cls(**self.settingskv[alias])
-
         setattr(self.storage, alias, client)
 
         return client
@@ -43,6 +57,9 @@ class SettingsProxy:
 
     def __delitem__(self, alias: str) -> None:
         delattr(self.storage, alias)
+
+    def clear(self) -> None:
+        self.storage = Local(self.thread_critical)
 
 
 settings = SettingsProxy()

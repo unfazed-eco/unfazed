@@ -2,9 +2,8 @@ import sys
 import typing as t
 
 from click import Option, Parameter
+from uvicorn import server, supervisors
 from uvicorn.config import Config
-from uvicorn.server import Server
-from uvicorn.supervisors import ChangeReload, Multiprocess
 
 from unfazed.command import BaseCommand
 
@@ -67,17 +66,17 @@ class Command(BaseCommand):
             workers=workers,
             log_level=log_level,
         )
-        server = Server(config)
+        runner = server.Server(config)
 
         sock = config.bind_socket()
         if config.should_reload:
-            ChangeReload(config, target=server.run, sockets=[sock]).run()
+            supervisors.ChangeReload(config, target=runner.run, sockets=[sock]).run()
 
         elif config.workers > 1:
-            Multiprocess(config, target=server.run, sockets=[sock]).run()
+            supervisors.Multiprocess(config, target=runner.run, sockets=[sock]).run()
 
         else:
-            await server.serve([sock])
+            await runner.serve([sock])
 
-        if not server.started and not config.should_reload and config.workers == 1:
+        if not runner.started and not config.should_reload and config.workers == 1:
             sys.exit(3)

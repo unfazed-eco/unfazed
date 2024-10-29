@@ -30,7 +30,7 @@ class BaseAppConfig:
 
         from unfazed.app import BaseAppConfig
         class AppConfig(BaseAppConfig):
-            def ready(self):
+            async def ready(self):
                 print("AppConfig is ready!")
         ```
 
@@ -42,11 +42,11 @@ class BaseAppConfig:
 
     @property
     def app_path(self) -> Path:
-        if hasattr(self.app_module.__path__, "_path"):
-            ret = Path(self.app_module.__path__._path[0])
-        else:
-            ret = Path(self.app_module.__path__[0])
-        return ret
+        # if hasattr(self.app_module.__path__, "_path"):
+        #     ret = Path(self.app_module.__path__._path[0])
+        # else:
+        #     ret = Path(self.app_module.__path__[0])
+        return Path(self.app_module.__path__._path[0])
 
     @property
     def name(self) -> str:
@@ -129,5 +129,8 @@ class BaseAppConfig:
 
         return app_cls(unfazed, module)
 
-    def ready(self):
+    async def ready(self):
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def __str__(self) -> str:
+        return self.name

@@ -28,7 +28,6 @@ class BaseCredential(BaseModel):
     ssl: t.Optional[bool] = Field(None, alias="SSL")
 
 
-
 class PgsqlCredential(BaseCredential):
     max_queries: _[int] = Field(None, alias="MAX_QUERIES")
     max_inactive_connection_lifetime: _[float] = Field(
@@ -57,7 +56,7 @@ class AppModels(BaseModel):
 
 class Database(BaseModel):
     connections: t.Dict[str, Connection] = Field(..., alias="CONNECTIONS")
-    driver: str = Field("unfazed.orm.tortoise.Driver", alias="DRIVER")
+    driver: str = Field("unfazed.db.tortoise.Driver", alias="DRIVER")
     apps: _[t.Dict[str, AppModels]] = Field(None, alias="APPS")
     routers: _[t.List[str]] = Field(None, alias="ROUTERS")
     use_tz: _[bool] = Field(None, alias="USE_TZ")

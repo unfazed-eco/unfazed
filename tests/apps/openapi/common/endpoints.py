@@ -43,7 +43,7 @@ async def update_account(
 
 
 async def delete_account(
-    request: HttpRequest, ctx: t.Annotated[ARQ.AccountDelete, params.Body()]
+    request: HttpRequest, ctx: t.Annotated[ARQ.AccountDelete, params.Json()]
 ) -> t.Annotated[
     JsonResponse[ARS._UpdateResp], ARS.SuccessfulDeleteResp, ARS.FailedResp
 ]:

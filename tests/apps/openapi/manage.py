@@ -23,7 +23,6 @@ async def main() -> None:
 
     unfazed = Unfazed()
     await unfazed.setup()
-    print(f"routes: {unfazed.router.routes}")
     await unfazed.execute_command_from_argv()
 
 

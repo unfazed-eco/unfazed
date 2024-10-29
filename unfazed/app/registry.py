@@ -1,6 +1,6 @@
 import typing as t
 
-from unfazed.type import InstalledApps
+from unfazed.type import CanBeImported
 
 from .base import BaseAppConfig
 
@@ -9,7 +9,9 @@ if t.TYPE_CHECKING:
 
 
 class AppCenter:
-    def __init__(self, unfazed: "Unfazed", installed_apps: InstalledApps) -> None:
+    def __init__(
+        self, unfazed: "Unfazed", installed_apps: t.List[CanBeImported]
+    ) -> None:
         self.unfazed = unfazed
         self.installed_apps = installed_apps
         self._store: t.Dict[str, BaseAppConfig] = {}
@@ -19,7 +21,7 @@ class AppCenter:
             if app_path in self._store:
                 raise RuntimeError(f"App with path {app_path} is already loaded")
             temp_app = self.load_app(app_path)
-
+            await temp_app.ready()
             self._store[temp_app.name] = temp_app
 
         return None
@@ -37,3 +39,7 @@ class AppCenter:
     def __iter__(self) -> t.Iterator[t.Tuple[str, BaseAppConfig]]:
         for key, value in self._store.items():
             yield (key, value)
+
+    @property
+    def store(self) -> t.Dict[str, BaseAppConfig]:
+        return self._store

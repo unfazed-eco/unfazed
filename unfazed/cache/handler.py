@@ -11,7 +11,7 @@ class CacheHandler:
         try:
             return getattr(self.storage, key)
         except AttributeError:
-            raise KeyError(f"CacheBackend {key} not found")
+            raise KeyError(f"Unfazed Error: CacheBackend {key} not found")
 
     def __setitem__(self, key: str, backend: CacheBackend) -> None:
         setattr(self.storage, key, backend)

@@ -8,26 +8,27 @@ from unfazed import protocol as p
 from unfazed.app import AppCenter
 from unfazed.cache import caches
 from unfazed.command import CliCommandCenter, CommandCenter
-from unfazed.conf import UnfazedSettings, settings
+from unfazed.conf import UnfazedSettings
+from unfazed.conf import settings as settings_proxy
+from unfazed.db import ModelCenter
 from unfazed.lifespan import lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.orm import ModelCenter
 from unfazed.protocol import BaseLifeSpan
-from unfazed.route import parse_urlconf
+from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
 
 
 class Unfazed(Starlette):
-    version = "0.0.1"
-
     def __init__(
         self,
+        *,
         debug: bool = False,
-        routes: t.Sequence[p.Route] | None = None,
+        routes: t.Sequence[Route] | None = None,
         middlewares: t.Sequence[p.MiddleWare] | None = None,
+        settings: UnfazedSettings | None = None,
     ) -> None:
         self._ready = False
         self._loading = False
@@ -35,12 +36,15 @@ class Unfazed(Starlette):
         self._app_center: AppCenter = None
         self._command_center: CommandCenter = None
         self._model_center: ModelCenter = None
+        self._settings = settings
 
         super().__init__(debug=debug, routes=routes, middleware=middlewares)
 
     @property
     def settings(self) -> UnfazedSettings:
-        return settings["UNFAZED_SETTINGS"]
+        if self._settings is None:
+            self._settings = settings_proxy["UNFAZED_SETTINGS"]
+        return self._settings
 
     @property
     def ready(self) -> bool:
@@ -80,21 +84,21 @@ class Unfazed(Starlette):
             )
         return self._model_center
 
-    def setup_routes(self):
+    def setup_routes(self) -> None:
         if not self.settings.ROOT_URLCONF:
             return
         # add routes from settings.ROOT_URLCONF
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
             self.router.routes.append(route)
 
-    def setup_middleware(self):
+    def setup_middleware(self) -> None:
         if not self.settings.MIDDLEWARE:
             return
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
             self.user_middleware.insert(0, cls)
 
-    def setup_cache(self):
+    def setup_cache(self) -> None:
         cache = self.settings.CACHE
         if not cache:
             return
@@ -106,7 +110,7 @@ class Unfazed(Starlette):
             cache = backend_cls(location, options)
             caches[alias] = cache
 
-    def setup_logging(self):
+    def setup_logging(self) -> None:
         if not self.settings.LOGGING:
             config = {}
 
@@ -117,9 +121,8 @@ class Unfazed(Starlette):
         log_center = LogCenter(self, config)
         log_center.setup()
 
-    def setup_lifespan(self):
+    def setup_lifespan(self) -> None:
         lifespan_handler.unfazed = self
-        lifespan_handler.register_internal()
 
         lifespan_list = self.settings.LIFESPAN or []
 
@@ -132,7 +135,7 @@ class Unfazed(Starlette):
 
         self.router.lifespan_context = lifespan_context
 
-    def setup_openapi(self):
+    def setup_openapi(self) -> None:
         if not self.settings.OPENAPI:
             return
 
@@ -151,7 +154,7 @@ class Unfazed(Starlette):
         middleware = self.user_middleware
         app = self.router
         for cls in reversed(middleware):
-            app = cls(self, app)
+            app = cls(app)
         return app
 
     @unfazed_locker
@@ -172,11 +175,21 @@ class Unfazed(Starlette):
         self.setup_openapi()
 
     @unfazed_locker
-    async def setup_cli(self):
+    async def setup_cli(self) -> None:
         self.cli_command_center.setup()
 
-    async def execute_command_from_argv(self):
+    async def execute_command_from_argv(self) -> None:
         await run_in_threadpool(self.command_center.main)
 
-    async def execute_command_from_cli(self):
+    async def execute_command_from_cli(self) -> None:
         await run_in_threadpool(self.cli_command_center.main)
+
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return {
+            "settings": self.settings.model_dump(),
+            "routes": self.router.routes,
+            "apps": self.app_center.store,
+            "middlewares": self.user_middleware,
+            "lifespan": lifespan_handler.lifespan,
+            "commands": self.command_center.commands,
+        }

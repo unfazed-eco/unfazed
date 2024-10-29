@@ -1,2 +1,0 @@
-class SignalNotAllowed(Exception):
-    pass

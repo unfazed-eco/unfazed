@@ -13,7 +13,6 @@ if t.TYPE_CHECKING:
 SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_install",
-    "CLIENT_CLASS": "unfazed.conf.UnfazedSettings",
     "ROOT_URLCONF": "tests.apps.app.routes",
 }
 
@@ -88,8 +87,12 @@ async def test_installed_apps(mocker: "MockerFixture") -> None:
     await unfazed.setup()
     success_app = unfazed.app_center["tests.apps.app.common"]
 
+    assert "tests.apps.app.common" in unfazed.app_center.store
+
     assert success_app.label == "tests_apps_app_common"
     assert success_app.name == "tests.apps.app.common"
+    assert str(success_app) == "tests.apps.app.common"
+
 
     # 8. test double setup
     unfazed = Unfazed()
