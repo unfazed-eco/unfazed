@@ -1,14 +1,19 @@
+import os
 import typing as t
 
 import pytest
 from pydantic import BaseModel, Field
 from starlette.routing import Match
 
+from unfazed.conf import UnfazedSettings
+from unfazed.core import Unfazed
 from unfazed.exception import TypeHintRequired
+from unfazed.file import UploadFile
 from unfazed.http import HttpRequest, JsonResponse
 from unfazed.route import Route
 from unfazed.route import params as p
 from unfazed.route.endpoint import EndPointDefinition
+from unfazed.test import Requestfactory
 
 
 async def reiceive(*args, **kw):
@@ -483,10 +488,10 @@ class RespE5(BaseModel):
 
 async def endpoint5(
     request: HttpRequest,
-    bd1: t.Annotated[Body1, p.Body()],
-    bd2: t.Annotated[Body2, p.Body()],
+    bd1: t.Annotated[Body1, p.Json()],
+    bd2: t.Annotated[Body2, p.Json()],
     bd3: Body3,
-    body6: t.Annotated[str, p.Body(default="foo")],
+    body6: t.Annotated[str, p.Json(default="foo")],
 ) -> t.Annotated[JsonResponse[RespE5], p.ResponseSpec(model=RespE5)]:
     r = RespE5(
         body1=bd1.body1,
@@ -520,13 +525,13 @@ async def test_body():
     assert (
         "bd1" in definition.body_params
         and definition.body_params["bd1"][0] == Body1
-        and isinstance(definition.body_params["bd1"][1], p.Body)
+        and isinstance(definition.body_params["bd1"][1], p.Json)
     )
 
     assert (
         "bd2" in definition.body_params
         and definition.body_params["bd2"][0] == Body2
-        and isinstance(definition.body_params["bd2"][1], p.Body)
+        and isinstance(definition.body_params["bd2"][1], p.Json)
     )
     assert "bd3" in definition.body_params and definition.body_params["bd3"][0] == Body3
 
@@ -677,7 +682,7 @@ async def form_receive2(*args, **kw):
 async def endpoint7(
     request: HttpRequest,
     pth1: t.Annotated[int, p.Path()],
-    bd1: t.Annotated[int, p.Body()],
+    bd1: t.Annotated[int, p.Json()],
     cookie1: t.Annotated[int, p.Cookie()],
     hdr1: t.Annotated[int, p.Header()],
 ) -> JsonResponse:
@@ -794,14 +799,14 @@ async def endpoint14(
 async def endpoint15(
     request: HttpRequest,
     form1: t.Annotated[str, p.Form(default="foo")],
-    body1: t.Annotated[str, p.Body(default="foo")],
+    body1: t.Annotated[str, p.Json(default="foo")],
 ) -> JsonResponse:
     return JsonResponse({"method": "GET"})
 
 
 async def endpoint16(
     request: HttpRequest,
-    body1: t.Annotated[str, p.Body(default="foo")],
+    body1: t.Annotated[str, p.Json(default="foo")],
     form1: t.Annotated[str, p.Form(default="foo")],
 ) -> JsonResponse:
     return JsonResponse({"method": "GET"})
@@ -826,7 +831,14 @@ async def endpoint17(
 async def endpoint18(
     request: HttpRequest,
     bd1: Body171,
-    name: t.Annotated[str, p.Body()],
+    name: t.Annotated[str, p.Json()],
+) -> JsonResponse:
+    return JsonResponse({"method": "POST"})
+
+
+async def endpoint20(
+    request: HttpRequest,
+    bd1,
 ) -> JsonResponse:
     return JsonResponse({"method": "POST"})
 
@@ -936,27 +948,73 @@ async def test_definition():
             path_parm_names=[],
         )
 
+    # missing type hint
+    with pytest.raises(TypeHintRequired):
+        EndPointDefinition(
+            endpoint=endpoint20,
+            methods=["POST"],
+            tags=["tag1"],
+            path_parm_names=[],
+        )
+
 
 # ====== test file ======
-# TODO
-
-# async def endpoint19(
-#     request: HttpRequest,
-#     file1: t.Annotated[bytes, p.File()],
-# ) -> JsonResponse:
-#     return JsonResponse({"method": "POST"})
 
 
-# async def test_file():
-#     route = Route(
-#         path="/",
-#         endpoint=endpoint19,
-#         tags=["tag1"],
-#         methods=["POST"],
-#     )
+class CtxFile(BaseModel):
+    name: str
+    age: int
 
-#     definition = route.endpoint_definition
 
-#     assert "file1" in definition.params
-#     assert "file1" in definition.body_params
-#     assert "file1" in definition.body_model.model_fields
+class RespFile(BaseModel):
+    name: str
+    age: int
+    file_name: str
+
+
+async def endpoint19(
+    request: HttpRequest,
+    file1: t.Annotated[UploadFile, p.File()],
+    ctx: t.Annotated[CtxFile, p.Form()],
+) -> JsonResponse:
+    return JsonResponse(
+        RespFile(
+            name=ctx.name,
+            age=ctx.age,
+            file_name=file1.filename,
+        )
+    )
+
+
+async def test_file():
+    route = Route(
+        path="/with-file",
+        endpoint=endpoint19,
+        tags=["tag1"],
+        methods=["POST"],
+    )
+
+    definition = route.endpoint_definition
+
+    assert "file1" in definition.params
+    assert "file1" in definition.body_params
+    assert "file1" in definition.body_model.model_fields
+
+    unfazed = Unfazed(
+        settings=UnfazedSettings(PROJECT_NAME="test_file"), routes=[route]
+    )
+
+    await unfazed.setup()
+
+    request = Requestfactory(unfazed)
+
+    zenofpython = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+
+    resp = request.post(
+        "/with-file",
+        files={"file1": open(zenofpython, "rb")},
+        data={"name": "unfazed", "age": 1},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json() == {"name": "unfazed", "age": 1, "file_name": "zenofpython.txt"}

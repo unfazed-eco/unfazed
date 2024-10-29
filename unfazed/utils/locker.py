@@ -2,7 +2,7 @@ import typing as t
 from asyncio import Lock
 
 if t.TYPE_CHECKING:
-    from unfazed.core import Unfazed
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 def unfazed_locker(async_method: t.Callable) -> t.Callable:
@@ -11,7 +11,7 @@ def unfazed_locker(async_method: t.Callable) -> t.Callable:
             return
         async with Lock():
             if self._ready:
-                return
+                return  # pragma: no cover
 
             if self._loading:
                 raise RuntimeError("Unfazed is already loading")

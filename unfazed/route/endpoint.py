@@ -7,11 +7,13 @@ from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
 
 from unfazed.exception import TypeHintRequired
+from unfazed.file import UploadFile
 from unfazed.http import HttpRequest
-from unfazed.type import SUPPOTED_REQUEST_TYPE
 
 from . import params as p
 from . import utils as u
+
+SUPPOTED_REQUEST_TYPE = t.Union[str, int, float, t.List, BaseModel, UploadFile]
 
 
 class EndpointHandler:
@@ -70,7 +72,7 @@ class EndpointHandler:
 
         if self.endpoint_definition.body_model:
             if self.endpoint_definition.body_type == "json":
-                body_params, body_err = await self._slove_body_params(request)
+                body_params, body_err = await self._slove_json_params(request)
                 params.update(body_params)
                 if body_err:
                     error_list.append(body_err)
@@ -155,14 +157,13 @@ class EndpointHandler:
             request.cookies,
         )
 
-    async def _slove_body_params(
+    async def _slove_json_params(
         self, request: HttpRequest
     ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        data = await request.json()
         return self._solve_params(
             self.endpoint_definition.body_model,
             self.endpoint_definition.body_params,
-            data,
+            await request.json(),
         )
 
     async def _slove_form_params(self, request: HttpRequest):
@@ -188,7 +189,7 @@ class EndPointDefinition(BaseModel):
     query_params: t.Dict[str, t.Tuple[t.Type, p.Query]] = {}
     header_params: t.Dict[str, t.Tuple[t.Type, p.Header]] = {}
     cookie_params: t.Dict[str, t.Tuple[t.Type, p.Cookie]] = {}
-    body_params: t.Dict[str, t.Tuple[t.Type, p.Body | p.Form | p.File]] = {}
+    body_params: t.Dict[str, t.Tuple[t.Type, p.Json | p.Form | p.File]] = {}
 
     body_type: t.Optional[t.Literal["json", "form"]] = None
 
@@ -234,7 +235,7 @@ class EndPointDefinition(BaseModel):
 
             # raise if no type hint
             if param.name not in type_hints:
-                raise ValueError(
+                raise TypeHintRequired(
                     f"missing type hint for {param.name} in endpoint: {self.endpoint_name}"
                 )
 
@@ -316,10 +317,10 @@ class EndPointDefinition(BaseModel):
                 elif isinstance(model_or_field, p.Cookie):
                     self.cookie_params[param.name] = (origin, model_or_field)
 
-                elif isinstance(model_or_field, p.Body):
+                elif isinstance(model_or_field, p.Json):
                     if has_form_field:
                         raise ValueError(
-                            f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                            f"Error for {self.endpoint_name}: Cannot set json field and form field at the same time"
                         )
                     self.body_params[param.name] = (origin, model_or_field)
                     has_body_field = True
@@ -327,7 +328,7 @@ class EndPointDefinition(BaseModel):
                 elif isinstance(model_or_field, p.Form):
                     if has_body_field:
                         raise ValueError(
-                            f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                            f"Error for {self.endpoint_name}: Cannot set json field and form field at the same time"
                         )
                     self.body_params[param.name] = (origin, model_or_field)
                     has_form_field = True
@@ -351,9 +352,9 @@ class EndPointDefinition(BaseModel):
                     ):
                         if has_form_field:
                             raise ValueError(
-                                f"Error for {self.endpoint_name}: Cannot set body field and form field at the same time"
+                                f"Error for {self.endpoint_name}: Cannot set Json field and form field at the same time"
                             )
-                        self.body_params[param.name] = (annotation, p.Body())
+                        self.body_params[param.name] = (annotation, p.Json())
                         has_body_field = True
                     else:
                         self.query_params[param.name] = (annotation, p.Query())
@@ -474,7 +475,8 @@ class EndPointDefinition(BaseModel):
 
                 field_difinitions[name] = (annotation, fieldinfo)
 
-        config_dict = ConfigDict()
+        # arbitrary_types_allowed = True for UploadFile
+        config_dict = ConfigDict(arbitrary_types_allowed=True)
         for base in bases:
             config_dict.update(base.model_config)
 

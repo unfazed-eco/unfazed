@@ -2,7 +2,7 @@ import typing as t
 
 from .base import Doc
 from .cache import CacheOptions
-from .http import SUPPOTED_REQUEST_TYPE, HttpMethod
+from .http import HttpMethod
 
 CanBeImported = t.Annotated[
     str,
@@ -25,5 +25,4 @@ __all__ = [
     "CacheOptions",
     "Domain",
     "HttpMethod",
-    "SUPPOTED_REQUEST_TYPE",
 ]

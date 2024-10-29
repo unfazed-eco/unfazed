@@ -29,7 +29,7 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option):
+    async def handle(self, **option) -> None:
         location = option.get("location")
         safe = option.get("safe")
 

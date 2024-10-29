@@ -123,7 +123,6 @@ class Unfazed(Starlette):
 
     def setup_lifespan(self):
         lifespan_handler.unfazed = self
-        lifespan_handler.register_internal()
 
         lifespan_list = self.settings.LIFESPAN or []
 

@@ -21,7 +21,7 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option):
+    async def handle(self, **option) -> None:
         location = option.get("location")
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)

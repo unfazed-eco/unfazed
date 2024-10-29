@@ -34,7 +34,7 @@ class Cookie(Param):
     pass
 
 
-class Body(Param):
+class Json(Param):
     def __init__(self, **kwargs):
         kwargs["media_type"] = "application/json"
         super().__init__(**kwargs)
