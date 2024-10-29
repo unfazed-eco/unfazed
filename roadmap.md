@@ -9,22 +9,22 @@ Unfazed development plan
 - [x] command
 - [x] conf
 - [x] core
-- [ ] http
+- [x] http
 - [ ] middleware
 - [x] template
 - [x] route
 - [x] utils
 - [ ] contrib
-- [ ] db
+- [x] db
 - [x] cache
 - [x] log
-- [ ] test
-- [ ] exception
+- [x] test
+- [x] exception
 - [x] serializer
-- [ ] type
-- [ ] protocol
+- [x] type
+- [x] protocol
 - [x] openapi
-- [ ] schema
+- [x] schema
 
 ### app
 
@@ -119,7 +119,6 @@ contrib 包含以下的 app
 - [ ] auth
 - [ ] extauth
 - [ ] session
-- [ ] files
 - [ ] generator
 
 
@@ -145,12 +144,12 @@ contrib 包含以下的 app
 
 ### test
 
-- [ ] testclient 实现
+- [x] testclient 实现
 
 
 ### exception
 
-- [ ] 基本的 unfazed exception 实现
+- [x] 基本的 unfazed exception 实现
 
 
 ### serializer
@@ -167,29 +166,29 @@ contrib 包含以下的 app
 
 ### lifespan
 
-- [ ] lifespan protocol 实现
-- [ ] lifespan manager 实现
+- [x] lifespan protocol 实现
+- [x] lifespan manager 实现
 
 
 
 ### type
 
-- [ ] unfazed 常用的 type 实现
+- [x] unfazed 常用的 type 实现
 
 
 ### protocol
 
-- [ ] unfazed 常用的 protocol 实现
-- [ ] cache
-- [ ] command
-- [ ] conf
-- [ ] lifespan
-- [ ] middleware
-- [ ] orm
-- [ ] route
-- [ ] serializer
+- [x] unfazed 常用的 protocol 实现
+- [x] cache
+- [x] command
+- [x] conf
+- [x] lifespan
+- [x] middleware
+- [x] orm
+- [x] route
+- [x] serializer
 
 
 ### schema
 
-- [ ] unfazed 常用的 schema 实现
+- [x] unfazed 常用的 schema 实现
