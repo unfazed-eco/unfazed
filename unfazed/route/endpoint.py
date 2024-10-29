@@ -264,17 +264,19 @@ class EndPointDefinition(BaseModel):
         self.params = ret
 
     def _convert_return_to_response(self):
+        if self.response_models is None:
+            self.response_models = []
+        else:
+            # if set response_models at path("/", response_models={yourmodels})
+            # ignore return type
+            return
+
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
         if "return" not in type_hints:
             raise TypeHintRequired(
                 f"missing type hint for return in endpoint: {self.endpoint_name}"
             )
-
-        # if set response_models at path("/", response_models={yourmodels})
-        # ignore return type
-        if self.response_models:
-            return
 
         _dict = type_hints["return"].__dict__
 

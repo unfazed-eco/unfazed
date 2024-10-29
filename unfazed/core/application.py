@@ -84,21 +84,21 @@ class Unfazed(Starlette):
             )
         return self._model_center
 
-    def setup_routes(self):
+    def setup_routes(self) -> None:
         if not self.settings.ROOT_URLCONF:
             return
         # add routes from settings.ROOT_URLCONF
         for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
             self.router.routes.append(route)
 
-    def setup_middleware(self):
+    def setup_middleware(self) -> None:
         if not self.settings.MIDDLEWARE:
             return
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
             self.user_middleware.insert(0, cls)
 
-    def setup_cache(self):
+    def setup_cache(self) -> None:
         cache = self.settings.CACHE
         if not cache:
             return
@@ -110,7 +110,7 @@ class Unfazed(Starlette):
             cache = backend_cls(location, options)
             caches[alias] = cache
 
-    def setup_logging(self):
+    def setup_logging(self) -> None:
         if not self.settings.LOGGING:
             config = {}
 
@@ -121,7 +121,7 @@ class Unfazed(Starlette):
         log_center = LogCenter(self, config)
         log_center.setup()
 
-    def setup_lifespan(self):
+    def setup_lifespan(self) -> None:
         lifespan_handler.unfazed = self
 
         lifespan_list = self.settings.LIFESPAN or []
@@ -135,7 +135,7 @@ class Unfazed(Starlette):
 
         self.router.lifespan_context = lifespan_context
 
-    def setup_openapi(self):
+    def setup_openapi(self) -> None:
         if not self.settings.OPENAPI:
             return
 
@@ -175,13 +175,13 @@ class Unfazed(Starlette):
         self.setup_openapi()
 
     @unfazed_locker
-    async def setup_cli(self):
+    async def setup_cli(self) -> None:
         self.cli_command_center.setup()
 
-    async def execute_command_from_argv(self):
+    async def execute_command_from_argv(self) -> None:
         await run_in_threadpool(self.command_center.main)
 
-    async def execute_command_from_cli(self):
+    async def execute_command_from_cli(self) -> None:
         await run_in_threadpool(self.cli_command_center.main)
 
     def to_dict(self) -> t.Dict[str, t.Any]:
