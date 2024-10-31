@@ -13,6 +13,7 @@ from starlette.types import Message
 from unfazed.conf import settings
 from unfazed.contrib.session.backend.base import SessionBase
 from unfazed.contrib.session.settings import SessionSettings
+from unfazed.contrib.session.utils import build_cookie
 from unfazed.protocol import ASGIType
 from unfazed.utils import import_string
 
@@ -45,7 +46,17 @@ class SessionMiddleware:
             if message["type"] == ASGIType.HTTP_RESPONSE_START:
                 headers = MutableHeaders(scope=message)
                 if session_store.modified:
-                    headers.append("Set-Cookie", session_store.header_value)
+                    await session_store.save()
+                    header_value = build_cookie(
+                        self.setting.cookie_name,
+                        session_store.session_key,
+                        path=self.setting.cookie_path,
+                        domain=self.setting.cookie_domain,
+                        secure=self.setting.cookie_secure,
+                        httponly=self.setting.cookie_httponly,
+                        samesite=self.setting.cookie_samesite,
+                    )
+                    headers.append("Set-Cookie", header_value)
 
             await send(message)
 
