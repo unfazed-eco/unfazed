@@ -11,8 +11,8 @@ class SessionSettings(BaseModel):
         alias="ENGINE",
     )
     cookie_name: str = Field("session_id", alias="COOKIE_NAME")
-    cookie_domain: str = Field(..., alias="COOKIE_DOMAIN")
-    cookie_path: str = Field(None, alias="COOKIE_PATH")
+    cookie_domain: str | None = Field(None, alias="COOKIE_DOMAIN")
+    cookie_path: str = Field("/", alias="COOKIE_PATH")
     cookie_secure: bool = Field(False, alias="COOKIE_SECURE")
     cookie_httponly: bool = Field(True, alias="COOKIE_HTTPONLY")
     cookie_samesite: t.Literal["lax", "strict", "none"] = Field(
