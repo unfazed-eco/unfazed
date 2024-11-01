@@ -13,7 +13,7 @@ class SessionSettings(BaseModel):
     cookie_domain: str | None = Field(None, alias="COOKIE_DOMAIN")
 
     engine: CanBeImported = Field(
-        "unfazed.contrib.session.backend.default.SigningSession",
+        "unfazed.contrib.session.backends.default.SigningSession",
         alias="ENGINE",
     )
     cookie_name: str = Field("session_id", alias="COOKIE_NAME")

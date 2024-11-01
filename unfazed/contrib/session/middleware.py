@@ -11,7 +11,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import Message
 
 from unfazed.conf import settings
-from unfazed.contrib.session.backend.base import SessionBase
+from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.contrib.session.utils import build_cookie
 from unfazed.protocol import ASGIType
@@ -70,7 +70,7 @@ class SessionMiddleware:
                             self.setting.cookie_name,
                             "null",
                             max_age=0,
-                            expires=0,
+                            expires=None,
                             path=self.setting.cookie_path,
                             domain=self.setting.cookie_domain,
                             secure=self.setting.cookie_secure,

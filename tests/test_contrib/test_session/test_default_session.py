@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 
-from unfazed.contrib.session.backend.default import SigningSession
+from unfazed.contrib.session.backends.default import SigningSession
 from unfazed.contrib.session.settings import SessionSettings
 
 SESSION_KEY1 = "unfazed_session_key1"

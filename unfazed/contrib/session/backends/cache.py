@@ -41,17 +41,17 @@ class CacheSession(SessionBase):
             self.session_key = self.generate_session_key()
 
         if not self._session:
-            self.client.delete(self.session_key)
+            await self.client.delete(self.session_key)
 
         else:
-            self.client.set(self.session_key, self._session)
+            await self.client.set(self.session_key, self._session, self.get_max_age())
 
     async def load(self) -> None:
         if not self.session_key:
             self._session = {}
             return
 
-        ret = self.client.get(self.session_key)
+        ret = await self.client.get(self.session_key)
 
         if not ret:
             self._session = {}
