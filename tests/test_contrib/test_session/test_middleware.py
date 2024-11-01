@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from unfazed.conf import UnfazedSettings, settings
@@ -7,15 +8,34 @@ from unfazed.http import HttpRequest, HttpResponse, JsonResponse
 from unfazed.route import Route
 from unfazed.test import Requestfactory
 
+HOST = os.getenv("REDIS_HOST", "redis")
 UNFAZED_SETTINGS = {
     "PROJECT": "test_middleware",
     "MIDDLEWARE": ["unfazed.contrib.session.middleware.SessionMiddleware"],
+    "CACHE": {
+        "default": {
+            "BACKEND": "unfazed.cache.backends.redis.AsyncDefaultBackend",
+            "LOCATION": f"redis://{HOST}:6379",
+            "OPTIONS": {
+                "PREFIX": "test_middleware",
+            },
+        },
+    },
 }
 
-SESSION_SETTINGS = {
+
+DEFAULT_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
     "COOKIE_DOMAIN": "garena.com",
     "COOKIE_SECURE": True,
+}
+
+CACHE_SESSION_SETTINGS = {
+    "SECRET": uuid.uuid4().hex,
+    "COOKIE_DOMAIN": "garena.com",
+    "COOKIE_SECURE": True,
+    "CACHE_ALIAS": "default",
+    "ENGINE": "unfazed.contrib.session.backends.cache.CacheSession",
 }
 
 
@@ -53,10 +73,10 @@ ROUTES = [
 ]
 
 
-async def test_middleware():
+async def _test_engine(session_setting: SessionSettings):
     unfazed = Unfazed(settings=UnfazedSettings(**UNFAZED_SETTINGS), routes=ROUTES)
     await unfazed.setup()
-    settings["SESSION_SETTINGS"] = SessionSettings(**SESSION_SETTINGS)
+    settings["SESSION_SETTINGS"] = session_setting
 
     with Requestfactory(unfazed, base_url="https://garena.com") as request:
         # login
@@ -88,3 +108,17 @@ async def test_middleware():
         resp = request.get("/read")
         assert resp.status_code == 200
         assert resp.json() == {}
+
+
+async def test_middleware():
+    await _test_engine(SessionSettings(**DEFAULT_SESSION_SETTINGS))
+
+    cache_session_setting = SessionSettings(**CACHE_SESSION_SETTINGS)
+    await _test_engine(cache_session_setting)
+
+    # with pytest.raises(ValueError):
+    #     cache_session_setting.CACHE_ALIAS = ""
+    #     await _test_engine(cache_session_setting)
+    # with pytest.raises(ValueError):
+    #     cache_session_setting.CACHE_ALIAS = "notfound"
+    #     await _test_engine(cache_session_setting)

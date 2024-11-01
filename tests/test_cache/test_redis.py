@@ -37,19 +37,11 @@ async def test_redis_client():
     await client.set("foo", "bar")
     assert await client.get("foo") == "bar"
 
-    await client.set("foo1", 10)
-    assert await client.decrby("foo1", 5) == 5
-    assert int(await client.get("foo1")) == 5
+    await client.set("foo1", 1)
+    assert await client.get("foo1") == 1
 
-    # close the client
-    await client.close()
+    await client.set("foo2", 1.1)
+    assert await client.get("foo2") == 1.1
 
-    # redis1 cache
-
-    client1: AsyncDefaultBackend = caches["redis1"]
-
-    await client1.flushdb()
-    await client1.set("foo", "bar")
-    assert await client1.get("foo") == "bar"
-
-    await client1.close()
+    await client.set("foo3", {"a": 1, "b": [2]})
+    assert await client.get("foo3") == {"a": 1, "b": [2]}
