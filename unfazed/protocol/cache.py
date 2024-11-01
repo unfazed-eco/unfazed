@@ -1,5 +1,7 @@
 import typing as t
 
+from unfazed.type import Doc
+
 
 @t.runtime_checkable
 class CacheBackend(t.Protocol):
@@ -20,3 +22,14 @@ class CacheBackend(t.Protocol):
     def make_key(self, key: str) -> str: ...
 
     async def close(self) -> None: ...
+
+
+@t.runtime_checkable
+class SerializerBase(t.Protocol):
+    def dumps(self, value: t.Any) -> bytes: ...
+    def loads(
+        self, value: bytes
+    ) -> t.Annotated[
+        t.Any,
+        Doc(description="return type depends on what serializer defined"),
+    ]: ...

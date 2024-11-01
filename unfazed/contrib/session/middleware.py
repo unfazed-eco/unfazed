@@ -40,24 +40,44 @@ class SessionMiddleware:
             session_key = None
 
         session_store: SessionBase = self.engine_cls(self.setting, session_key)
+        await session_store.load()
         scope["session"] = session_store
 
         async def wrapped_send(message: Message):
             if message["type"] == ASGIType.HTTP_RESPONSE_START:
                 headers = MutableHeaders(scope=message)
+
+                # if session is created / updated / deleted
+                # save the session and reset the cookie
                 if session_store.modified:
                     await session_store.save()
-                    header_value = build_cookie(
-                        self.setting.cookie_name,
-                        session_store.session_key,
-                        path=self.setting.cookie_path,
-                        domain=self.setting.cookie_domain,
-                        secure=self.setting.cookie_secure,
-                        httponly=self.setting.cookie_httponly,
-                        samesite=self.setting.cookie_samesite,
-                    )
-                    headers.append("Set-Cookie", header_value)
 
+                    # if session is empty, delete the cookie
+                    if session_store:
+                        header_value = build_cookie(
+                            self.setting.cookie_name,
+                            session_store.session_key,
+                            max_age=self.setting.cookie_max_age,
+                            expires=session_store.get_expiry_age(),
+                            path=self.setting.cookie_path,
+                            domain=self.setting.cookie_domain,
+                            secure=self.setting.cookie_secure,
+                            httponly=self.setting.cookie_httponly,
+                            samesite=self.setting.cookie_samesite,
+                        )
+                    else:
+                        header_value = build_cookie(
+                            self.setting.cookie_name,
+                            "null",
+                            max_age=0,
+                            expires=0,
+                            path=self.setting.cookie_path,
+                            domain=self.setting.cookie_domain,
+                            secure=self.setting.cookie_secure,
+                            httponly=self.setting.cookie_httponly,
+                            samesite=self.setting.cookie_samesite,
+                        )
+                    headers.append("Set-Cookie", header_value)
             await send(message)
 
         await self.app(scope, receive, wrapped_send)

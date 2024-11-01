@@ -16,5 +16,8 @@ class CacheHandler:
     def __setitem__(self, key: str, backend: CacheBackend) -> None:
         setattr(self.storage, key, backend)
 
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self.storage, key)
+
 
 caches = CacheHandler()

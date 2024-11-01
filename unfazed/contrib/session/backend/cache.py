@@ -1,13 +1,31 @@
 import time
 import uuid
 
+from unfazed.cache import caches
+from unfazed.protocol import CacheBackend as CacheBackendProtocol
+
 from .base import SessionBase
 
 
 class CacheSession(SessionBase):
     PREFIX = "cachesession:"
 
-    def generate_session_id(self) -> str:
+    def __init__(self, session_setting, session_key=None):
+        super().__init__(session_setting, session_key)
+
+        _cache_alias = session_setting.cache_alias
+        if not _cache_alias:
+            raise ValueError("CacheSession Error: need valid cache alias")
+
+        if _cache_alias not in caches:
+            raise ValueError(
+                f"CacheSession Error: cache alias {_cache_alias} not in caches"
+                "Plz check your unfazedsettings `CACHES`"
+            )
+
+        self.client: CacheBackendProtocol = caches[_cache_alias]
+
+    def generate_session_key(self) -> str:
         """
         format:
             {prefix}:{timestamp}:{uuid_hex_str1}:{uuid_hex_str2}
@@ -17,3 +35,26 @@ class CacheSession(SessionBase):
         uuid_hex_str2 = uuid.uuid4().hex
 
         return f"{self.PREFIX}{timestamp}:{uuid_hex_str1}:{uuid_hex_str2}"
+
+    async def save(self):
+        if not self.session_key:
+            self.session_key = self.generate_session_key()
+
+        if not self._session:
+            self.client.delete(self.session_key)
+
+        else:
+            self.client.set(self.session_key, self._session)
+
+    async def load(self) -> None:
+        if not self.session_key:
+            self._session = {}
+            return
+
+        ret = self.client.get(self.session_key)
+
+        if not ret:
+            self._session = {}
+
+        else:
+            self._session = ret
