@@ -1,6 +1,6 @@
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from unfazed.type import CanBeImported
 
@@ -25,7 +25,7 @@ class RedisOptions(BaseModel):
     socket_connect_timeout: int | None = None
     socket_keepalive: bool | None = None
     socket_keepalive_options: t.Dict[str, t.Any] | None = None
-    decode_responses: bool = True
+    decode_responses: bool = False
     retry_on_timeout: bool | None = None
     retry_on_error: bool | None = None
     max_connections: int = 10
@@ -41,3 +41,21 @@ class RedisOptions(BaseModel):
     ssl_check_hostname: bool = False
     ssl_min_version: str | None = None
     ssl_ciphers: str | None = None
+
+    serializer: CanBeImported | None = Field(
+        "unfazed.cache.serializer.pickle.PickleSerializer",
+        alias="SERIALIZER",
+        description="serialize data before save",
+    )
+
+    compressor: CanBeImported | None = Field(
+        None,
+        alias="COMPRESSOR",
+        description="compress data before save",
+    )
+
+    prefix: str | None = Field(
+        None,
+        alias="PREFIX",
+        description="its strongly recommended to set prefix",
+    )
