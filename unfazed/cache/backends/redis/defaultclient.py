@@ -1,4 +1,5 @@
 import typing as t
+from datetime import datetime
 
 from redis.asyncio import Redis
 from redis.asyncio.connection import parse_url
@@ -11,18 +12,7 @@ from unfazed.utils import import_string
 
 class AsyncDefaultBackend(CacheBackendProtocol):
     """
-    Usage:
-        CACHE = {
-            "default": {
-                "BACKEND": "unfazed.cache.backends.redis.AsyncDefaultBackend",
-                "LOCATION": "redis://localhost:6379",
-                "OPTIONS": {
-                    "retry": True,
-                    "max_connections": 10,
-                    "health_check_interval": 30
-                },
-            }
-        }
+    Redis cache backend
 
     """
 
@@ -44,6 +34,10 @@ class AsyncDefaultBackend(CacheBackendProtocol):
         self.serializer = serializer
 
         if options_model.compressor:
+            if not serializer:
+                raise ValueError(
+                    f"Serializer is required for compressor: {options_model.compressor}"
+                )
             compressor = import_string(options_model.compressor)()
         else:
             compressor = None
@@ -79,6 +73,52 @@ class AsyncDefaultBackend(CacheBackendProtocol):
             ssl_ciphers=options_model.ssl_ciphers,
         )
 
+        have_sp_client = False
+        # serializer and compressor are not compatible with decode_responses == True
+        # unfazed will init ave two clients, one for raw data, one for serialized and compressed data
+        if options_model.decode_responses:
+            if serializer:
+                self.sp_client = Redis(
+                    host=kw.get("host", "localhost"),
+                    port=kw.get("port", 6379),
+                    db=kw.get("db", 0),
+                    password=kw.get("password", None),
+                    username=kw.get("username"),
+                    retry=retry_cls,
+                    socket_timeout=options_model.socket_timeout,
+                    socket_connect_timeout=options_model.socket_connect_timeout,
+                    socket_keepalive=options_model.socket_keepalive,
+                    socket_keepalive_options=options_model.socket_keepalive_options,
+                    decode_responses=False,
+                    retry_on_timeout=options_model.retry_on_timeout,
+                    retry_on_error=options_model.retry_on_error,
+                    max_connections=options_model.max_connections,
+                    single_connection_client=options_model.single_connection_client,
+                    health_check_interval=options_model.health_check_interval,
+                    ssl=options_model.ssl,
+                    ssl_keyfile=options_model.ssl_keyfile,
+                    ssl_certfile=options_model.ssl_certfile,
+                    ssl_cert_reqs=options_model.ssl_cert_reqs,
+                    ssl_ca_certs=options_model.ssl_ca_certs,
+                    ssl_ca_data=options_model.ssl_ca_data,
+                    ssl_check_hostname=options_model.ssl_check_hostname,
+                    ssl_min_version=options_model.ssl_min_version,
+                    ssl_ciphers=options_model.ssl_ciphers,
+                )
+                have_sp_client = True
+            else:
+                self.sp_client = self.client
+        else:
+            self.sp_client = self.client
+
+        self.have_sp_client = have_sp_client
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.client.close()
+
     async def close(self) -> None:
         # for compatibility with cache backend protocol
         return await self.client.aclose()
@@ -89,6 +129,9 @@ class AsyncDefaultBackend(CacheBackendProtocol):
         return f"{self.prefix}:{key}"
 
     def encode(self, value: t.Any) -> t.Union[int, float, bytes]:
+        if not self.have_sp_client:
+            return value
+
         if isinstance(value, (int, float)):
             return value
 
@@ -100,11 +143,16 @@ class AsyncDefaultBackend(CacheBackendProtocol):
 
         return value
 
-    def decode(self, value: bytes):
+    def decode(self, value: bytes | str) -> bytes | int | float:
+        if not self.have_sp_client:
+            return value
+
         if value is None:
             return value
+
         try:
             value_str = value.decode("utf-8")
+
             if value_str.isdigit():
                 return int(value_str)
             try:
@@ -123,33 +171,176 @@ class AsyncDefaultBackend(CacheBackendProtocol):
         return value
 
     # general commands
-    async def flushdb(self):
-        await self.client.flushdb()
+    async def flushdb(self, asynchronous: bool = False, **kw) -> t.Any:
+        await self.client.flushdb(asynchronous, **kw)
 
-    async def ping(self):
-        return await self.client.ping()
+    async def ping(self, **kw) -> t.Any:
+        return await self.client.ping(**kw)
 
-    async def exists(self, name: str):
+    async def exists(self, name: str) -> int:
         key = self.make_key(name)
         return await self.client.exists(key)
 
-    async def expire(self, name: str, time: int, *args, **kw):
+    async def expire(
+        self,
+        name: str,
+        time: int,
+        nx: bool = False,
+        xx: bool = False,
+        gt: bool = False,
+        lt: bool = False,
+    ) -> t.Any:
         key = self.make_key(name)
-        return await self.client.expire(key, time, *args, **kw)
+        return await self.client.expire(key, time, nx, xx, gt, lt)
 
-    async def touch(self, name: str, *args, **kw):
-        key = self.make_key(name)
-        return await self.client.touch(key, *args, **kw)
+    async def touch(self, *args) -> int:
+        args = [self.make_key(key) for key in args]
+        return await self.client.touch(*args)
 
     async def ttl(self, name: str):
         key = self.make_key(name)
         return await self.client.ttl(key)
 
     # string commands
+    # unfazed split string commands into two parts
+    # raw string commands and string commands using serializer and compressor
+    # int and float are not influenced
+
+    # =======   raw string commands  =======
     async def append(self, name: str, value: str) -> t.Any:
+        """
+        Warning:
+            use this method with raw_set and raw_get
+        """
         key = self.make_key(name)
         return await self.client.append(key, value)
 
+    async def getrange(self, name: str, start: int, end: int) -> t.Any:
+        """
+        Warning:
+            use this method with raw_set and raw_get
+        """
+        key = self.make_key(name)
+        return await self.client.getrange(key, start, end)
+
+    async def setrange(self, name: str, offset: int, value: str) -> int:
+        """
+        Warning:
+            use this method with raw_set and raw_get
+        """
+        key = self.make_key(name)
+        return await self.client.setrange(key, offset, value)
+
+    async def strlen(self, name: str) -> int:
+        """
+        Warning:
+            use this method with raw_set and raw_get
+        """
+        key = self.make_key(name)
+        return await self.client.strlen(key)
+
+    async def substr(self, name: str, start: int, end: int) -> str:
+        """
+        Warning:
+            use this method with raw_set and raw_get
+        """
+        key = self.make_key(name)
+        return await self.client.substr(key, start, end)
+
+    # unfazed provides raw_get and raw_set for users to use redis commands directly
+    # if some other commands like getset/getdel are needed
+    # PR is welcome
+    async def raw_get(self, name: str) -> t.Any:
+        key = self.make_key(name)
+        return await self.client.get(key)
+
+    async def raw_set(self, name: str, value: t.Any, *args, **kw):
+        key = self.make_key(name)
+        await self.client.set(key, value, *args, **kw)
+
+    # ========  string commands using serializer and compressor  ========
+
+    async def get(self, name: str) -> t.Any:
+        key = self.make_key(name)
+        value = await self.sp_client.get(key)
+        return self.decode(value)
+
+    async def getdel(self, name: str) -> t.Any:
+        key = self.make_key(name)
+        value = await self.sp_client.getdel(key)
+        return self.decode(value)
+
+    async def getex(
+        self,
+        name: str,
+        *,
+        ex: int | None = None,
+        px: int | None = None,
+        exat: int | datetime | None = None,
+        pxat: int | datetime | None = None,
+        persist: bool = False,
+    ) -> t.Any:
+        key = self.make_key(name)
+        value = await self.sp_client.getex(key, ex, px, exat, pxat, persist)
+        return self.decode(value)
+
+    async def getset(self, name: str, value: t.Any) -> t.Any:
+        key = self.make_key(name)
+        new_value = self.encode(value)
+        value = await self.sp_client.getset(key, new_value)
+        return self.decode(value)
+
+    async def mget(self, keys: t.List[str], *args) -> t.List:
+        keys = [self.make_key(key) for key in keys]
+        values = await self.sp_client.mget(keys, *args)
+        return [self.decode(value) for value in values]
+
+    async def mset(self, mapping: t.Dict[str, t.Any]) -> str:
+        mapping = {
+            self.make_key(key): self.encode(value) for key, value in mapping.items()
+        }
+        return await self.sp_client.mset(mapping)
+
+    async def msetnx(self, mapping: t.Dict[str, t.Any]) -> bool:
+        mapping = {
+            self.make_key(key): self.encode(value) for key, value in mapping.items()
+        }
+        return await self.sp_client.msetnx(mapping)
+
+    async def set(
+        self,
+        name: str,
+        value: t.Any,
+        ex: int | None = None,
+        px: int | None = None,
+        nx: bool = False,
+        xx: bool = False,
+        keepttl: bool = False,
+        get: bool = False,
+        exat: int | datetime | None = None,
+        pxat: int | datetime | None = None,
+    ):
+        key = self.make_key(name)
+        value = self.encode(value)
+        await self.sp_client.set(key, value, ex, px, nx, xx, keepttl, get, exat, pxat)
+
+    async def setex(self, name: str, time: int, value: t.Any) -> str:
+        key = self.make_key(name)
+        value = self.encode(value)
+        return await self.sp_client.setex(key, time, value)
+
+    async def setnx(self, name: str, value: t.Any) -> bool:
+        key = self.make_key(name)
+        value = self.encode(value)
+        return await self.sp_client.setnx(key, value)
+
+    async def psetex(self, name: str, time: int, value: t.Any) -> str:
+        key = self.make_key(name)
+        value = self.encode(value)
+        return await self.sp_client.psetex(key, time, value)
+
+    # ==== int and float are
+    # not influenced ====
     async def decr(self, name: str, amount: int = 1) -> int:
         key = self.make_key(name)
         return await self.client.decr(key, amount)
@@ -157,26 +348,6 @@ class AsyncDefaultBackend(CacheBackendProtocol):
     async def decrby(self, name: str, amount: int = 1) -> int:
         key = self.make_key(name)
         return await self.client.decrby(key, amount)
-
-    async def get(self, name: str) -> t.Any:
-        key = self.make_key(name)
-        value = await self.client.get(key)
-        return self.decode(value)
-
-    async def getdel(self, name: str) -> t.Any:
-        key = self.make_key(name)
-        value = await self.client.getdel(key)
-        return self.decode(value)
-
-    async def getex(self, name: str, *args, **kw) -> t.Any:
-        key = self.make_key(name)
-        value = await self.client.getex(key, *args, **kw)
-        return self.decode(value)
-
-    async def getrange(self, name: str, start: int, end: int) -> t.Any:
-        key = self.make_key(name)
-        value = await self.client.getrange(key, start, end)
-        return self.decode(value)
 
     async def incr(self, name: str, amount: int = 1) -> int:
         key = self.make_key(name)
@@ -189,61 +360,6 @@ class AsyncDefaultBackend(CacheBackendProtocol):
     async def incrbyfloat(self, name: str, amount: float = 1.0) -> float:
         key = self.make_key(name)
         return await self.client.incrbyfloat(key, amount)
-
-    async def getset(self, name: str, value: t.Any) -> t.Any:
-        key = self.make_key(name)
-        new_value = self.encode(value)
-        value = await self.client.getset(key, new_value)
-        return self.decode(value)
-
-    async def mget(self, keys: t.List[str], *args) -> t.List:
-        keys = [self.make_key(key) for key in keys]
-        values = await self.client.mget(keys, *args)
-        return [self.decode(value) for value in values]
-
-    async def mset(self, mapping: t.Dict[str, t.Any]) -> str:
-        mapping = {
-            self.make_key(key): self.encode(value) for key, value in mapping.items()
-        }
-        return await self.client.mset(mapping)
-
-    async def msetnx(self, mapping: t.Dict[str, t.Any]) -> bool:
-        mapping = {
-            self.make_key(key): self.encode(value) for key, value in mapping.items()
-        }
-        return await self.client.msetnx(mapping)
-
-    async def psetex(self, name: str, time: int, value: t.Any) -> str:
-        key = self.make_key(name)
-        value = self.encode(value)
-        return await self.client.psetex(key, time, value)
-
-    async def set(self, name: str, value: t.Any, *args, **kw):
-        key = self.make_key(name)
-        value = self.encode(value)
-        await self.client.set(key, value, *args, **kw)
-
-    async def setex(self, name: str, time: int, value: t.Any) -> str:
-        key = self.make_key(name)
-        value = self.encode(value)
-        return await self.client.setex(key, time, value)
-
-    async def setnx(self, name: str, value: t.Any) -> bool:
-        key = self.make_key(name)
-        value = self.encode(value)
-        return await self.client.setnx(key, value)
-
-    async def setrange(self, name: str, offset: int, value: str) -> int:
-        key = self.make_key(name)
-        return await self.client.setrange(key, offset, value)
-
-    async def strlen(self, name: str) -> int:
-        key = self.make_key(name)
-        return await self.client.strlen(key)
-
-    async def substr(self, name: str, start: int, end: int) -> str:
-        key = self.make_key(name)
-        return await self.client.substr(key, start, end)
 
     # hash commands
     async def hget(self, name: str, key: str):
@@ -335,9 +451,16 @@ class AsyncDefaultBackend(CacheBackendProtocol):
         name = self.make_key(key)
         return await self.client.hscan(name, cursor, match, count, no_values)
 
-    async def hset(self, name: str, key: str, value: str) -> int:
+    async def hset(
+        self,
+        name: str,
+        key: str | None = None,
+        value: str | None = None,
+        mapping: t.Dict | None = None,
+        items: t.List | None = None,
+    ) -> int:
         name = self.make_key(name)
-        return await self.client.hset(name, key, value)
+        return await self.client.hset(name, key, value, mapping, items)
 
     async def hsetnx(self, name: str, key: str, value: str) -> bool:
         name = self.make_key(name)
