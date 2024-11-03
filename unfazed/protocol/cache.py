@@ -33,3 +33,9 @@ class SerializerBase(t.Protocol):
         t.Any,
         Doc(description="return type depends on what serializer defined"),
     ]: ...
+
+
+@t.runtime_checkable
+class CompressorBase(t.Protocol):
+    def compress(self, value: bytes) -> bytes: ...
+    def decompress(self, value: bytes) -> bytes: ...

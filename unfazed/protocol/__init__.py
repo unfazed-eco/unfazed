@@ -1,5 +1,5 @@
 from .asgi import ASGIType
-from .cache import CacheBackend, SerializerBase
+from .cache import CacheBackend, CompressorBase, SerializerBase
 from .command import Command
 from .conf import Settings
 from .lifespan import BaseLifeSpan
@@ -19,4 +19,5 @@ __all__ = [
     "QuerySet",
     "ASGIType",
     "SerializerBase",
+    "CompressorBase",
 ]

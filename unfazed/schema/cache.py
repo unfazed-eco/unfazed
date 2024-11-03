@@ -25,7 +25,9 @@ class RedisOptions(BaseModel):
     socket_connect_timeout: int | None = None
     socket_keepalive: bool | None = None
     socket_keepalive_options: t.Dict[str, t.Any] | None = None
-    decode_responses: bool = False
+
+    # set decode responses to True
+    decode_responses: bool = True
     retry_on_timeout: bool | None = None
     retry_on_error: bool | None = None
     max_connections: int = 10
@@ -43,13 +45,13 @@ class RedisOptions(BaseModel):
     ssl_ciphers: str | None = None
 
     serializer: CanBeImported | None = Field(
-        "unfazed.cache.serializer.pickle.PickleSerializer",
+        "unfazed.cache.serializers.pickle.PickleSerializer",
         alias="SERIALIZER",
         description="serialize data before save",
     )
 
     compressor: CanBeImported | None = Field(
-        None,
+        "unfazed.cache.compressors.zlib.ZlibCompressor",
         alias="COMPRESSOR",
         description="compress data before save",
     )
