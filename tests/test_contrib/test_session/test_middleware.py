@@ -115,10 +115,3 @@ async def test_middleware():
 
     cache_session_setting = SessionSettings(**CACHE_SESSION_SETTINGS)
     await _test_engine(cache_session_setting)
-
-    # with pytest.raises(ValueError):
-    #     cache_session_setting.CACHE_ALIAS = ""
-    #     await _test_engine(cache_session_setting)
-    # with pytest.raises(ValueError):
-    #     cache_session_setting.CACHE_ALIAS = "notfound"
-    #     await _test_engine(cache_session_setting)
