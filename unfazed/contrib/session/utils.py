@@ -32,3 +32,4 @@ def build_cookie(
         cookie[key]["samesite"] = samesite
     cookie_val = cookie.output(header="").strip()
     return cookie_val
+

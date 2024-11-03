@@ -70,7 +70,7 @@ class SessionMiddleware:
                             self.setting.cookie_name,
                             "null",
                             max_age=0,
-                            expires=None,
+                            expires=session_store.get_expiry_age(),
                             path=self.setting.cookie_path,
                             domain=self.setting.cookie_domain,
                             secure=self.setting.cookie_secure,

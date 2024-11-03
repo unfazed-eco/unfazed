@@ -8,7 +8,7 @@ SESSION_KEY1 = "unfazed_session_key1"
 SESSION_KEY2 = "unfazed_session_key2"
 
 
-async def test_default():
+async def test_default() -> None:
     # set session
     secret_key = uuid.uuid4().hex
     session_setting = SessionSettings(SECRET=secret_key, COOKIE_DOMAIN="garena.com")

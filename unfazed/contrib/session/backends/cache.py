@@ -53,6 +53,7 @@ class CacheSession(SessionBase):
 
         ret = await self.client.get(self.session_key)
 
+        # expired or not found
         if not ret:
             self._session = {}
 

@@ -101,6 +101,8 @@ class AsyncDefaultBackend(CacheBackendProtocol):
         return value
 
     def decode(self, value: bytes):
+        if value is None:
+            return value
         try:
             value_str = value.decode("utf-8")
             if value_str.isdigit():
