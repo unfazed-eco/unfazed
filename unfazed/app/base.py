@@ -83,6 +83,20 @@ class BaseAppConfig:
 
         return bool(existed)
 
+    def wakeup(self, filename: str) -> None:
+        """
+        Wake up the app with the given label.
+
+        Args:
+            filename (str): The file of the app to wake up.
+
+        Returns:
+            None
+        """
+        # check if the app has the given file
+        if hasattr(self.app_module, filename):
+            importlib.import_module(f"{self.app_module.__name__}.{filename}")
+
     @classmethod
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:
         """
