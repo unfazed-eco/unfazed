@@ -1,3 +1,3 @@
-from .defaultclient import AsyncDefaultBackend
+from .serializedclient import SerializerBackend
 
-__all__ = ["AsyncDefaultBackend"]
+__all__ = ["SerializerBackend"]

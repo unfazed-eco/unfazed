@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from unfazed.cache import caches
-from unfazed.cache.backends.redis import AsyncDefaultBackend
+from unfazed.cache.backends.redis import SerializerBackend
 from unfazed.contrib.session.backends.cache import CacheSession
 from unfazed.contrib.session.settings import SessionSettings
 
@@ -15,7 +15,7 @@ HOST = os.getenv("REDIS_HOST", "redis")
 
 
 async def test_redis_client() -> None:
-    caches["default"] = AsyncDefaultBackend(
+    caches["default"] = SerializerBackend(
         location=f"redis://{HOST}:6379",
         options={"PREFIX": "test_redis_client"},
     )
