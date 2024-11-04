@@ -27,7 +27,7 @@ class RedisOptions(BaseModel):
     socket_keepalive_options: t.Dict[str, t.Any] | None = None
 
     # set decode responses to True
-    decode_responses: bool = True
+    decode_responses: bool = False
     retry_on_timeout: bool | None = None
     retry_on_error: bool | None = None
     max_connections: int = 10

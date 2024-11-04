@@ -2,14 +2,14 @@ import os
 
 import pytest
 
-from unfazed.cache.backends.redis import AsyncDefaultBackend
+from unfazed.cache.backends.redis import SerializerBackend
 
 HOST = os.getenv("REDIS_HOST", "redis")
 
 
 @pytest.fixture
 async def client():
-    client: AsyncDefaultBackend = AsyncDefaultBackend(
+    client: SerializerBackend = SerializerBackend(
         f"redis://{HOST}:6379", options={"PREFIX": "test"}
     )
 
@@ -19,7 +19,7 @@ async def client():
 
 
 async def test_client_init():
-    client = AsyncDefaultBackend(f"redis://{HOST}:6379")
+    client = SerializerBackend(f"redis://{HOST}:6379")
 
     await client.flushdb()
     await client.set("foo", "bar")
@@ -27,40 +27,35 @@ async def test_client_init():
     await client.close()
 
     # test retry
-    client = AsyncDefaultBackend(f"redis://{HOST}:6379", options={"retry": False})
+    client = SerializerBackend(f"redis://{HOST}:6379", options={"retry": False})
 
     client.client.get_retry() is None
     await client.close()
 
     # test serializer is None
-    async with AsyncDefaultBackend(
+    async with SerializerBackend(
         f"redis://{HOST}:6379",
         options={"SERIALIZER": None, "COMPRESSOR": None},
     ) as client:
         await client.set("foo", "bar")
-        assert await client.get("foo") == "bar"
+        assert await client.get("foo") == b"bar"
 
     with pytest.raises(ValueError):
-        AsyncDefaultBackend(f"redis://{HOST}:6379", options={"SERIALIZER": None})
+        SerializerBackend(f"redis://{HOST}:6379", options={"SERIALIZER": None})
 
     # no prefix
-    async with AsyncDefaultBackend(
+    async with SerializerBackend(
         f"redis://{HOST}:6379", options={"PREFIX": None}
     ) as client:
         await client.set("foo", "bar")
         assert await client.get("foo") == "bar"
 
-    # test sp_client
-    async with AsyncDefaultBackend(
-        f"redis://{HOST}:6379", options={"decode_responses": False}
-    ) as client:
-        assert client.have_sp_client is False
+    with pytest.raises(ValueError):
+        SerializerBackend(f"redis://{HOST}:6379", options={"decode_responses": True})
 
 
-async def test_generic_cmd(client: AsyncDefaultBackend):
+async def test_generic_cmd(client: SerializerBackend):
     await client.flushdb()
-
-    await client.ping()
 
     await client.set("foo", "bar")
     assert await client.exists("foo") == 1
@@ -72,7 +67,7 @@ async def test_generic_cmd(client: AsyncDefaultBackend):
     assert await client.touch("foo", "foo1") == 1
 
 
-async def test_str_cmd(client: AsyncDefaultBackend):
+async def test_str_cmd(client: SerializerBackend):
     await client.flushdb()
 
     await client.set("foo", "bar")
@@ -83,6 +78,8 @@ async def test_str_cmd(client: AsyncDefaultBackend):
 
     await client.set("foo1", 1)
     assert await client.get("foo1") == 1
+
+    
 
     await client.setex("foo2", 1, 1.1)
     assert await client.get("foo2") == 1.1
@@ -115,31 +112,7 @@ async def test_str_cmd(client: AsyncDefaultBackend):
     assert await client.get("foo10") == "baz"
 
 
-async def test_raw_str_cmd(client: AsyncDefaultBackend):
-    await client.flushdb()
-
-    await client.raw_set("foo", "bar")
-    assert await client.raw_get("foo") == "bar"
-
-    # append
-    await client.append("foo", "baz")
-    assert await client.raw_get("foo") == "barbaz"
-
-    # getrange
-    assert await client.getrange("foo", 0, 2) == "bar"
-
-    # setrange
-    await client.setrange("foo", 3, "zab")
-    assert await client.raw_get("foo") == "barzab"
-
-    # strlen
-    assert await client.strlen("foo") == 6
-
-    # substr
-    assert await client.substr("foo", 0, 2) == "bar"
-
-
-async def test_int_float_cmd(client: AsyncDefaultBackend):
+async def test_int_float_cmd(client: SerializerBackend):
     await client.flushdb()
 
     await client.set("foo", 1)
@@ -159,10 +132,3 @@ async def test_int_float_cmd(client: AsyncDefaultBackend):
 
     await client.incrbyfloat("foo", 1.1)
     assert await client.get("foo") == 2.1
-
-
-async def test_hash_cmd(client: AsyncDefaultBackend) -> None:
-    await client.flushdb()
-
-    await client.hset("set1", mapping={"foo": "bar", "baz": 1})
-    assert await client.hget("set1", "foo") == "bar"

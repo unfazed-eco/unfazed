@@ -54,7 +54,7 @@ _Setting = {
     },
     "CACHE": {
         "default": {
-            "BACKEND": "unfazed.cache.backends.redis.AsyncDefaultBackend",
+            "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
             "LOCATION": f"redis://{HOST}:6379",
         },
     },

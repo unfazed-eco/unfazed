@@ -14,7 +14,7 @@ UNFAZED_SETTINGS = {
     "MIDDLEWARE": ["unfazed.contrib.session.middleware.SessionMiddleware"],
     "CACHE": {
         "default": {
-            "BACKEND": "unfazed.cache.backends.redis.AsyncDefaultBackend",
+            "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
             "LOCATION": f"redis://{HOST}:6379",
             "OPTIONS": {
                 "PREFIX": "test_middleware",
