@@ -100,7 +100,7 @@ class SiteSettings(BaseAdminModel):
 
     custom_settings: t.Dict[str, t.Any] = {}
 
-    def to_serialize(self, *args, **kw) -> t.Dict[str, t.Any]:
+    def to_serialize(self) -> t.Dict[str, t.Any]:
         ret = {"title": self.title, "component": self.component}
 
         if self.custom_settings:
