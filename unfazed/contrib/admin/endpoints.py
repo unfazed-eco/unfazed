@@ -11,9 +11,6 @@ from .services import AdminModelService
 
 _ = t.Annotated
 
-# TODO
-# login_required function
-
 
 @login_required
 async def list_route(request: HttpRequest) -> JsonResponse:

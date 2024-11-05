@@ -41,8 +41,13 @@ class AdminCollector:
             obj = getattr(self._store, ele)
             if not isinstance(obj, BaseAdminModel):
                 continue
-            ret[ele] = obj.to_route()
 
+            if obj.model_type in ret:
+                ret[obj.model_type].append(obj.to_route())
+            else:
+                ret[obj.model_type] = [obj.to_route()]
+
+        return ret
 
 
 admin_collector = AdminCollector()
