@@ -32,7 +32,7 @@ class AbstractUser(BaseModel):
 
     username = fields.CharField(max_length=255, default="")
     password = fields.CharField(max_length=255, default="")
-    email = fields.CharField(max_length=255)
+    email = fields.CharField(max_length=255, default="")
     is_superuser = fields.SmallIntField(default=0)
 
     @property

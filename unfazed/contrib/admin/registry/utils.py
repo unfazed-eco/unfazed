@@ -20,5 +20,5 @@ def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
         elif cond.icontains is not None:
             ret[f"{field}__icontains"] = cond.icontains
         elif cond.contains is not None:
-            ret[f"{field}__icontains"] = cond.contains
+            ret[f"{field}__contains"] = cond.contains
     return ret

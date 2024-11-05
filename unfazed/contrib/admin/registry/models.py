@@ -26,7 +26,7 @@ class ModelType(enum.StrEnum):
     TOOL = "tool"
 
 
-class BaseModel:
+class BaseAdminModel:
     model_type: str
     help_text: t.List[str] = []
 
@@ -35,6 +35,9 @@ class BaseModel:
     icon: str = ""
     hidden: bool = False
     hidden_children: bool = False
+
+    # register behavior
+    override: bool = False
 
     @property
     def name(self):
@@ -45,34 +48,32 @@ class BaseModel:
         return self.__class__.__name__
 
     def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
-        return True
+        return request.user.is_superuser
 
     def has_change_perm(self, request: HttpRequest, *args, **kw) -> bool:
-        return True
+        return request.user.is_superuser
 
     def has_delete_perm(self, request: HttpRequest, *args, **kw) -> bool:
-        return True
+        return request.user.is_superuser
 
     def has_create_perm(self, request: HttpRequest, *args, **kw) -> bool:
-        return True
+        return request.user.is_superuser
+
+    def has_action_perm(self, request: HttpRequest, *args, **kw) -> bool:
+        return request.user.is_superuser
 
     def to_serialize(self, *args, **kw) -> dict:
         raise NotImplementedError
 
     def get_actions(self) -> t.Dict[str, t.Dict]:
         actions: t.Dict[str, t.Dict] = {}
-        for ele in dir(self):
-            if hasattr(ele, "action"):
-                attrs = ele.attrs
-                actions[attrs["name"]] = attrs
 
-        return actions
-
-    def get_batch_actions(self) -> t.Dict[str, t.Dict]:
-        actions: t.Dict[str, t.Dict] = {}
         for ele in dir(self):
-            if hasattr(ele, "batch_action"):
-                attrs = ele.attrs
+            if ele.startswith("__"):
+                continue
+            obj = getattr(self, ele)
+            if hasattr(obj, "action"):
+                attrs = obj.attrs
                 actions[attrs["name"]] = attrs
 
         return actions
@@ -90,8 +91,11 @@ class BaseModel:
             },
         }
 
+    def to_inlines(self, data: t.Dict) -> t.Dict:
+        raise NotImplementedError
 
-class SiteSettings(BaseModel):
+
+class SiteSettings(BaseAdminModel):
     model_type = ModelType.SITE
 
     custom_settings: t.Dict[str, t.Any] = {}
@@ -108,7 +112,7 @@ class SiteSettings(BaseModel):
 site = SiteSettings()
 
 
-class ModelAdmin(BaseModel):
+class ModelAdmin(BaseAdminModel):
     _type = ModelType.DB
     serializer: t.Annotated[TSerializer, "also a pydantic model"]
 
@@ -217,9 +221,9 @@ class ModelAdmin(BaseModel):
         pass
 
 
-class ToolAdmin(BaseModel):
+class ToolAdmin(BaseAdminModel):
     pass
 
 
-class CacheAdmin(BaseModel):
+class CacheAdmin(BaseAdminModel):
     pass
