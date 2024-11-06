@@ -73,9 +73,7 @@ ROUTES = [
 ]
 
 
-async def _test_engine(session_setting: SessionSettings):
-    unfazed = Unfazed(settings=UnfazedSettings(**UNFAZED_SETTINGS), routes=ROUTES)
-    await unfazed.setup()
+async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings):
     settings["SESSION_SETTINGS"] = session_setting
 
     with Requestfactory(unfazed, base_url="https://garena.com") as request:
@@ -111,7 +109,9 @@ async def _test_engine(session_setting: SessionSettings):
 
 
 async def test_middleware():
-    await _test_engine(SessionSettings(**DEFAULT_SESSION_SETTINGS))
+    unfazed = Unfazed(settings=UnfazedSettings(**UNFAZED_SETTINGS), routes=ROUTES)
+    await unfazed.setup()
+    await _test_engine(unfazed, SessionSettings(**DEFAULT_SESSION_SETTINGS))
 
     cache_session_setting = SessionSettings(**CACHE_SESSION_SETTINGS)
-    await _test_engine(cache_session_setting)
+    await _test_engine(unfazed, cache_session_setting)

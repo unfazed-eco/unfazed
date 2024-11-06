@@ -53,7 +53,7 @@ async def model_data(
 async def model_action(
     request: HttpRequest, ctx: _[s.Action, p.Json()]
 ) -> t.Annotated[
-    HttpResponse, Doc("depends on the action implemetion, text/json/stream")
+    HttpResponse, Doc(description="depends on the action implemetion, text/json/stream")
 ]:
     ret = await AdminModelService.model_action(ctx.name, ctx.action, ctx.data, request)
     return JsonResponse(ret)

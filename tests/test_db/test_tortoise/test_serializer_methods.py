@@ -1,12 +1,9 @@
-import os
 import typing as t
 import uuid
 from datetime import timedelta
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
-import pytest_asyncio
 from pydantic import BaseModel, Field
 
 from tests.apps.orm.serializer.models import (
@@ -18,59 +15,7 @@ from tests.apps.orm.serializer.models import (
     Profile,
     Student,
 )
-from unfazed.conf import UnfazedSettings
-from unfazed.core import Unfazed
-from unfazed.db.tortoise.commands import init_db, migrate
 from unfazed.db.tortoise.serializer import TSerializer
-
-_Settings = {
-    "DEBUG": True,
-    "PROJECT_NAME": "test_app_db",
-    "ROOT_URLCONF": "tests.apps.orm.routes",
-    "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
-    "DATABASE": {
-        "CONNECTIONS": {
-            "default": {
-                "ENGINE": "unfazed.db.tortoise.backends.mysql",
-                "CREDENTIALS": {
-                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
-                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
-                    "USER": "root",
-                    "PASSWORD": "app",
-                    "DATABASE": "test_app",
-                },
-            }
-        }
-    },
-}
-
-
-@pytest_asyncio.fixture(scope="session")
-async def prepare_db(tmp_path_factory: Path) -> t.Any:
-    # init unfazed
-    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
-
-    await unfazed.setup()
-
-    tmp_path = tmp_path_factory.mktemp("orm")
-    # create migrations
-    root_path = tmp_path / "serializer"
-    root_path.mkdir()
-
-    migrations_path = root_path / "migrations"
-
-    cmd = init_db.Command(
-        unfazed=unfazed, name="orm_test_makemigrations", app_label="orm_test_cmd"
-    )
-
-    await cmd.handle(**{"safe": True, "location": migrations_path})
-
-    # migrate cmd
-    cmd = migrate.Command(
-        unfazed=unfazed, name="orm_test_makemigrations", app_label="orm_test_cmd"
-    )
-
-    await cmd.handle(**{"location": migrations_path, "name": "add car model"})
 
 
 class CarSerializer(TSerializer):
