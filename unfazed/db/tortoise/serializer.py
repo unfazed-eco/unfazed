@@ -157,6 +157,7 @@ def create_model_from_tortoise(
 
     relation_created_fields = []
     for name, field in model._meta.fields_map.items():
+        print(f"field: {field.__dict__}, name: {name}")
         if name in exclude:
             continue
 
@@ -303,15 +304,15 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
         ]
 
     @t.final
-    async def create(self, **kwargs: t.Any) -> t.Self:
+    async def create(self, **kwargs: t.Any) -> Model:
         using_db = kwargs.pop("using_db", None)
         model: Model = self.Meta.model
         ins = await model.create(using_db=using_db, **self.valid_data)
 
-        return await self.retrieve(ins)
+        return ins
 
     @t.final
-    async def update(self, instance: Model, **kwargs: t.Any) -> BaseModel:
+    async def update(self, instance: Model, **kwargs: t.Any) -> Model:
         using_db = kwargs.pop("using_db", None)
 
         for k, v in self.model_dump(exclude_none=True).items():
@@ -321,7 +322,7 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
                 setattr(instance, k, v)
 
         await instance.save(using_db=using_db)
-        return await self.retrieve(instance)
+        return instance
 
     @t.final
     @classmethod

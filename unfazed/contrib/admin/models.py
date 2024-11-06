@@ -12,4 +12,4 @@ class LogEntry(Model):
 
     class Meta:
         table = "unfazed_admin_logentry"
-        indexes = ("email",)
+        indexes = ("account",)

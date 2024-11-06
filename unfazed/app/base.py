@@ -42,11 +42,11 @@ class BaseAppConfig:
 
     @property
     def app_path(self) -> Path:
-        # if hasattr(self.app_module.__path__, "_path"):
-        #     ret = Path(self.app_module.__path__._path[0])
-        # else:
-        #     ret = Path(self.app_module.__path__[0])
-        return Path(self.app_module.__path__._path[0])
+        if hasattr(self.app_module.__path__, "_path"):
+            ret = Path(self.app_module.__path__._path[0])
+        else:
+            ret = Path(self.app_module.__path__[0])
+        return ret
 
     @property
     def name(self) -> str:

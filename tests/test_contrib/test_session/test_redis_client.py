@@ -91,3 +91,5 @@ async def test_redis_client() -> None:
     with pytest.raises(ValueError):
         session_setting.cache_alias = "invalid"
         CacheSession(session_setting=session_setting, session_key=None)
+
+    await caches["default"].close()

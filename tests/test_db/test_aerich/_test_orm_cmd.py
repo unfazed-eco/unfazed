@@ -20,7 +20,6 @@ _Settings = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_db",
     "ROOT_URLCONF": "tests.apps.orm.routes",
-    # "INSTALLED_APPS": ["tests.apps.orm.common", "tests.apps.orm.serializer"],
     "DATABASE": {
         "CONNECTIONS": {
             "default": {
@@ -70,7 +69,7 @@ async def test_cmd(tmp_path: Path) -> None:
     unfazed2 = Unfazed(
         settings=UnfazedSettings(
             **_Settings,
-            INSTALLED_APPS=["tests.apps.orm.common", "tests.apps.orm.serializer"],
+            INSTALLED_APPS=["tests.apps.orm.common", "tests.apps.orm.other"],
         )
     )
     await unfazed2.setup()

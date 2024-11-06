@@ -1,10 +1,18 @@
 import typing as t
 
+from pydantic import BaseModel
+
+# from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.protocol import BaseSerializer
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
 from unfazed.schema import Condtion
 
 from .registry import BaseAdminModel, ModelAdmin, admin_collector, parse_cond, site
+
+
+class IdSchema(BaseModel):
+    id: int = 0
 
 
 class AdminModelService:
@@ -86,7 +94,27 @@ class AdminModelService:
             request
         ):
             raise PermissionDenied(message="Permission Denied")
-        return await admin_ins.serializer.create(data, inlines)
+
+        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+
+        # handle main model
+        idschema = IdSchema(**data)
+        if idschema.id <= 0:
+            serializer = serializer_cls(data)
+            db_ins = await serializer.create()
+        else:
+            db_ins = await serializer_cls.get_object(idschema)
+
+        # handle inlines
+        for name, inline_data in inlines.items():
+            # inlines_ins = admin_collector[name]
+            # inline_serializer_cls = inline_ins.serializer
+            # inline_stat = inline_data.pop("__status")
+
+            # await inlines_serializer.create()
+            pass
+
+        return await serializer_cls.retrieve(db_ins)
 
     @classmethod
     async def model_delete(

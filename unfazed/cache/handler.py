@@ -19,5 +19,17 @@ class CacheHandler:
     def __contains__(self, key: str) -> bool:
         return hasattr(self.storage, key)
 
+    def __delitem__(self, key: str) -> None:
+        delattr(self.storage, key)
+
+    async def close(self):
+        for obj in dir(self.storage):
+            if obj.startswith("__"):
+                continue
+
+            client = getattr(self.storage, obj)
+            if hasattr(client, "close"):
+                await client.close()
+
 
 caches = CacheHandler()

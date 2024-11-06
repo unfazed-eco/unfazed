@@ -1,11 +1,16 @@
 import os
 import typing as t
+from pathlib import Path
 
 import pytest
+import pytest_asyncio
 from pytest import Item
 from pytest_asyncio import is_async_test
 
 from tests.utils import DataBase
+from unfazed.conf import UnfazedSettings
+from unfazed.core import Unfazed
+from unfazed.db.tortoise.commands import init_db, migrate
 
 
 # dont need decorate test functions with pytest.mark.asyncio
@@ -16,7 +21,7 @@ def pytest_collection_modifyitems(items: t.List[Item]) -> None:
         async_test.add_marker(session_scope_marker, append=False)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def use_test_db() -> t.Any:
     # refer: Unfazed/docker-compose.yml
 
@@ -32,3 +37,57 @@ def use_test_db() -> t.Any:
 
     # drop test database
     db.drop_db("test_app")
+
+
+_Settings = {
+    "DEBUG": True,
+    "PROJECT_NAME": "test_app_db",
+    # "ROOT_URLCONF": "tests.apps.routes",
+    "INSTALLED_APPS": [
+        "tests.apps.orm.common",
+        "tests.apps.orm.serializer",
+        "unfazed.contrib.admin",
+    ],
+    "DATABASE": {
+        "CONNECTIONS": {
+            "default": {
+                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "CREDENTIALS": {
+                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
+                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
+                    "USER": "root",
+                    "PASSWORD": "app",
+                    "DATABASE": "test_app",
+                },
+            }
+        }
+    },
+}
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def prepare_db(tmp_path_factory: Path, use_test_db: t.Generator) -> t.Any:
+    # init unfazed
+    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+
+    await unfazed.setup()
+
+    root_path = tmp_path_factory.mktemp("unfazed")
+    # create migrations
+
+    migrations_path = root_path / "migrations"
+
+    cmd = init_db.Command(
+        unfazed=unfazed, name="unfazed_test", app_label="unfazed_test"
+    )
+
+    await cmd.handle(**{"safe": True, "location": migrations_path})
+
+    # migrate cmd
+    cmd = migrate.Command(
+        unfazed=unfazed, name="unfazed_test", app_label="unfazed_test"
+    )
+
+    await cmd.handle(**{"location": migrations_path, "name": "add car model"})
+
+    yield
