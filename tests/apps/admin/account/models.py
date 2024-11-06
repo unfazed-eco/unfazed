@@ -5,7 +5,7 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    id = fields.IntField(pk=True)
+    id = fields.IntField(primary_key=True)
 
 
 class User(BaseModel):
