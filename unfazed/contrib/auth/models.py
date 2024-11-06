@@ -20,7 +20,7 @@ class BaseModel(Model):
     class Meta:
         abstract = True
 
-    id = fields.IntField(pk=True)
+    id = fields.IntField(primary_key=True)
     created_at = fields.BigIntField()
     updated_at = fields.BigIntField()
     is_active = fields.SmallIntField(default=Status.ACTIVE, choices=Status)

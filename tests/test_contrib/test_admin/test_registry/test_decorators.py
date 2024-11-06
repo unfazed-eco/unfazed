@@ -5,21 +5,21 @@ from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
 
 
-class User(Model):
+class Student(Model):
     name: str = fields.CharField(max_length=255)
     age: int = fields.IntField()
 
 
-class UserSerializer(TSerializer):
+class StudentSerializer(TSerializer):
     class Meta:
-        model = User
+        model = Student
 
 
 async def test_decorator():
     admin_collector.clear()
 
-    @register(UserSerializer)
-    class UserAdmin(ModelAdmin):
+    @register(StudentSerializer)
+    class StudentAdmin(ModelAdmin):
         @action(name="test_action", confirm=True)
         def test_action(self, request: HttpRequest | None = None) -> str:
             return "test_action"
@@ -30,12 +30,12 @@ async def test_decorator():
 
         @property
         def name(self):
-            return "UserAdmin"
+            return "StudentAdmin"
 
-    assert "UserAdmin" in admin_collector
+    assert "StudentAdmin" in admin_collector
 
-    ins = admin_collector["UserAdmin"]
-    assert ins.serializer == UserSerializer
+    ins = admin_collector["StudentAdmin"]
+    assert ins.serializer == StudentSerializer
 
     actions = ins.get_actions()
 

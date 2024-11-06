@@ -29,7 +29,8 @@ class BaseSerializer(BaseModel, BaseSerializerProtocol):
     @classmethod
     async def create_from_ctx(cls, ctx: BaseModel, **kwargs) -> t.Self:
         serializer = cls(**ctx.model_dump(exclude_none=True))
-        return await serializer.create(**kwargs)
+        db_ins = await serializer.create(**kwargs)
+        return await cls.retrieve(db_ins, **kwargs)
 
     @t.final
     @classmethod
@@ -40,7 +41,8 @@ class BaseSerializer(BaseModel, BaseSerializerProtocol):
         for field in ctx.model_fields:
             if hasattr(serializer, field):
                 setattr(serializer, field, getattr(ctx, field))
-        return await serializer.update(ins, **kwargs)
+        db_ins = await serializer.update(ins, **kwargs)
+        return await cls.retrieve(db_ins, **kwargs)
 
     @t.final
     @classmethod

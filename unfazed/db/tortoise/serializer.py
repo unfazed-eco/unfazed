@@ -156,8 +156,8 @@ def create_model_from_tortoise(
     exclude = exclude or []
 
     relation_created_fields = []
+
     for name, field in model._meta.fields_map.items():
-        print(f"field: {field.__dict__}, name: {name}")
         if name in exclude:
             continue
 

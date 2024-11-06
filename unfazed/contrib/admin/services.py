@@ -2,10 +2,11 @@ import typing as t
 
 from pydantic import BaseModel
 
-# from unfazed.db.tortoise.serializer import TSerializer
-from unfazed.protocol import BaseSerializer
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
+
+# from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.protocol import BaseSerializer
 from unfazed.schema import Condtion
 
 from .registry import BaseAdminModel, ModelAdmin, admin_collector, parse_cond, site
@@ -60,8 +61,11 @@ class AdminModelService:
             raise PermissionDenied(message="Permission Denied")
 
         cond = parse_cond(condtion=cond)
-        ret = await admin_ins.serializer.list(cond, page, size)
-        return ret
+        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        queryset = serializer_cls.get_queryset(cond, fetch_related=False)
+        result: BaseModel = await serializer_cls.list(queryset, page, size)
+
+        return result.model_dump()
 
     @classmethod
     async def model_action(
@@ -100,10 +104,12 @@ class AdminModelService:
         # handle main model
         idschema = IdSchema(**data)
         if idschema.id <= 0:
-            serializer = serializer_cls(data)
+            serializer = serializer_cls(**data)
             db_ins = await serializer.create()
         else:
-            db_ins = await serializer_cls.get_object(idschema)
+            db_obj = await serializer_cls.get_object(idschema)
+            serializer = serializer_cls(**data)
+            db_ins = await serializer.update(db_obj)
 
         # handle inlines
         for name, inline_data in inlines.items():
@@ -125,4 +131,12 @@ class AdminModelService:
         if not admin_ins.has_delete_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        return await admin_ins.serializer.delete(data)
+        idschema = IdSchema(**data)
+
+        if idschema.id <= 0:
+            raise ValueError("id must be greater than 0")
+
+        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        db_model = await serializer_cls.get_object(idschema)
+
+        return await serializer_cls.destroy(db_model)

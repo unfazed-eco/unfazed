@@ -46,6 +46,8 @@ _Settings = {
     "INSTALLED_APPS": [
         "tests.apps.orm.common",
         "tests.apps.orm.serializer",
+        "tests.apps.admin.account",
+        "tests.apps.admin.article",
         "unfazed.contrib.admin",
     ],
     "DATABASE": {
