@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from .orm import Model, QuerySet
 
 if t.TYPE_CHECKING:
-    from unfazed.schema import Result  # pragma: no cover
+    from unfazed.schema import Relation, Result  # pragma: no cover
 
 
 class BaseSerializer(ABC):
@@ -58,3 +58,6 @@ class BaseSerializer(ABC):
 
     @classmethod
     async def retrieve_from_ctx(cls, ctx: BaseModel) -> t.Self: ...
+
+    @classmethod
+    def find_relation(cls, other_cls: t.Type[t.Self]) -> t.Optional["Relation"]: ...

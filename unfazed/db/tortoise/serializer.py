@@ -15,7 +15,7 @@ from tortoise.fields.relational import (
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
 
-from unfazed.schema import Result
+from unfazed.schema import Relation, Result
 from unfazed.serializer import BaseSerializer
 
 
@@ -183,9 +183,9 @@ def create_model_from_tortoise(
             params[name] = create_bk_o2o_field(field)
 
     # delete fields created by relation
-    for field_name in relation_created_fields:
-        if field_name in params:
-            del params[field_name]
+    # for field_name in relation_created_fields:
+    #     if field_name in params:
+    #         del params[field_name]
 
     for field in annotations:
         python_type = annotations[field]
@@ -375,3 +375,65 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
     def from_instance(cls, instance: Model) -> BaseModel:
         # make sure set from_attributes=True
         return cls.model_validate(instance, from_attributes=True)
+
+    @classmethod
+    def find_relation(cls, other_cls: t.Type[t.Self]) -> Relation | None:
+        self_model: Model = cls.Meta.model
+        other_model: Model = other_cls.Meta.model
+
+        # check if it is a m2m relation
+        for field_name in self_model._meta.m2m_fields:
+            field = self_model._meta.fields_map[field_name]
+            if field.related_model == other_model:
+                return Relation(
+                    to=other_cls.__name__,
+                    source_field=field_name,  # alse field.related_name
+                    dest_field="",
+                    relation="m2m",
+                )
+
+        # check if it is a fk relation
+        for field_name in self_model._meta.fk_fields:
+            field = self_model._meta.fields_map[field_name]
+            if field.related_model == other_model:
+                return Relation(
+                    to=other_cls.__name__,
+                    source_field=field.source_field,  # alse field.source_field
+                    dest_field=field.to_field,
+                    relation="fk",
+                )
+
+        # check if it is a bk_fk relation
+        for field_name in self_model._meta.backward_fk_fields:
+            field = self_model._meta.fields_map[field_name]
+            if field.related_model == other_model:
+                return Relation(
+                    to=other_cls.__name__,
+                    source_field="",
+                    dest_field=field.relation_source_field,
+                    relation="bk_fk",
+                )
+
+        # check if it is a o2o relation
+        for field_name in self_model._meta.o2o_fields:
+            field = self_model._meta.fields_map[field_name]
+            if field.related_model == other_model:
+                return Relation(
+                    to=other_cls.__name__,
+                    source_field=field.source_field,
+                    dest_field=field.to_field,
+                    relation="o2o",
+                )
+
+        # check if it is a bk_o2o relation
+        for field_name in self_model._meta.backward_o2o_fields:
+            field = self_model._meta.fields_map[field_name]
+            if field.related_model == other_model:
+                return Relation(
+                    to=other_cls.__name__,
+                    source_field="",
+                    dest_field=field.relation_source_field,
+                    relation="bk_o2o",
+                )
+
+        return None
