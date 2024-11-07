@@ -29,20 +29,28 @@ class Group(BaseModel):
     )
 
 
-class Role(BaseModel):
+class Profile(BaseModel):
     class Meta:
-        table = "test_unfazed_auth_role"
+        table = "test_unfazed_auth_profile"
 
-    name = fields.CharField(max_length=255)
-    users = fields.ManyToManyField(
+    user = fields.OneToOneField(
         "models.User",
-        related_name="roles",
+        related_name="profile",
         on_delete=fields.NO_ACTION,
         db_constraint=False,
     )
-    groups = fields.ManyToManyField(
-        "models.Group",
-        related_name="roles",
+    avatar = fields.CharField(max_length=255)
+
+
+class Book(BaseModel):
+    class Meta:
+        table = "test_unfazed_auth_book"
+
+    title = fields.CharField(max_length=255)
+    author = fields.CharField(max_length=255)
+    owner = fields.ForeignKeyField(
+        "models.User",
+        related_name="books",
         on_delete=fields.NO_ACTION,
         db_constraint=False,
     )

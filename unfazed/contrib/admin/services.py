@@ -1,11 +1,11 @@
+import inspect
 import typing as t
 
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-
-# from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.protocol import BaseSerializer
 from unfazed.schema import Condtion
 
@@ -14,6 +14,13 @@ from .registry import BaseAdminModel, ModelAdmin, admin_collector, parse_cond, s
 
 class IdSchema(BaseModel):
     id: int = 0
+
+
+class InlineStatus:
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+    NO_ACTION = "no_action"
 
 
 class AdminModelService:
@@ -86,7 +93,9 @@ class AdminModelService:
 
         method = getattr(admin_ins, action)
 
-        return await method(data, request)
+        if inspect.iscoroutinefunction(method):
+            return await method(data, request)
+        return await run_in_threadpool(method, data, request)
 
     @classmethod
     async def model_save(
@@ -107,18 +116,126 @@ class AdminModelService:
             serializer = serializer_cls(**data)
             db_ins = await serializer.create()
         else:
-            db_obj = await serializer_cls.get_object(idschema)
+            current_db_ins = await serializer_cls.get_object(idschema)
             serializer = serializer_cls(**data)
-            db_ins = await serializer.update(db_obj)
+            db_ins = await serializer.update(current_db_ins)
 
         # handle inlines
-        for name, inline_data in inlines.items():
-            # inlines_ins = admin_collector[name]
-            # inline_serializer_cls = inline_ins.serializer
-            # inline_stat = inline_data.pop("__status")
+        for name, inline_data_list in inlines.items():
+            ins = admin_collector[name]
+            inline_serializer_cls: t.Type[BaseSerializer] = ins.serializer
+            relation = inline_serializer_cls.find_relation(serializer_cls)
 
-            # await inlines_serializer.create()
-            pass
+            if not relation:
+                raise ValueError(
+                    f"relation between {name} and {admin_ins_name} not found"
+                )
+
+            for inline_data in inline_data_list:
+                stat = inline_data.pop("__status")
+                ins_idschema = IdSchema(**inline_data)
+
+                # m2m
+                if relation.relation == "m2m":
+                    if stat == InlineStatus.DELETE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        await getattr(inline_db_ins, relation.source_field).remove(
+                            db_ins
+                        )
+                    elif stat == InlineStatus.CREATE:
+                        serializer = inline_serializer_cls(**inline_data)
+                        inline_db_ins = await serializer.create()
+                        await getattr(inline_db_ins, relation.source_field).add(db_ins)
+                    elif stat == InlineStatus.UPDATE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.update(inline_db_ins)
+
+                    else:
+                        pass  # do nothing
+
+                # fk
+                elif relation.relation == "fk":
+                    if stat == InlineStatus.DELETE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        await inline_serializer_cls.destroy(inline_db_ins)
+                    elif stat == InlineStatus.CREATE:
+                        inline_data[relation.source_field] = getattr(
+                            db_ins, relation.dest_field
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.create()
+
+                    elif stat == InlineStatus.UPDATE:
+                        old_inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.update(old_inline_db_ins)
+
+                    else:
+                        pass  # do nothing
+
+                # bk_fk
+                elif relation.relation == "bk_fk":
+                    if stat == InlineStatus.DELETE:
+                        raise ValueError("bk_fk relation does not support delete")
+                    elif stat == InlineStatus.CREATE:
+                        raise ValueError("bk_fk relation does not support create")
+                    elif stat == InlineStatus.UPDATE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.update(inline_db_ins)
+                    else:
+                        pass  # do nothing
+
+                # o2o
+                elif relation.relation == "o2o":
+                    if stat == InlineStatus.DELETE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        await inline_serializer_cls.destroy(inline_db_ins)
+                    elif stat == InlineStatus.CREATE:
+                        inline_data[relation.source_field] = getattr(
+                            db_ins, relation.dest_field
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.create()
+                    elif stat == InlineStatus.UPDATE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.update(inline_db_ins)
+                    else:
+                        pass  # do nothing
+
+                # bk_o2o
+                elif relation.relation == "bk_o2o":
+                    if stat == InlineStatus.DELETE:
+                        raise ValueError("bk_o2o relation does not support delete")
+                    elif stat == InlineStatus.CREATE:
+                        raise ValueError("bk_o2o relation does not support create")
+                    elif stat == InlineStatus.UPDATE:
+                        inline_db_ins = await inline_serializer_cls.get_object(
+                            ins_idschema
+                        )
+                        serializer = inline_serializer_cls(**inline_data)
+                        await serializer.update(inline_db_ins)
+                    else:
+                        pass  # do nothing
+
+                else:
+                    raise ValueError(f"relation {relation.relation} not supported")
 
         return await serializer_cls.retrieve(db_ins)
 

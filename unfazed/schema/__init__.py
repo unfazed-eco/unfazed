@@ -4,7 +4,7 @@ from .command import Command
 from .logging import LogConfig
 from .openapi import OpenAPI
 from .orm import AppModels, Database
-from .serializer import Result
+from .serializer import Relation, Result
 
 __all__ = [
     "Command",
@@ -17,4 +17,5 @@ __all__ = [
     "LocOptions",
     "RedisOptions",
     "Condtion",
+    "Relation",
 ]
