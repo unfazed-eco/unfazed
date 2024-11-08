@@ -1,0 +1,77 @@
+import typing as t
+
+
+class Field:
+    def __init__(
+        self,
+        name: str,
+        readonly: bool = False,
+        show: bool = True,
+        blank: bool = True,
+        choices: t.Tuple[t.Tuple[t.Union[str, int]]] = None,
+        help_text: str = "",
+        default: t.Any = None,
+    ) -> None:
+        self.name = name
+        self.readonly = readonly
+        self.show = show
+        self.blank = blank
+        self.choices: t.Union[tuple, list] = choices or []
+        self.help_text = help_text
+        self.default = default
+
+    def to_json(self):
+        return {
+            "name": self.name,
+            "readonly": self.readonly,
+            "show": self.show,
+            "blank": self.blank,
+            "choices": list(self.choices),
+            "help_text": self.help_text,
+            "default": self.default,
+            "type": self.__class__.__name__,
+        }
+
+    def edit(self, key: str, value: t.Any):
+        if hasattr(self, key):
+            setattr(self, key, value)
+
+
+class CharField(Field):
+    pass
+
+
+class IntegerField(Field):
+    pass
+
+
+class EditorField(Field):
+    pass
+
+
+class TextField(Field):
+    pass
+
+
+class TimeField(Field):
+    pass
+
+
+class UploadField(Field):
+    pass
+
+
+class BoolField(Field):
+    pass
+
+
+class ImageField(Field):
+    pass
+
+
+class JsonField(Field):
+    pass
+
+
+class DateTimeField(Field):
+    pass

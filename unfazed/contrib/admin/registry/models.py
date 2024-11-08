@@ -7,6 +7,12 @@ from pydantic.fields import FieldInfo
 
 from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
+from unfazed.protocol import BaseSerializer, CacheBackend
+
+from .collector import admin_collector
+from .decorators import action
+from .fields import CharField, TextField
+from .fields import Field as CustomField
 
 
 class AdminField(PydanticModel):
@@ -26,7 +32,7 @@ class ModelType(enum.StrEnum):
     TOOL = "tool"
 
 
-class BaseAdminModel:
+class BaseAdmin:
     model_type: str
     help_text: t.List[str] = []
 
@@ -91,11 +97,8 @@ class BaseAdminModel:
             },
         }
 
-    def to_inlines(self, data: t.Dict) -> t.Dict:
-        raise NotImplementedError
 
-
-class SiteSettings(BaseAdminModel):
+class SiteSettings(BaseAdmin):
     model_type = ModelType.SITE
 
     custom_settings: t.Dict[str, t.Any] = {}
@@ -112,9 +115,8 @@ class SiteSettings(BaseAdminModel):
 site = SiteSettings()
 
 
-class ModelAdmin(BaseAdminModel):
-    _type = ModelType.DB
-    serializer: t.Annotated[TSerializer, "also a pydantic model"]
+class BaseModelAdmin(BaseAdmin):
+    serializer: t.Type[TSerializer]
 
     # fields description
     image_fields: t.List[str] = []
@@ -131,9 +133,7 @@ class ModelAdmin(BaseAdminModel):
     list_filter: t.List[str] = []
     list_search: t.List[str] = []
     list_per_page: int = 20
-
-    # behaviors on detail page
-    detail_display: t.List[str] = []
+    list_order: t.List[str] = []
 
     # default actions
     can_add: bool = True
@@ -217,13 +217,184 @@ class ModelAdmin(BaseAdminModel):
 
         return fields_mapping
 
-    def get_attributes(self) -> t.Dict[str, t.Any]:
-        pass
+
+class ModelAdmin(BaseModelAdmin):
+    can_show_all: bool = True
+
+    # behaviors on detail page
+    detail_display: t.List[str] = []
+
+    # have edit btn to detail page
+    editable: bool = True
+
+    # relations
+    inlines: t.List[BaseModelAdmin | str] = []
+
+    def to_inlines(self) -> t.Dict:
+        inlines = self.inlines
+        if not inlines:
+            return {}
+
+        ret = {}
+        self_serializer: BaseSerializer = self.serializer
+        for inline in inlines:
+            if isinstance(inline, str):
+                inline = admin_collector[inline]
+
+            inline_serializer: BaseSerializer = inline.serializer
+            relation = inline_serializer.find_relation(self_serializer)
+
+            if not relation:
+                raise ValueError(
+                    f"dont have relation between {inline.name} and {self.name} not found"
+                )
+
+            elif relation.relation == "bk_fk":
+                raise ValueError(
+                    f"bk_fk relation between {inline.name} and {self.name} is not supported"
+                )
+
+            elif relation.relation == "bk_o2o":
+                raise ValueError(
+                    f"bk_o2o relation between {inline.name} and {self.name} is not supported"
+                )
+
+            else:
+                ret[inline.name] = relation.model_dump()
+
+        return ret
+
+    def to_serialize(self, *args, **kw) -> dict:
+        fields_map = self.get_fields()
+        actions = self.get_actions()
+
+        detail_display = self.detail_display or [
+            name for name in self.serializer.Meta.Model._meta.db_fields
+        ]
+        attrs = {
+            "editable": self.editable,
+            "help_text": self.help_text,
+            "can_show_all": self.can_show_all,
+            "can_search": self.can_search,
+            "search_fields": self.search_fields or detail_display,
+            "list_per_page": self.list_per_page,
+            "detail_display": detail_display,
+            "can_add": self.can_add,
+            "list_search": self.list_search,
+            "can_delete": self.can_delete,
+            "can_edit": self.can_edit,
+        }
+
+        list_filter = self.list_filter
+        for item in list_filter:
+            if item not in fields_map:
+                raise ValueError(f"{item} not found in show_fields")
+        attrs["list_filter"] = list_filter
+
+        list_sort = self.list_sort
+        for item in list_sort:
+            if item not in fields_map:
+                raise ValueError(f"{item} not found in show_fields")
+        attrs["list_sort"] = list_sort
+
+        return {
+            "fields": fields_map,
+            "actions": actions,
+            "attrs": attrs,
+        }
 
 
-class ToolAdmin(BaseAdminModel):
-    pass
+class ModelInlineAdmin(ModelAdmin):
+    # behaviors on list page
+    list_show_type: int
+    max_num: int = 0
+    min_num: int = 0
+
+    # item control
+    can_copy: bool = False
+
+    def to_route(self) -> None:
+        return None
+
+    def to_serialize(self) -> dict:
+        fields_map = self.get_fields()
+
+        attrs = {
+            "help_text": self.help_text,
+            "list_show_type": self.list_show_type,
+            "max_num": self.max_num,
+            "min_num": self.min_num,
+            "can_copy": self.can_copy,
+            "can_add": self.can_add,
+            "can_delete": self.can_delete,
+            "can_edit": self.can_edit,
+            "can_search": self.can_search,
+            "list_per_page": self.list_per_page,
+            "list_order": self.list_order,
+            "list_search": self.list_search,
+        }
+
+        list_filter = self.list_filter
+        for item in list_filter:
+            if item not in fields_map:
+                raise ValueError(f"{item} not found in show_fields")
+        attrs["list_filter"] = list_filter
+
+        list_sort = self.list_sort
+        for item in list_sort:
+            if item not in fields_map:
+                raise ValueError(f"{item} not found in show_fields")
+        attrs["list_sort"] = list_sort
+
+        return {
+            "fields": fields_map,
+            "attrs": attrs,
+            "actions": self.get_actions(),
+        }
 
 
-class CacheAdmin(BaseAdminModel):
-    pass
+class ToolAdmin(BaseAdmin):
+    fields_set: t.List[CustomField] = []
+
+    output_field: str
+
+    def to_serialize(self) -> dict:
+        fields_map = {}
+        for field in self.fields_set:
+            fields_map[field.name] = field.to_json()
+
+        attrs = {
+            "output_field": self.output_field,
+            "help_text": self.help_text,
+        }
+
+        actions = self.get_actions()
+
+        return {
+            "fields": fields_map,
+            "actions": actions,
+            "attrs": attrs,
+        }
+
+
+class CacheAdmin(BaseAdmin):
+    fields_set: t.List[CustomField] = [
+        CharField(name="key", help_text="cache key"),
+        TextField(name="value", help_text="cache value"),
+    ]
+
+    output_field: str = "value"
+
+    cache_client: CacheBackend
+
+    @action(name="search")
+    async def search(self, key: str, *args, **kw) -> t.Any:
+        return await self.cache_client.get(key)
+
+    @action(name="set")
+    async def set(self, key: str, value: t.Any, *args, **kw) -> t.Any:
+        return await self.cache_client.set(key, value)
+
+    @action(name="delete")
+    async def delete(self, key: str, *args, **kw) -> t.Any:
+        return await self.cache_client.delete(key)
