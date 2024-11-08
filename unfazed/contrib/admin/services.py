@@ -72,7 +72,7 @@ class AdminModelService:
         queryset = serializer_cls.get_queryset(cond, fetch_related=False)
         result: BaseModel = await serializer_cls.list(queryset, page, size)
 
-        return result.model_dump()
+        return result.model_dump(exclude_none=True)
 
     @classmethod
     async def model_action(
@@ -84,9 +84,7 @@ class AdminModelService:
     ) -> t.Any:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
         if not hasattr(admin_ins, action):
-            raise ValueError(
-                f"admin ins {admin_ins.name} does not have action {action}"
-            )
+            raise KeyError(f"admin ins {admin_ins.name} does not have action {action}")
 
         if not admin_ins.has_action_perm(request):
             raise PermissionDenied(message="Permission Denied")
@@ -132,7 +130,7 @@ class AdminModelService:
                 )
 
             for inline_data in inline_data_list:
-                stat = inline_data.pop("__status")
+                stat = inline_data.pop("__status", "no_action")
                 ins_idschema = IdSchema(**inline_data)
 
                 # m2m
@@ -184,18 +182,7 @@ class AdminModelService:
 
                 # bk_fk
                 elif relation.relation == "bk_fk":
-                    if stat == InlineStatus.DELETE:
-                        raise ValueError("bk_fk relation does not support delete")
-                    elif stat == InlineStatus.CREATE:
-                        raise ValueError("bk_fk relation does not support create")
-                    elif stat == InlineStatus.UPDATE:
-                        inline_db_ins = await inline_serializer_cls.get_object(
-                            ins_idschema
-                        )
-                        serializer = inline_serializer_cls(**inline_data)
-                        await serializer.update(inline_db_ins)
-                    else:
-                        pass  # do nothing
+                    raise ValueError("bk_fk relation does not support create")
 
                 # o2o
                 elif relation.relation == "o2o":
@@ -220,22 +207,8 @@ class AdminModelService:
                         pass  # do nothing
 
                 # bk_o2o
-                elif relation.relation == "bk_o2o":
-                    if stat == InlineStatus.DELETE:
-                        raise ValueError("bk_o2o relation does not support delete")
-                    elif stat == InlineStatus.CREATE:
-                        raise ValueError("bk_o2o relation does not support create")
-                    elif stat == InlineStatus.UPDATE:
-                        inline_db_ins = await inline_serializer_cls.get_object(
-                            ins_idschema
-                        )
-                        serializer = inline_serializer_cls(**inline_data)
-                        await serializer.update(inline_db_ins)
-                    else:
-                        pass  # do nothing
-
                 else:
-                    raise ValueError(f"relation {relation.relation} not supported")
+                    raise ValueError("bk_o2o relation does not support create")
 
         return await serializer_cls.retrieve(db_ins)
 
