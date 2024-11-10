@@ -1,13 +1,13 @@
 import pytest
 
-from unfazed.contrib.admin.registry import BaseAdminModel, admin_collector
+from unfazed.contrib.admin.registry import BaseAdmin, admin_collector
 
 
-class Admin1(BaseAdminModel):
+class Admin1(BaseAdmin):
     pass
 
 
-class Admin2(BaseAdminModel):
+class Admin2(BaseAdmin):
     pass
 
 

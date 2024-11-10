@@ -12,3 +12,8 @@ class Article(BaseModel):
     title = fields.CharField(max_length=255)
     author = fields.CharField(max_length=255)
     content = fields.TextField()
+
+
+class Author(BaseModel):
+    name = fields.CharField(max_length=255)
+    age = fields.IntField()

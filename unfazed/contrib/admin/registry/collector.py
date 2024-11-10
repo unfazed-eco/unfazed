@@ -1,53 +1,38 @@
 import typing as t
 
-from asgiref.local import Local
-
-from .models import BaseAdminModel
+if t.TYPE_CHECKING:
+    from .models import BaseAdmin  # pragma: no cover
 
 
 class AdminCollector:
     def __init__(self) -> None:
-        self._store: Local = Local()
+        self._store: t.Dict[str, "BaseAdmin"] = {}
 
-    def set(self, key: str, value: BaseAdminModel, override: bool = False) -> None:
-        if hasattr(self._store, key):
+    def set(self, key: str, value: "BaseAdmin", override: bool = False) -> None:
+        if key in self._store:
             if not override:
                 raise KeyError(f"Key {key} already exists in the store")
-        setattr(self._store, key, value)
+        self._store[key] = value
 
-    def __getitem__(self, key: str) -> BaseAdminModel:
-        if not hasattr(self._store, key):
+    def __getitem__(self, key: str) -> "BaseAdmin":
+        if key not in self._store:
             raise KeyError(f"Key {key} not found in the store")
 
-        return getattr(self._store, key)
+        return self._store[key]
 
     def __delitem__(self, key: str) -> None:
-        if not hasattr(self._store, key):
+        if key not in self._store:
             raise KeyError(f"Key {key} not found in the store")
-        delattr(self._store, key)
+        del self._store[key]
 
     def __contains__(self, key: str) -> bool:
-        return hasattr(self._store, key)
+        return key in self._store
+
+    def __iter__(self) -> t.Iterator[t.Tuple[str, "BaseAdmin"]]:
+        return iter(self._store.items())
 
     def clear(self) -> None:
-        self._store = Local()
-
-    def get_routes(self) -> t.Dict[str, t.Any]:
-        ret: t.Dict[str, t.Any] = {}
-
-        for ele in dir(self._store):
-            if ele.startswith("__"):
-                continue
-            obj = getattr(self._store, ele)
-            if not isinstance(obj, BaseAdminModel):
-                continue
-
-            if obj.model_type in ret:
-                ret[obj.model_type].append(obj.to_route())
-            else:
-                ret[obj.model_type] = [obj.to_route()]
-
-        return ret
+        self._store = {}
 
 
 admin_collector = AdminCollector()

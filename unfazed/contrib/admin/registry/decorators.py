@@ -5,7 +5,10 @@ from functools import wraps
 from unfazed.db.tortoise.serializer import TSerializer
 
 from .collector import admin_collector
-from .models import BaseAdminModel
+from .schema import AdminAction
+
+if t.TYPE_CHECKING:
+    from .models import BaseAdmin  # pragma: no cover
 
 
 class ActionOutput:
@@ -16,10 +19,11 @@ class ActionOutput:
     Table = 5
 
 
-def register(serializer_cls: t.Type[TSerializer]):
-    def wrapper(admin_cls: t.Type[BaseAdminModel]):
+def register(serializer_cls: t.Type[TSerializer] | None = None):
+    def wrapper(admin_cls: t.Type["BaseAdmin"]):
         admin_ins = admin_cls()
-        admin_ins.serializer = serializer_cls
+        if serializer_cls:
+            admin_ins.serializer = serializer_cls
         override = getattr(admin_cls, "override", False)
         admin_collector.set(admin_ins.name, admin_ins, override=override)
 
@@ -46,15 +50,15 @@ def action(
         def inner(*args, **kwargs):
             return method(*args, **kwargs)
 
-        attrs = {
-            "name": name or method.__name__,
-            "raw_name": method.__name__,
-            "output": output,
-            "confirm": confirm,
-            "description": description,
-            "batch": batch,
-            **extra,
-        }
+        attrs = AdminAction(
+            name=name or method.__name__,
+            raw_name=method.__name__,
+            output=output,
+            confirm=confirm,
+            description=description,
+            batch=batch,
+            extra=extra,
+        )
 
         if inspect.iscoroutinefunction(method):
             setattr(asyncinner, "action", True)

@@ -1,28 +1,19 @@
 import enum
 import typing as t
 
-from pydantic import BaseModel as PydanticModel
-from pydantic import Field
 from pydantic.fields import FieldInfo
 
+from unfazed.conf import UnfazedSettings, settings
 from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseSerializer, CacheBackend
+from unfazed.schema import AdminRoute
 
 from .collector import admin_collector
 from .decorators import action
 from .fields import CharField, TextField
 from .fields import Field as CustomField
-
-
-class AdminField(PydanticModel):
-    field_type: str = Field(..., alias="type")
-    readonly: bool = False
-    show: bool = False
-    blank: bool = True
-    choices: t.List[t.Tuple[str, str]] = []
-    help_text: str = ""
-    default: t.Any = None
+from .schema import AdminAction, AdminAttrs, AdminField, AdminSerializeModel
 
 
 class ModelType(enum.StrEnum):
@@ -35,6 +26,7 @@ class ModelType(enum.StrEnum):
 class BaseAdmin:
     model_type: str
     help_text: t.List[str] = []
+    route_label: str = ""
 
     # route config
     component: str = ""
@@ -53,58 +45,90 @@ class BaseAdmin:
     def title(self):
         return self.__class__.__name__
 
-    def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
         return request.user.is_superuser
 
-    def has_change_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_change_perm(self, request: HttpRequest, *args, **kw) -> bool:
         return request.user.is_superuser
 
-    def has_delete_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_delete_perm(self, request: HttpRequest, *args, **kw) -> bool:
         return request.user.is_superuser
 
-    def has_create_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_create_perm(self, request: HttpRequest, *args, **kw) -> bool:
         return request.user.is_superuser
 
-    def has_action_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_action_perm(self, request: HttpRequest, *args, **kw) -> bool:
         return request.user.is_superuser
 
     def to_serialize(self, *args, **kw) -> dict:
         raise NotImplementedError
 
-    def get_actions(self) -> t.Dict[str, t.Dict]:
-        actions: t.Dict[str, t.Dict] = {}
+    def get_actions(self) -> t.Dict[str, AdminAction]:
+        actions: t.Dict[str, AdminAction] = {}
 
         for ele in dir(self):
             if ele.startswith("__"):
                 continue
             obj = getattr(self, ele)
             if hasattr(obj, "action"):
-                attrs = obj.attrs
-                actions[attrs["name"]] = attrs
+                attrs: AdminAction = obj.attrs
+                actions[attrs.name] = attrs
 
         return actions
 
-    def to_route(self) -> t.Dict[str, t.Any]:
-        return {
-            "title": self.title,
-            "component": self.component,
-            "name": self.name,
-            "children": [],
-            "meta": {
+    def to_route(self) -> AdminRoute | None:
+        return AdminRoute(
+            title=self.title,
+            component=self.component,
+            name=self.name,
+            children=[],
+            meta={
                 "icon": self.icon,
                 "hidden": self.hidden,
                 "hideChildrenInMenu": self.hidden_children,
             },
-        }
+        )
 
 
 class SiteSettings(BaseAdmin):
-    model_type = ModelType.SITE
-
+    navTheme: str = "light"
+    colorPrimary: str = "#1890ff"
+    layout: str = "mix"
+    contentWidth: str = "Fluid"
+    fixedHeader: bool = False
+    fixSiderbar: bool = False
+    colorWeak: bool = False
+    title: str = "Unfazed Admin"
+    pwa: bool = False
+    logo: str = "https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg"
+    iconfontUrl: str = ""
+    pageSize: int = 20
+    timeZone: str = "UTC"
     custom_settings: t.Dict[str, t.Any] = {}
+    sitePrefix: str = "/admin"
+    authType: t.List[int] = [1]
+
+    def to_route(self) -> None:
+        return None
 
     def to_serialize(self) -> t.Dict[str, t.Any]:
-        ret = {"title": self.title, "component": self.component}
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        ret = {
+            "title": self.title,
+            "navTheme": self.navTheme,
+            "colorPrimary": self.colorPrimary,
+            "layout": self.layout,
+            "contentWidth": self.contentWidth,
+            "fixedHeader": self.fixedHeader,
+            "colorWeak": self.colorWeak,
+            "logo": self.logo,
+            "pageSize": self.pageSize,
+            "timeZone": self.timeZone,
+            "sitePrefix": self.sitePrefix,
+            "debug": unfazed_settings.DEBUG,
+            "version": unfazed_settings.VERSION or "0.0.1",
+            "authType": self.authType,
+        }
 
         if self.custom_settings:
             ret.update(self.custom_settings)
@@ -141,6 +165,8 @@ class BaseModelAdmin(BaseAdmin):
     can_edit: bool = True
     can_search: bool = True
 
+    search_fields: t.List[str] = []
+
     def get_fields(self) -> t.Dict[str, t.Dict]:
         if not self.serializer:
             raise ValueError(f"serializer is not set for {self.__class__.__name__}")
@@ -158,7 +184,7 @@ class BaseModelAdmin(BaseAdmin):
             if fieldinfo.default is None:
                 not_null.append(name)
 
-            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {})
+            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {}) or {}
             choices = json_schema_extra.get("choices", [])
 
             fields_mapping[name] = AdminField(
@@ -169,7 +195,7 @@ class BaseModelAdmin(BaseAdmin):
                     "blank": True,
                     "choices": choices,
                     "help_text": fieldinfo.description,
-                    "default": fieldinfo.default,
+                    "default": fieldinfo.get_default(),
                 }
             )
         list_display = self.list_display or field_list
@@ -213,7 +239,7 @@ class BaseModelAdmin(BaseAdmin):
         for item in not_null_fields:
             if item not in fields_mapping:
                 raise ValueError(f"{item} show include in show_fields")
-            fields_mapping[item].black = False
+            fields_mapping[item].blank = False
 
         return fields_mapping
 
@@ -264,12 +290,12 @@ class ModelAdmin(BaseModelAdmin):
 
         return ret
 
-    def to_serialize(self, *args, **kw) -> dict:
+    def to_serialize(self, *args, **kw) -> AdminSerializeModel:
         fields_map = self.get_fields()
         actions = self.get_actions()
 
         detail_display = self.detail_display or [
-            name for name in self.serializer.Meta.Model._meta.db_fields
+            name for name in self.serializer.Meta.model._meta.db_fields
         ]
         attrs = {
             "editable": self.editable,
@@ -297,11 +323,11 @@ class ModelAdmin(BaseModelAdmin):
                 raise ValueError(f"{item} not found in show_fields")
         attrs["list_sort"] = list_sort
 
-        return {
-            "fields": fields_map,
-            "actions": actions,
-            "attrs": attrs,
-        }
+        return AdminSerializeModel(
+            fields=fields_map,
+            actions=actions,
+            attrs=AdminAttrs(**attrs),
+        )
 
 
 class ModelInlineAdmin(ModelAdmin):
@@ -355,7 +381,7 @@ class ModelInlineAdmin(ModelAdmin):
 
 class ToolAdmin(BaseAdmin):
     fields_set: t.List[CustomField] = []
-
+    route_label: str = "Tools"
     output_field: str
 
     def to_serialize(self) -> dict:
@@ -378,6 +404,7 @@ class ToolAdmin(BaseAdmin):
 
 
 class CacheAdmin(BaseAdmin):
+    route_label: str = "Cache"
     fields_set: t.List[CustomField] = [
         CharField(name="key", help_text="cache key"),
         TextField(name="value", help_text="cache value"),

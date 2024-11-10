@@ -12,6 +12,7 @@ from .models import LogEntry
 def record(func: t.Callable) -> t.Callable:
     @wraps(func)
     async def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        request_json = await request.json()
         resp: HttpResponse = await func(request, *args, **kwargs)
 
         await LogEntry.create(
@@ -19,7 +20,7 @@ def record(func: t.Callable) -> t.Callable:
             account=request.user.username or request.user.email,
             path=request.url.path,
             ip=request.client.host,
-            request=json.dumps(request.json()).decode(),
+            request=json.dumps(request_json).decode(),
             response=resp.body.decode(),
         )
 

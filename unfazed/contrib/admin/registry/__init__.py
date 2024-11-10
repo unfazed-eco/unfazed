@@ -1,14 +1,17 @@
 from .collector import admin_collector
 from .decorators import action, register
-from .models import BaseAdminModel, ModelAdmin, site
+from .models import BaseAdmin, CacheAdmin, ModelAdmin, ModelInlineAdmin, ToolAdmin, site
 from .utils import parse_cond
 
 __all__ = [
     "admin_collector",
-    "BaseAdminModel",
+    "BaseAdmin",
     "ModelAdmin",
     "parse_cond",
     "site",
     "register",
     "action",
+    "ModelInlineAdmin",
+    "CacheAdmin",
+    "ToolAdmin",
 ]
