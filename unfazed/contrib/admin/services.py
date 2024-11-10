@@ -7,9 +7,15 @@ from starlette.concurrency import run_in_threadpool
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseSerializer
-from unfazed.schema import Condtion
+from unfazed.schema import AdminRoute, Condtion
 
-from .registry import BaseAdminModel, ModelAdmin, admin_collector, parse_cond, site
+from .registry import (
+    BaseAdmin,
+    ModelAdmin,
+    admin_collector,
+    parse_cond,
+    site,
+)
 
 
 class IdSchema(BaseModel):
@@ -25,8 +31,52 @@ class InlineStatus:
 
 class AdminModelService:
     @classmethod
-    async def list_route(cls) -> t.Dict:
-        routes = admin_collector.get_routes()
+    async def list_route(cls, request: HttpRequest) -> t.List[t.Dict]:
+        temp = {}
+        admin_ins: BaseAdmin
+        for _, admin_ins in admin_collector:
+            if not await admin_ins.has_view_perm(request):
+                continue
+
+            route = admin_ins.to_route()
+
+            if not route:
+                continue
+
+            if isinstance(admin_ins, ModelAdmin):
+                route_label = (
+                    admin_ins.route_label
+                    or admin_ins.serializer.Meta.model._meta.app
+                    or "Default"
+                )
+            else:
+                route_label = admin_ins.route_label or "Default"
+
+            route_label = route_label.capitalize()
+
+            if route_label not in temp:
+                temp_top_route = AdminRoute(
+                    title=route_label,
+                    children=[],
+                    name=route_label,
+                    icon="el-icon-s-home",
+                    meta={
+                        "icon": "el-icon-s-home",
+                        "hidden": False,
+                        "hidden_children": False,
+                    },
+                )
+                temp[route_label] = temp_top_route
+            else:
+                temp_top_route = temp[route_label]
+            temp_top_route.children.append(route)
+
+        routes = []
+
+        route: BaseModel
+        for _, route in temp.items():
+            routes.append(route.model_dump(exclude_none=True))
+
         return routes
 
     @classmethod
@@ -34,24 +84,24 @@ class AdminModelService:
         return site.to_serialize()
 
     @classmethod
-    def model_desc(cls, admin_ins_name: str, request: HttpRequest) -> t.Dict:
-        admin_ins: BaseAdminModel = admin_collector[admin_ins_name]
+    async def model_desc(cls, admin_ins_name: str, request: HttpRequest) -> t.Dict:
+        admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
-        if not admin_ins.has_view_perm(request):
+        if not await admin_ins.has_view_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        return admin_ins.to_serialize()
+        return admin_ins.to_serialize().model_dump(exclude_none=True)
 
     @classmethod
-    def model_detail(
+    async def model_detail(
         cls, admin_ins_name: str, data: t.Dict[str, t.Any], request: HttpRequest
     ) -> t.Dict:
-        admin_ins: BaseAdminModel = admin_collector[admin_ins_name]
+        admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
-        if not admin_ins.has_view_perm(request):
+        if not await admin_ins.has_view_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        return admin_ins.to_inlines(data)
+        return admin_ins.to_inlines()
 
     @classmethod
     async def model_data(
@@ -64,7 +114,7 @@ class AdminModelService:
     ) -> t.Dict:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
-        if not admin_ins.has_view_perm(request):
+        if not await admin_ins.has_view_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
         cond = parse_cond(condtion=cond)
@@ -86,7 +136,7 @@ class AdminModelService:
         if not hasattr(admin_ins, action):
             raise KeyError(f"admin ins {admin_ins.name} does not have action {action}")
 
-        if not admin_ins.has_action_perm(request):
+        if not await admin_ins.has_action_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
         method = getattr(admin_ins, action)
@@ -101,9 +151,9 @@ class AdminModelService:
     ) -> t.Any:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
-        if not admin_ins.has_change_perm(request) and not admin_ins.has_create_perm(
+        if not await admin_ins.has_change_perm(
             request
-        ):
+        ) and not await admin_ins.has_create_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
         serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
@@ -218,7 +268,7 @@ class AdminModelService:
     ) -> t.Any:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
-        if not admin_ins.has_delete_perm(request):
+        if not await admin_ins.has_delete_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
         idschema = IdSchema(**data)

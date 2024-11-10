@@ -1,10 +1,22 @@
 import typing as t
 
 import pytest
+import pytest_asyncio
 
 from tests.apps.admin.account.models import Book, Group, Profile, User
 from tests.apps.admin.article.models import Article
-from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
+from unfazed.cache.backends.locmem import LocMemCache
+from unfazed.conf import UnfazedSettings, settings
+from unfazed.contrib.admin.registry import (
+    CacheAdmin,
+    ModelAdmin,
+    ModelInlineAdmin,
+    ToolAdmin,
+    action,
+    admin_collector,
+    fields,
+    register,
+)
 from unfazed.contrib.admin.registry.collector import AdminCollector
 from unfazed.contrib.admin.services import AdminModelService
 from unfazed.db.tortoise.serializer import TSerializer
@@ -44,58 +56,58 @@ def collector():
     # ===== m2m bk test =======
 
     @register(UserSerializer)
-    class InlineM2MUserAdmin(ModelAdmin):
+    class InlineM2MUserAdmin(ModelInlineAdmin):
         pass
 
     @register(GroupSerializer)
     class M2MGroupAdmin(ModelAdmin):
-        inlines = [InlineM2MUserAdmin]
+        inlines = ["InlineM2MUserAdmin"]
 
     # ====== m2m test ======
     @register(GroupSerializer)
-    class InlineM2MGroupAdmin(ModelAdmin):
+    class InlineM2MGroupAdmin(ModelInlineAdmin):
         pass
 
     @register(UserSerializer)
     class M2MUserAdmin(ModelAdmin):
-        inlines = [InlineM2MGroupAdmin]
+        inlines = ["InlineM2MGroupAdmin"]
 
     # ====== o2o test ======
 
     @register(ProfileSerializer)
-    class InlineO2OProfileAdmin(ModelAdmin):
+    class InlineO2OProfileAdmin(ModelInlineAdmin):
         pass
 
     @register(UserSerializer)
     class O2OUserAdmin(ModelAdmin):
-        inlines = [InlineO2OProfileAdmin]
+        inlines = ["InlineO2OProfileAdmin"]
 
     # ====== o2o bk test ======
     @register(UserSerializer)
-    class InlineBKO2OUserAdmin(ModelAdmin):
+    class InlineBKO2OUserAdmin(ModelInlineAdmin):
         pass
 
     @register(ProfileSerializer)
     class BKO2OProfileAdmin(ModelAdmin):
-        inlines = [InlineBKO2OUserAdmin]
+        inlines = ["InlineBKO2OUserAdmin"]
 
     # ====== fk test ======
     @register(BookSerializer)
-    class InlineFKBookAdmin(ModelAdmin):
+    class InlineFKBookAdmin(ModelInlineAdmin):
         pass
 
     @register(UserSerializer)
     class FKUserAdmin(ModelAdmin):
-        inlines = [InlineFKBookAdmin]
+        inlines = ["InlineFKBookAdmin"]
 
     # ====== bk fk test ======
     @register(UserSerializer)
-    class InlineBkFKUserAdmin(ModelAdmin):
+    class InlineBkFKUserAdmin(ModelInlineAdmin):
         pass
 
     @register(BookSerializer)
     class BkFKBookAdmin(ModelAdmin):
-        inlines = [InlineBkFKUserAdmin]
+        inlines = ["InlineBkFKUserAdmin"]
 
     # ======= without relation test =======
     @register(ArticleSerializer)
@@ -104,7 +116,7 @@ def collector():
 
     @register(UserSerializer)
     class WithOutUserAdmin(ModelAdmin):
-        inlines = [WithOutArticleAdmin]
+        inlines = ["WithOutArticleAdmin"]
 
     # =============================
 
@@ -117,6 +129,30 @@ def collector():
         @action(name="async_method")
         async def async_method(self, data: t.Dict, request: HttpRequest) -> str:
             return "async hello"
+
+    # ========= cache ==========
+
+    @register()
+    class CacheUserAdmin(CacheAdmin):
+        cache_client = LocMemCache("test_admin")
+
+    # ========= tool ==========
+
+    @register()
+    class ExportToolAdmin(ToolAdmin):
+        fields_set = [
+            fields.CharField(name="name"),
+            fields.IntegerField(name="age"),
+        ]
+
+        output_field = "age"
+
+    # ========= without permission ==========
+
+    @register()
+    class WithoutPermissionAdmin(ModelAdmin):
+        async def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
+            return False
 
     yield admin_collector
 
@@ -131,7 +167,7 @@ def build_request():
     return Request()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def setup_article():
     await Article.all().delete()
 
@@ -143,7 +179,7 @@ async def setup_article():
     await Article.all().delete()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def setup_user():
     await User.all().delete()
     await Group.all().delete()
@@ -162,6 +198,11 @@ async def test_without_relation(
     collector: AdminCollector,
     setup_article: t.Generator,
 ) -> None:
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    print(f"test_without_relation: {loop}, {id(loop)}")
+
     # create article
     article = {"title": "test", "content": "test", "author": "test", "id": -1}
     request = build_request()
@@ -544,3 +585,53 @@ async def test_failed(collector: AdminCollector) -> None:
         await AdminModelService.model_save(
             "WithOutUserAdmin", user, {"WithOutArticleAdmin": [article]}, request
         )
+
+
+async def test_routes(collector: AdminCollector) -> None:
+    request = build_request()
+
+    ret = await AdminModelService.list_route(request)
+
+    # TODO
+    # need further test when connect to unfazed-admin
+    models_ret = [i for i in ret if i["name"] == "Models"][0]
+    tools_ret = [i for i in ret if i["name"] == "Tools"][0]
+    caches_ret = [i for i in ret if i["name"] == "Cache"][0]
+
+    assert "O2OUserAdmin" in [i["name"] for i in models_ret["children"]]
+    assert "ExportToolAdmin" in [i["name"] for i in tools_ret["children"]]
+    assert "WithoutPermissionAdmin" not in [i["name"] for i in tools_ret["children"]]
+    assert "CacheUserAdmin" in [i["name"] for i in caches_ret["children"]]
+
+
+def test_settings() -> None:
+    settings["UNFAZED_SETTINGS"] = UnfazedSettings(
+        PROJECT_NAME="test_admin", VERSION="0.1"
+    )
+
+    ret = AdminModelService.site_settings()
+
+    assert "title" in ret
+
+
+async def test_model_desc(collector: AdminCollector) -> None:
+    request = build_request()
+
+    ret = await AdminModelService.model_desc("ArticleAdmin", request)
+
+    assert "fields" in ret
+    assert "actions" in ret
+    assert "attrs" in ret
+
+    # assert "sync_method" in [i["name"] for i in ret["actions"]]
+    # assert "async_method" in [i["name"] for i in ret["actions"]]
+
+    # assert "InlineM2MGroupAdmin" in [i["name"] for i in ret["inlines"]]
+
+
+async def test_model_detail(collector: AdminCollector) -> None:
+    request = build_request()
+
+    ret = await AdminModelService.model_detail("M2MUserAdmin", {}, request)
+
+    assert "InlineM2MGroupAdmin" in ret

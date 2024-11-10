@@ -36,6 +36,10 @@ class Unfazed(Starlette):
         self._app_center: AppCenter = None
         self._command_center: CommandCenter = None
         self._model_center: ModelCenter = None
+
+        # convinient for building test
+        if settings:
+            settings_proxy["UNFAZED_SETTINGS"] = settings
         self._settings = settings
 
         super().__init__(debug=debug, routes=routes, middleware=middlewares)
