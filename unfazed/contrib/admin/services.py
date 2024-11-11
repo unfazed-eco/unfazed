@@ -148,7 +148,7 @@ class AdminModelService:
     @classmethod
     async def model_save(
         cls, admin_ins_name: str, data: t.Dict, inlines: t.Dict, request: HttpRequest
-    ) -> t.Any:
+    ) -> t.Dict:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_change_perm(

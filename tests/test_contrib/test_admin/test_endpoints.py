@@ -1,14 +1,14 @@
-import os
 import typing as t
 from unittest.mock import patch
 
 import pytest_asyncio
 
 from tests.apps.admin.article.models import Author
+from unfazed.conf import settings
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
 from unfazed.core import Unfazed
 from unfazed.db.tortoise.serializer import TSerializer
-from unfazed.http import HttpRequest
+from unfazed.http import HttpRequest, HttpResponse
 from unfazed.test import Requestfactory
 
 
@@ -18,21 +18,8 @@ class User:
     email = "user@unfazed.com"
 
 
-async def reiceive(*args, **kwargs):
-    pass
-
-
-async def send(*args, **kwargs):
-    pass
-
-
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(loop_scope="session")
 async def setup_env():
-    import asyncio
-
-    loop = asyncio.get_running_loop()
-    print(f"setup_env {loop} - {id(loop)}")
-
     admin_collector.clear()
     await Author.all().delete()
 
@@ -60,6 +47,12 @@ async def setup_env():
         ) -> t.List:
             return [{"foo": "bar"}]
 
+        @action(name="test_action4")
+        async def test_action4(
+            self, data: t.Dict, request: HttpRequest | None = None
+        ) -> HttpResponse:
+            return HttpResponse("hello, unfazed")
+
         @property
         def name(self):
             return "AuthorAdmin"
@@ -70,64 +63,8 @@ async def setup_env():
     await Author.all().delete()
 
 
-_Settings = {
-    "DEBUG": True,
-    "PROJECT_NAME": "test_app_db",
-    "ROOT_URLCONF": "tests.apps.routes",
-    "INSTALLED_APPS": [
-        "tests.apps.orm.common",
-        "tests.apps.orm.serializer",
-        "tests.apps.admin.account",
-        "tests.apps.admin.article",
-        "unfazed.contrib.admin",
-    ],
-    "DATABASE": {
-        "CONNECTIONS": {
-            "default": {
-                "ENGINE": "unfazed.db.tortoise.backends.mysql",
-                "CREDENTIALS": {
-                    "HOST": os.environ.get("MYSQL_HOST", "mysql"),
-                    "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
-                    "USER": "root",
-                    "PASSWORD": "app",
-                    "DATABASE": "test_app",
-                },
-            }
-        }
-    },
-}
-
-
-# async def test_endpoints_with_scope(setup_env: t.Generator) -> None:
-#     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
-#     await unfazed.setup()
-
-#     ret = await unfazed(
-#         scope={
-#             "type": "http",
-#             "method": "GET",
-#             "scheme": "https",
-#             "server": ("www.example.org", 80),
-#             "path": "/api/contrib/admin/route-list",
-#             "user": User(),
-#         },
-#         receive=reiceive,
-#         send=send,
-#     )
-
-#     assert ret is None
-
-
 async def test_endpoints(setup_env: t.Generator, prepare_unfazed: Unfazed) -> None:
-    # unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
-
-    # await unfazed.setup()
-
-    import asyncio
-
-    loop = asyncio.get_running_loop()
-    print(f"test_endpoints {loop} - {id(loop)}")
-
+    settings["UNFAZED_SETTINGS"] = prepare_unfazed.settings
     with patch.object(HttpRequest, "user", User()):
         request = Requestfactory(prepare_unfazed)
 
@@ -159,46 +96,68 @@ async def test_endpoints(setup_env: t.Generator, prepare_unfazed: Unfazed) -> No
 
         assert resp.status_code == 200
 
+        resp = await request.post(
+            "/api/contrib/admin/model-action",
+            json={
+                "name": "AuthorAdmin",
+                "action": "test_action2",
+                "data": {},
+            },
+        )
 
-# resp = request.post(
-#     "/api/contrib/admin/model-action",
-#     json={
-#         "name": "AuthorAdmin",
-#         "action": "test_action2",
-#         "data": {},
-#     },
-# )
+        assert resp.status_code == 200
 
-# assert resp.status_code == 200
+        resp = await request.post(
+            "/api/contrib/admin/model-action",
+            json={
+                "name": "AuthorAdmin",
+                "action": "test_action4",
+                "data": {},
+            },
+        )
 
-# resp = request.post(
-#     "/api/contrib/admin/model-action",
-#     json={
-#         "name": "AuthorAdmin",
-#         "action": "test_action3",
-#         "data": {},
-#     },
-# )
+        assert resp.status_code == 200
 
-# assert resp.status_code == 200
+        resp = await request.post(
+            "/api/contrib/admin/model-action",
+            json={
+                "name": "AuthorAdmin",
+                "action": "test_action3",
+                "data": {},
+            },
+        )
 
+        assert resp.status_code == 200
 
-#         resp = request.post(
-#             "/api/contrib/admin/model-save",
-#             json={
-#                 "name": "AuthorAdmin",
-#                 "data": {
-#                     "name": "test_endpoints",
-#                     "age": 18,
-#                     "id": -1,
-#                 },
-#                 "inlines": {},
-#             },
-#         )
+        resp = await request.post(
+            "/api/contrib/admin/model-save",
+            json={
+                "name": "AuthorAdmin",
+                "data": {
+                    "name": "test_endpoints",
+                    "age": 18,
+                    "id": -1,
+                },
+                "inlines": {},
+            },
+        )
 
-#         assert resp.status_code == 200
+        assert resp.status_code == 200
+        ret = resp.json()
 
-# resp = request.post(
-#     "/api/contrib/admin/model-data",
-#     json={"name": "ArticleAdmin", "cond": {}, "page": 1, "size": 10},
-# )
+        resp = await request.post(
+            "/api/contrib/admin/model-data",
+            json={"name": "AuthorAdmin", "cond": [], "page": 1, "size": 10},
+        )
+
+        assert resp.status_code == 200
+
+        resp = await request.post(
+            "/api/contrib/admin/model-delete",
+            json={
+                "name": "AuthorAdmin",
+                "data": {"id": ret["id"]},
+            },
+        )
+
+        assert resp.status_code == 200

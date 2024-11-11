@@ -167,8 +167,12 @@ def build_request():
     return Request()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def setup_article():
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    print(f"setup_article {loop} - {id(loop)}")
     await Article.all().delete()
 
     for i in range(20):
@@ -179,7 +183,7 @@ async def setup_article():
     await Article.all().delete()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def setup_user():
     await User.all().delete()
     await Group.all().delete()
@@ -195,14 +199,8 @@ async def setup_user():
 
 
 async def test_without_relation(
-    collector: AdminCollector,
-    setup_article: t.Generator,
+    setup_article: t.Generator, collector: AdminCollector
 ) -> None:
-    import asyncio
-
-    loop = asyncio.get_running_loop()
-    print(f"test_without_relation: {loop}, {id(loop)}")
-
     # create article
     article = {"title": "test", "content": "test", "author": "test", "id": -1}
     request = build_request()
