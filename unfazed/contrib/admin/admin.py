@@ -1,12 +1,7 @@
 from .registry import ModelAdmin, register
-from .serializers import LogEntrySerializer, MenuSerializer
+from .serializers import LogEntrySerializer
 
 
 @register(LogEntrySerializer)
 class LogEntryAdmin(ModelAdmin):
-    pass
-
-
-@register(MenuSerializer)
-class MenuAdmin(ModelAdmin):
     pass

@@ -12,7 +12,7 @@ class Detail(BaseModel):
 
 
 class Data(BaseModel):
-    cond: t.List[Condtion]
+    cond: t.List[Condtion | None]
     name: str
     page: int
     size: int

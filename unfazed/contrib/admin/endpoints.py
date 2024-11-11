@@ -92,5 +92,5 @@ async def model_save(
 async def model_delete(
     request: HttpRequest, ctx: _[s.Delete, p.Json()]
 ) -> _[JsonResponse[s.DeleteResp], *s.DELETE_RESP]:
-    ret = await AdminModelService.model_delete(ctx.name, ctx.data)
+    ret = await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
     return JsonResponse(ret)
