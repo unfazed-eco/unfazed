@@ -10,7 +10,7 @@ TYPE_MAPPING = {
     "float": "FloatField",
     "decimal": "FloatField",
     "date": "DateField",
-    "datetime": "DateTimeField",
+    "datetime": "DatetimeField",
     "time": "TimeField",
     "bytes": "CharField",
     # tortoise type to field_type
@@ -24,6 +24,17 @@ TYPE_MAPPING = {
     "DecimalField": "FloatField",
     "JSONField": "CharField",
 }
+
+SUPPORTED_FIELD_TYPES = [
+    "CharField",
+    "IntegerField",
+    "BooleanField",
+    "FloatField",
+    "DateField",
+    "DatetimeField",
+    "TimeField",
+    "TextField",
+]
 
 
 def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
@@ -47,5 +58,7 @@ def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
     return ret
 
 
-def convert_python_type(t: str) -> str:
+def convert_field_type(t: str) -> str:
+    if t in SUPPORTED_FIELD_TYPES:
+        return t
     return TYPE_MAPPING.get(t, "CharField")

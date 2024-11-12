@@ -1,5 +1,7 @@
 import typing as t
 
+from .schema import AdminField
+
 
 class Field:
     def __init__(
@@ -21,20 +23,18 @@ class Field:
         self.default = default
 
     def to_json(self):
-        return {
-            "name": self.name,
-            "readonly": self.readonly,
-            "show": self.show,
-            "blank": self.blank,
-            "choices": list(self.choices),
-            "help_text": self.help_text,
-            "default": self.default,
-            "type": self.__class__.__name__,
-        }
-
-    def edit(self, key: str, value: t.Any):
-        if hasattr(self, key):
-            setattr(self, key, value)
+        return AdminField(
+            **{
+                "name": self.name,
+                "readonly": self.readonly,
+                "show": self.show,
+                "blank": self.blank,
+                "choices": list(self.choices),
+                "help_text": self.help_text,
+                "default": self.default,
+                "type": self.__class__.__name__,
+            }
+        )
 
 
 class CharField(Field):

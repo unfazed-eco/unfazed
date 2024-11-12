@@ -1,6 +1,7 @@
 import inspect
 import typing as t
 from enum import Enum
+from itertools import chain
 
 from pydantic.fields import FieldInfo
 
@@ -14,8 +15,16 @@ from .collector import admin_collector
 from .decorators import action
 from .fields import CharField, TextField
 from .fields import Field as CustomField
-from .schema import AdminAction, AdminAttrs, AdminField, AdminSerializeModel, AdminSite
-from .utils import convert_python_type
+from .schema import (
+    AdminAction,
+    AdminAttrs,
+    AdminField,
+    AdminInlineAttrs,
+    AdminSerializeModel,
+    AdminSite,
+    AdminToolAttrs,
+)
+from .utils import convert_field_type
 
 
 class BaseAdmin:
@@ -146,12 +155,11 @@ site = SiteSettings()
 
 
 class BaseModelAdmin(BaseAdmin):
-    serializer: t.Type[TSerializer]
+    serializer: t.Type[TSerializer] | None = None
 
     # fields description
     image_fields: t.List[str] = []
     datetime_fields: t.List[str] = []
-    time_fields: t.List[str] = []
     editor_fields: t.List[str] = []
     readonly_fields: t.List[str] = []
     not_null_fields: t.List[str] = []
@@ -189,11 +197,13 @@ class BaseModelAdmin(BaseAdmin):
             if fieldinfo.default is None:
                 not_null.append(name)
 
-            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {})
+            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {}) or {}
 
-            field_type = json_schema_extra.get(
-                "field_type", None
-            ) or convert_python_type(fieldinfo.annotation)
+            raw_field_type = json_schema_extra.get("field_type", None)
+            if not raw_field_type:
+                raw_field_type = fieldinfo.annotation.__name__
+
+            field_type = convert_field_type(raw_field_type)
 
             if inspect.isclass(fieldinfo.annotation) and issubclass(
                 fieldinfo.annotation, Enum
@@ -214,46 +224,52 @@ class BaseModelAdmin(BaseAdmin):
                 }
             )
         list_display = self.list_display or field_list
-        for item in list_display:
+        not_null_fields = self.not_null_fields + not_null
+
+        for item in chain(
+            list_display,
+            self.readonly_fields,
+            self.image_fields,
+            self.datetime_fields,
+            self.editor_fields,
+            self.json_fields,
+            not_null_fields,
+        ):
             if item not in fields_mapping:
-                raise ValueError(f"field '{item}' not included")
+                raise ValueError(f"field '{item}' not included in {field_list}")
+        for item in list_display:
             fields_mapping[item].show = True
 
         readonly_fields = self.readonly_fields
         for item in readonly_fields:
-            if item not in fields_mapping:
-                raise ValueError(f"{item} should included in show_fields")
             fields_mapping[item].readonly = True
 
         image_fields = self.image_fields
         for item in image_fields:
-            if item in fields_mapping:
-                fields_mapping[item].field_type = "ImageField"
+            fields_mapping[item].field_type = "ImageField"
 
         datetime_fields = self.datetime_fields
         for item in datetime_fields:
-            if item in fields_mapping:
-                fields_mapping[item].field_type = "DatetimeField"
-
-        time_fields = self.time_fields
-        for item in time_fields:
-            if fields_mapping[item].field_type != "TimeField":
-                raise ValueError(f"{item} should be TimeField")
+            if fields_mapping[item].field_type not in [
+                "DatetimeField",
+                "DateField",
+                "IntegerField",
+                "FloatField",
+            ]:
+                raise ValueError(
+                    f"{item} should be DatetimeField or DateField or IntegerField or FloatField"
+                )
+            fields_mapping[item].field_type = "DatetimeField"
 
         editor_fields = self.editor_fields
         for item in editor_fields:
-            if item in fields_mapping:
-                fields_mapping[item].field_type = "EditorField"
+            fields_mapping[item].field_type = "EditorField"
 
         json_fields = self.json_fields
         for item in json_fields:
-            if item in fields_mapping:
-                fields_mapping[item].field_type = "JsonField"
+            fields_mapping[item].field_type = "JsonField"
 
-        not_null_fields = self.not_null_fields + not_null or list_display
         for item in not_null_fields:
-            if item not in fields_mapping:
-                raise ValueError(f"{item} show include in show_fields")
             fields_mapping[item].blank = False
 
         return fields_mapping
@@ -270,7 +286,7 @@ class ModelAdmin(BaseModelAdmin):
     editable: bool = True
 
     # relations
-    inlines: t.List[BaseModelAdmin | str] = []
+    inlines: t.List[str] = []
 
     def to_inlines(self) -> t.Dict:
         inlines = self.inlines
@@ -279,11 +295,8 @@ class ModelAdmin(BaseModelAdmin):
 
         ret = {}
         self_serializer: BaseSerializer = self.serializer
-        for inline in inlines:
-            if isinstance(inline, str):
-                inline = admin_collector[inline]
-            else:
-                inline = admin_collector[inline.name]
+        for name in inlines:
+            inline = admin_collector[name]
 
             inline_serializer: BaseSerializer = inline.serializer
             relation = inline_serializer.find_relation(self_serializer)
@@ -308,49 +321,56 @@ class ModelAdmin(BaseModelAdmin):
 
         return ret
 
-    def to_serialize(self, *args, **kw) -> AdminSerializeModel:
-        fields_map = self.get_fields()
-        actions = self.get_actions()
-
+    def get_attrs(self, field_list: t.List[str]) -> AdminAttrs:
         detail_display = self.detail_display or [
             name for name in self.serializer.Meta.model._meta.db_fields
         ]
-        attrs = {
-            "editable": self.editable,
-            "help_text": self.help_text,
-            "can_show_all": self.can_show_all,
-            "can_search": self.can_search,
-            "search_fields": self.search_fields or detail_display,
-            "list_per_page": self.list_per_page,
-            "detail_display": detail_display,
-            "can_add": self.can_add,
-            "list_search": self.list_search,
-            "can_delete": self.can_delete,
-            "can_edit": self.can_edit,
-        }
+        for item in chain(
+            detail_display,
+            self.list_filter,
+            self.list_sort,
+            self.list_order,
+            self.search_fields,
+        ):
+            if item not in field_list:
+                raise ValueError(f"field {item} not found in {field_list}")
 
-        list_filter = self.list_filter
-        for item in list_filter:
-            if item not in fields_map:
-                raise ValueError(f"{item} not found in show_fields")
-        attrs["list_filter"] = list_filter
+        attrs = AdminAttrs(
+            **{
+                "editable": self.editable,
+                "help_text": self.help_text,
+                "can_show_all": self.can_show_all,
+                "can_search": self.can_search,
+                "search_fields": self.search_fields or detail_display,
+                "list_per_page": self.list_per_page,
+                "detail_display": detail_display,
+                "can_add": self.can_add,
+                "list_search": self.list_search,
+                "can_delete": self.can_delete,
+                "can_edit": self.can_edit,
+                "list_filter": self.list_filter,
+                "list_sort": self.list_sort,
+                "list_order": self.list_order,
+            }
+        )
 
-        list_sort = self.list_sort
-        for item in list_sort:
-            if item not in fields_map:
-                raise ValueError(f"{item} not found in show_fields")
-        attrs["list_sort"] = list_sort
+        return attrs
+
+    def to_serialize(self, *args, **kw) -> AdminSerializeModel:
+        fields_map = self.get_fields()
+        actions = self.get_actions()
+        attrs = self.get_attrs(list(fields_map.keys()))
 
         return AdminSerializeModel(
             fields=fields_map,
             actions=actions,
-            attrs=AdminAttrs(**attrs),
+            attrs=attrs,
         )
 
 
 class ModelInlineAdmin(ModelAdmin):
     # behaviors on list page
-    list_show_type: int
+
     max_num: int = 0
     min_num: int = 0
 
@@ -360,41 +380,50 @@ class ModelInlineAdmin(ModelAdmin):
     def to_route(self) -> None:
         return None
 
-    def to_serialize(self) -> dict:
+    def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:
+        list_display = self.list_display or [
+            name for name in self.serializer.Meta.model._meta.db_fields
+        ]
+
+        for item in chain(
+            list_display,
+            self.list_filter,
+            self.list_sort,
+            self.list_order,
+            self.search_fields,
+        ):
+            if item not in field_list:
+                raise ValueError(f"field {item} not found in {field_list}")
+
+        attrs = AdminInlineAttrs(
+            **{
+                "help_text": self.help_text,
+                "max_num": self.max_num,
+                "min_num": self.min_num,
+                "can_copy": self.can_copy,
+                "can_show_all": self.can_show_all,
+                "can_search": self.can_search,
+                "search_fields": self.search_fields or list_display,
+                "list_per_page": self.list_per_page,
+                "can_add": self.can_add,
+                "list_search": self.list_search,
+                "can_delete": self.can_delete,
+                "can_edit": self.can_edit,
+                "list_filter": self.list_filter,
+                "list_sort": self.list_sort,
+                "list_order": self.list_order,
+            }
+        )
+
+        return attrs
+
+    def to_serialize(self) -> AdminSerializeModel:
         fields_map = self.get_fields()
+        attrs = self.get_attrs(list(fields_map.keys()))
 
-        attrs = {
-            "help_text": self.help_text,
-            "list_show_type": self.list_show_type,
-            "max_num": self.max_num,
-            "min_num": self.min_num,
-            "can_copy": self.can_copy,
-            "can_add": self.can_add,
-            "can_delete": self.can_delete,
-            "can_edit": self.can_edit,
-            "can_search": self.can_search,
-            "list_per_page": self.list_per_page,
-            "list_order": self.list_order,
-            "list_search": self.list_search,
-        }
-
-        list_filter = self.list_filter
-        for item in list_filter:
-            if item not in fields_map:
-                raise ValueError(f"{item} not found in show_fields")
-        attrs["list_filter"] = list_filter
-
-        list_sort = self.list_sort
-        for item in list_sort:
-            if item not in fields_map:
-                raise ValueError(f"{item} not found in show_fields")
-        attrs["list_sort"] = list_sort
-
-        return {
-            "fields": fields_map,
-            "attrs": attrs,
-            "actions": self.get_actions(),
-        }
+        return AdminSerializeModel(
+            fields=fields_map, attrs=attrs, actions=self.get_actions()
+        )
 
 
 class ToolAdmin(BaseAdmin):
@@ -402,23 +431,20 @@ class ToolAdmin(BaseAdmin):
     route_label: str = "Tools"
     output_field: str
 
-    def to_serialize(self) -> dict:
+    def to_serialize(self) -> AdminSerializeModel:
         fields_map = {}
         for field in self.fields_set:
             fields_map[field.name] = field.to_json()
 
-        attrs = {
-            "output_field": self.output_field,
-            "help_text": self.help_text,
-        }
+        attrs = AdminToolAttrs(output_field=self.output_field, help_text=self.help_text)
 
         actions = self.get_actions()
 
-        return {
-            "fields": fields_map,
-            "actions": actions,
-            "attrs": attrs,
-        }
+        return AdminSerializeModel(
+            fields=fields_map,
+            actions=actions,
+            attrs=attrs,
+        )
 
 
 class CacheAdmin(BaseAdmin):
@@ -433,13 +459,19 @@ class CacheAdmin(BaseAdmin):
     cache_client: CacheBackend
 
     @action(name="search")
-    async def search(self, key: str, *args, **kw) -> t.Any:
+    async def search(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
+        key = data.get("key", None)
         return await self.cache_client.get(key)
 
     @action(name="set")
-    async def set(self, key: str, value: t.Any, *args, **kw) -> t.Any:
+    async def set(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
+        key = data.get("key", None)
+        value = data.get("value", None)
+
         return await self.cache_client.set(key, value)
 
     @action(name="delete")
-    async def delete(self, key: str, *args, **kw) -> t.Any:
+    async def delete(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
+        key = data.get("key", None)
+
         return await self.cache_client.delete(key)
