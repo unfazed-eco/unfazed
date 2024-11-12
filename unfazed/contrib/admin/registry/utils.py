@@ -2,6 +2,29 @@ import typing as t
 
 from unfazed.schema import Condtion
 
+TYPE_MAPPING = {
+    # python type to field_type
+    "str": "CharField",
+    "int": "IntegerField",
+    "bool": "BooleanField",
+    "float": "FloatField",
+    "decimal": "FloatField",
+    "date": "DateField",
+    "datetime": "DateTimeField",
+    "time": "TimeField",
+    "bytes": "CharField",
+    # tortoise type to field_type
+    "BigIntField": "IntegerField",
+    "BinaryField": "CharField",
+    "SmallIntField": "IntegerField",
+    "IntField": "IntegerField",
+    "CharEnumFieldInstance": "CharField",
+    "IntEnumFieldInstance": "IntegerField",
+    "UUIDField": "CharField",
+    "DecimalField": "FloatField",
+    "JSONField": "CharField",
+}
+
 
 def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
     ret = {}
@@ -22,3 +45,7 @@ def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
         elif cond.contains is not None:
             ret[f"{field}__contains"] = cond.contains
     return ret
+
+
+def convert_python_type(t: str) -> str:
+    return TYPE_MAPPING.get(t, "CharField")

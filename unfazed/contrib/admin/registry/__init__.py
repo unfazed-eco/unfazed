@@ -1,6 +1,14 @@
 from .collector import admin_collector
 from .decorators import action, register
-from .models import BaseAdmin, CacheAdmin, ModelAdmin, ModelInlineAdmin, ToolAdmin, site
+from .models import (
+    BaseAdmin,
+    BaseModelAdmin,
+    CacheAdmin,
+    ModelAdmin,
+    ModelInlineAdmin,
+    ToolAdmin,
+    site,
+)
 from .utils import parse_cond
 
 __all__ = [
@@ -14,4 +22,5 @@ __all__ = [
     "ModelInlineAdmin",
     "CacheAdmin",
     "ToolAdmin",
+    "BaseModelAdmin",
 ]

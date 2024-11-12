@@ -81,7 +81,7 @@ class AdminModelService:
 
     @classmethod
     def site_settings(cls) -> t.Dict:
-        return site.to_serialize()
+        return site.to_serialize().model_dump(exclude_none=True)
 
     @classmethod
     async def model_desc(cls, admin_ins_name: str, request: HttpRequest) -> t.Dict:
