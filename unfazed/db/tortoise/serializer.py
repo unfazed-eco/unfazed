@@ -135,6 +135,7 @@ def create_common_field(field: Field) -> t.Tuple[t.Type, FieldInfo]:
         default_factory=default_factory,
         description=description["description"] or "",
         title=description["name"] or "",
+        json_schema_extra=field.describe(True),
         **description["constraints"],
     )
 

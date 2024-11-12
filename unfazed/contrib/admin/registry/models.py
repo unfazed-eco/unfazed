@@ -1,5 +1,6 @@
-import enum
+import inspect
 import typing as t
+from enum import Enum
 
 from pydantic.fields import FieldInfo
 
@@ -13,20 +14,13 @@ from .collector import admin_collector
 from .decorators import action
 from .fields import CharField, TextField
 from .fields import Field as CustomField
-from .schema import AdminAction, AdminAttrs, AdminField, AdminSerializeModel
-
-
-class ModelType(enum.StrEnum):
-    SITE = "site"
-    DB = "db"
-    CACHE = "cache"
-    TOOL = "tool"
+from .schema import AdminAction, AdminAttrs, AdminField, AdminSerializeModel, AdminSite
+from .utils import convert_python_type
 
 
 class BaseAdmin:
-    model_type: str
     help_text: t.List[str] = []
-    route_label: str = ""
+    route_label: str | None = None
 
     # route config
     component: str = ""
@@ -61,7 +55,7 @@ class BaseAdmin:
         return request.user.is_superuser
 
     def to_serialize(self, *args, **kw) -> dict:
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_actions(self) -> t.Dict[str, AdminAction]:
         actions: t.Dict[str, AdminAction] = {}
@@ -91,6 +85,7 @@ class BaseAdmin:
 
 
 class SiteSettings(BaseAdmin):
+    # antd properties
     navTheme: str = "light"
     colorPrimary: str = "#1890ff"
     layout: str = "mix"
@@ -104,34 +99,45 @@ class SiteSettings(BaseAdmin):
     iconfontUrl: str = ""
     pageSize: int = 20
     timeZone: str = "UTC"
-    custom_settings: t.Dict[str, t.Any] = {}
-    sitePrefix: str = "/admin"
-    authType: t.List[int] = [1]
+
+    # antd will call backend api use this prefix
+    # for example, if apiPrefix is /api/contrib/admin
+    # antd will call /api/contrib/admin/model-data to get data
+    apiPrefix: str = "/api/contrib/admin"
+
+    # auth type
+    # TODO
+    authPlugins: t.List[t.Dict[str, t.Any]] = []
+
+    # custom settings
+    # If the frontend is integrated with other non-unfazed-admin,
+    # additional configurations can be passed through this field
+    extra: t.Dict[str, t.Any] = {}
 
     def to_route(self) -> None:
         return None
 
-    def to_serialize(self) -> t.Dict[str, t.Any]:
+    def to_serialize(self) -> AdminSite:
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
-        ret = {
-            "title": self.title,
-            "navTheme": self.navTheme,
-            "colorPrimary": self.colorPrimary,
-            "layout": self.layout,
-            "contentWidth": self.contentWidth,
-            "fixedHeader": self.fixedHeader,
-            "colorWeak": self.colorWeak,
-            "logo": self.logo,
-            "pageSize": self.pageSize,
-            "timeZone": self.timeZone,
-            "sitePrefix": self.sitePrefix,
-            "debug": unfazed_settings.DEBUG,
-            "version": unfazed_settings.VERSION or "0.0.1",
-            "authType": self.authType,
-        }
-
-        if self.custom_settings:
-            ret.update(self.custom_settings)
+        ret = AdminSite(
+            **{
+                "title": self.title,
+                "navTheme": self.navTheme,
+                "colorPrimary": self.colorPrimary,
+                "layout": self.layout,
+                "contentWidth": self.contentWidth,
+                "fixedHeader": self.fixedHeader,
+                "colorWeak": self.colorWeak,
+                "logo": self.logo,
+                "pageSize": self.pageSize,
+                "timeZone": self.timeZone,
+                "apiPrefix": self.apiPrefix,
+                "debug": unfazed_settings.DEBUG,
+                "version": unfazed_settings.VERSION or "0.0.1",
+                "authPlugins": self.authPlugins,
+                "extra": self.extra,
+            }
+        )
 
         return ret
 
@@ -163,8 +169,9 @@ class BaseModelAdmin(BaseAdmin):
     can_add: bool = True
     can_delete: bool = True
     can_edit: bool = True
-    can_search: bool = True
 
+    # search panel
+    can_search: bool = True
     search_fields: t.List[str] = []
 
     def get_fields(self) -> t.Dict[str, t.Dict]:
@@ -178,24 +185,32 @@ class BaseModelAdmin(BaseAdmin):
         field_list = []
         not_null = []
         for name, fieldinfo in fields.items():
-            field_class_name = fieldinfo.annotation.__name__
-
             field_list.append(name)
             if fieldinfo.default is None:
                 not_null.append(name)
 
-            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {}) or {}
-            choices = json_schema_extra.get("choices", [])
+            json_schema_extra = getattr(fieldinfo, "json_schema_extra", {})
+
+            field_type = json_schema_extra.get(
+                "field_type", None
+            ) or convert_python_type(fieldinfo.annotation)
+
+            if inspect.isclass(fieldinfo.annotation) and issubclass(
+                fieldinfo.annotation, Enum
+            ):
+                choices = [(item.name, item.value) for item in fieldinfo.annotation]
+            else:
+                choices = json_schema_extra.get("choices", None) or []
 
             fields_mapping[name] = AdminField(
                 **{
-                    "type": field_class_name,
+                    "type": field_type,
                     "readonly": False,
                     "show": False,
                     "blank": True,
                     "choices": choices,
-                    "help_text": fieldinfo.description,
-                    "default": fieldinfo.get_default(),
+                    "help_text": fieldinfo.description or "",
+                    "default": fieldinfo.get_default(call_default_factory=True),
                 }
             )
         list_display = self.list_display or field_list
@@ -245,7 +260,8 @@ class BaseModelAdmin(BaseAdmin):
 
 
 class ModelAdmin(BaseModelAdmin):
-    can_show_all: bool = True
+    # behaviors on list page
+    can_show_all: bool = False
 
     # behaviors on detail page
     detail_display: t.List[str] = []
@@ -266,6 +282,8 @@ class ModelAdmin(BaseModelAdmin):
         for inline in inlines:
             if isinstance(inline, str):
                 inline = admin_collector[inline]
+            else:
+                inline = admin_collector[inline.name]
 
             inline_serializer: BaseSerializer = inline.serializer
             relation = inline_serializer.find_relation(self_serializer)
