@@ -1,4 +1,3 @@
-import typing as t
 import uuid
 from datetime import timedelta
 from decimal import Decimal
@@ -12,9 +11,9 @@ from tests.apps.orm.serializer.models import (
     Car,
     Color,
     Course,
-    Profile,
     Student,
 )
+from tests.apps.orm.serializer.models import StudentProfile as Profile
 from unfazed.db.tortoise.serializer import TSerializer
 
 
@@ -26,7 +25,7 @@ class CarSerializer(TSerializer):
         model = Car
 
 
-async def test_serializer_methods(prepare_db: t.Generator) -> None:
+async def test_serializer_methods() -> None:
     await Car.all().delete()
     # create
     car = CarSerializer(
@@ -227,7 +226,7 @@ async def test_serializer_methods(prepare_db: t.Generator) -> None:
     assert await Car.filter(id=new_car.id).count() == 0
 
 
-async def test_relations(prepare_db: t.Generator) -> None:
+async def test_relations() -> None:
     s1 = await Student.create(name="student1", age=18)
     s2 = await Student.create(name="student2", age=19)
 
