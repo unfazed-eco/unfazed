@@ -1010,7 +1010,7 @@ async def test_file():
 
     zenofpython = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
 
-    resp = request.post(
+    resp = await request.post(
         "/with-file",
         files={"file1": open(zenofpython, "rb")},
         data={"name": "unfazed", "age": 1},

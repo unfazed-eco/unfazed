@@ -62,11 +62,11 @@ async def test_api():
     with patch.object(OpenApiService, "get_settings", return_value=unfazed.settings):
         request = Requestfactory(unfazed)
 
-        response = request.get("/openapi/docs")
+        response = await request.get("/openapi/docs")
         assert response.status_code == 200
 
-        response = request.get("/openapi/redoc")
+        response = await request.get("/openapi/redoc")
         assert response.status_code == 200
 
-        response = request.get("/openapi/openapi.json")
+        response = await request.get("/openapi/openapi.json")
         assert response.status_code == 200

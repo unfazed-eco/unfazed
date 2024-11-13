@@ -36,7 +36,7 @@ class Car(Model):
     override = f.CharField(max_length=100)
 
     class Meta:
-        table = "car"
+        table = "serializer_car"
 
 
 # for test relationship
@@ -46,7 +46,7 @@ class Student(Model):
     age = f.IntField()
 
     class Meta:
-        table = "student"
+        table = "serializer_student"
 
 
 class Bag(Model):
@@ -60,10 +60,10 @@ class Bag(Model):
     name = f.CharField(max_length=100)
 
     class Meta:
-        table = "bag"
+        table = "serializer_bag"
 
 
-class Profile(Model):
+class StudentProfile(Model):
     id = f.BigIntField(primary_key=True)
     nickname = f.CharField(max_length=100)
     student = f.OneToOneField(
@@ -74,7 +74,7 @@ class Profile(Model):
     )
 
     class Meta:
-        table = "profile"
+        table = "serializer_profile"
 
 
 class Course(Model):
@@ -88,7 +88,7 @@ class Course(Model):
     )
 
     class Meta:
-        table = "course"
+        table = "serializer_course"
 
 
 # class StudentCourseRelation(Model):

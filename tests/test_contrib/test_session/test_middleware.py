@@ -78,32 +78,32 @@ async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings):
 
     with Requestfactory(unfazed, base_url="https://garena.com") as request:
         # login
-        resp = request.get("/login")
+        resp = await request.get("/login")
         assert resp.status_code == 200
         assert resp.text == "ok"
 
         # read
-        resp = request.get("/read")
+        resp = await request.get("/read")
         assert resp.status_code == 200
         assert resp.json() == {"foo": "bar"}
 
         # update
-        resp = request.get("/update")
+        resp = await request.get("/update")
         assert resp.status_code == 200
         assert resp.text == "ok"
 
         # read
-        resp = request.get("/read")
+        resp = await request.get("/read")
         assert resp.status_code == 200
         assert resp.json() == {"foo2": "bar2"}
 
         # flush
-        resp = request.get("/logout")
+        resp = await request.get("/logout")
         assert resp.status_code == 200
         assert resp.text == "ok"
 
         # read
-        resp = request.get("/read")
+        resp = await request.get("/read")
         assert resp.status_code == 200
         assert resp.json() == {}
 
