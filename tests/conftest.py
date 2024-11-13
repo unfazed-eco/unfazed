@@ -69,10 +69,6 @@ _Settings = {
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
 async def prepare_unfazed(tmp_path_factory: Path, use_test_db: t.Generator) -> t.Any:
-    import asyncio
-
-    loop = asyncio.get_running_loop()
-    print(f"prepare_unfazed {loop} - {id(loop)}")
     # init unfazed
     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
 

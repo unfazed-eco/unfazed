@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 import typing as t
+import warnings
 from pathlib import Path
 from types import ModuleType
 
@@ -94,8 +95,12 @@ class BaseAppConfig:
             None
         """
         # check if the app has the given file
-        if hasattr(self.app_module, filename):
+        try:
             importlib.import_module(f"{self.app_module.__name__}.{filename}")
+        except ImportError:
+            warnings.warn(
+                f"Could not import {self.app_module.__name__}.{filename}, please check if the {filename} file exists."
+            )
 
     @classmethod
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:
