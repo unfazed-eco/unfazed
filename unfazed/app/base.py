@@ -84,7 +84,7 @@ class BaseAppConfig:
 
         return bool(existed)
 
-    def wakeup(self, filename: str) -> None:
+    def wakeup(self, filename: str) -> bool:
         """
         Wake up the app with the given label.
 
@@ -92,15 +92,18 @@ class BaseAppConfig:
             filename (str): The file of the app to wake up.
 
         Returns:
-            None
+            bool
         """
         # check if the app has the given file
         try:
             importlib.import_module(f"{self.app_module.__name__}.{filename}")
+            return True
         except ImportError:
             warnings.warn(
                 f"Could not import {self.app_module.__name__}.{filename}, please check if the {filename} file exists."
             )
+
+            return False
 
     @classmethod
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:
