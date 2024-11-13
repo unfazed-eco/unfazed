@@ -1,14 +1,7 @@
-import typing as t
-
 import pytest
 
-from tests.decorators import mock_unfazed_settings
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
-
-if t.TYPE_CHECKING:
-    from pytest_mock import MockerFixture
-
 
 SETTINGS = {
     "DEBUG": True,
@@ -17,9 +10,8 @@ SETTINGS = {
 }
 
 
-@mock_unfazed_settings(UnfazedSettings(**SETTINGS))
-async def test_installed_apps(mocker: "MockerFixture") -> None:
-    unfazed = Unfazed()
+async def test_installed_apps(capsys) -> None:
+    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
 
     # Check if the installed apps are loaded correctly
 
@@ -93,6 +85,13 @@ async def test_installed_apps(mocker: "MockerFixture") -> None:
     assert success_app.name == "tests.apps.app.common"
     assert str(success_app) == "tests.apps.app.common"
 
+    ret = success_app.wakeup("admin")
+    assert ret is True
+    screen = capsys.readouterr()
+    assert screen.out == "hello, unfazed\n"
+
+    ret = success_app.wakeup("notexist")
+    assert ret is False
 
     # 8. test double setup
     unfazed = Unfazed()
