@@ -3,13 +3,13 @@ from pydantic import BaseModel
 
 class Condtion(BaseModel):
     field: str
-    eq: float | int | str | None
-    lt: float | int | None
-    lte: float | int | None
-    gt: float | int | None
-    gte: float | int | None
-    contains: str | None
-    icontains: str | None
+    eq: float | int | str | None = None
+    lt: float | int | None = None
+    lte: float | int | None = None
+    gt: float | int | None = None
+    gte: float | int | None = None
+    contains: str | None = None
+    icontains: str | None = None
 
 
 class RouteMeta(BaseModel):

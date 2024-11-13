@@ -43,17 +43,17 @@ def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
         field = cond.field
         if cond.eq is not None:
             ret[field] = cond.eq
-        elif cond.lt is not None:
+        if cond.lt is not None:
             ret[f"{field}__lt"] = cond.lt
-        elif cond.gt is not None:
+        if cond.gt is not None:
             ret[f"{field}__gt"] = cond.gt
-        elif cond.lte is not None:
+        if cond.lte is not None:
             ret[f"{field}__lte"] = cond.lte
-        elif cond.gte is not None:
+        if cond.gte is not None:
             ret[f"{field}__gte"] = cond.gte
-        elif cond.icontains is not None:
+        if cond.icontains is not None:
             ret[f"{field}__icontains"] = cond.icontains
-        elif cond.contains is not None:
+        if cond.contains is not None:
             ret[f"{field}__contains"] = cond.contains
     return ret
 

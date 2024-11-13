@@ -169,10 +169,6 @@ def build_request():
 
 @pytest_asyncio.fixture(loop_scope="session")
 async def setup_article():
-    import asyncio
-
-    loop = asyncio.get_running_loop()
-    print(f"setup_article {loop} - {id(loop)}")
     await Article.all().delete()
 
     for i in range(20):
