@@ -1,14 +1,10 @@
-import typing as t
-
 import pytest
 
 from unfazed.cache import caches
+from unfazed.cache.backends.locmem import LocMemCache
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
-
-if t.TYPE_CHECKING:
-    from pytest_mock import MockerFixture  # pragma: no cover
-
+from unfazed.test import Requestfactory
 
 _Settings = {
     "DEBUG": True,
@@ -31,10 +27,13 @@ _Settings = {
             },
         },
     },
+    "LIFESPAN": ["unfazed.cache.lifespan.CacheClear"],
 }
 
 
-async def test_cache_setup(mocker: "MockerFixture") -> None:
+async def test_cache_registry(
+        
+) -> None:
     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
 
     await unfazed.setup()
@@ -50,3 +49,24 @@ async def test_cache_setup(mocker: "MockerFixture") -> None:
     # test non-exist cache
     with pytest.raises(KeyError):
         caches["non-exist"]
+
+    # test cache close
+    async with Requestfactory(unfazed):
+        # trigger cacheclear lifespan
+        pass
+
+
+async def test_handler() -> None:
+    caches["foo"] = LocMemCache("foo", {"MAX_ENTRIES": 1000})
+
+    assert "foo" in caches
+    assert "bar" not in caches
+
+    with pytest.raises(KeyError):
+        caches["bar"]
+
+    del caches["foo"]
+
+    assert "foo" not in caches
+
+    await caches.close()

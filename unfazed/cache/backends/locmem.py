@@ -31,6 +31,8 @@ class LocMemCache(CacheBackend):
         self._expire_info = _expire_info.setdefault(location, {})
         self._lock = _locks.setdefault(location, Lock())
 
+        self.closed = False
+
     def make_key(self, key: str, version: int | None = None) -> str:
         version = version or self.version
         return f"{self.prefix}:{key}:{version}"
@@ -127,9 +129,12 @@ class LocMemCache(CacheBackend):
             self._expire_info.clear()
 
     async def close(self) -> None:
+        if self.closed:
+            return
         async with self._lock:
             self._cache.clear()
             self._expire_info.clear()
             del _caches[self.prefix]
             del _expire_info[self.prefix]
             del _locks[self.prefix]
+        self.closed = True

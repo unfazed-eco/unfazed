@@ -1,35 +1,28 @@
-from asgiref.local import Local
-
 from unfazed.protocol import CacheBackend
 
 
 class CacheHandler:
     def __init__(self) -> None:
-        self.storage = Local()
+        self.storage = {}
 
     def __getitem__(self, key: str) -> CacheBackend:
         try:
-            return getattr(self.storage, key)
-        except AttributeError:
+            return self.storage[key]
+        except KeyError:
             raise KeyError(f"Unfazed Error: CacheBackend {key} not found")
 
     def __setitem__(self, key: str, backend: CacheBackend) -> None:
-        setattr(self.storage, key, backend)
+        self.storage[key] = backend
 
     def __contains__(self, key: str) -> bool:
-        return hasattr(self.storage, key)
+        return key in self.storage
 
     def __delitem__(self, key: str) -> None:
-        delattr(self.storage, key)
+        del self.storage[key]
 
     async def close(self):
-        for obj in dir(self.storage):
-            if obj.startswith("__"):
-                continue
-
-            client = getattr(self.storage, obj)
-            if hasattr(client, "close"):
-                await client.close()
+        for backend in self.storage.values():
+            await backend.close()
 
 
 caches = CacheHandler()
