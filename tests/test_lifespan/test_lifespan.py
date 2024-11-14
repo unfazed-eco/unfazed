@@ -1,11 +1,8 @@
-from unittest.mock import PropertyMock, patch
-
 import pytest
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core.application import Unfazed
-from unfazed.lifespan import lifespan_handler
-from unfazed.protocol import BaseLifeSpan
+from unfazed.lifespan import BaseLifeSpan, lifespan_handler
 from unfazed.test import Requestfactory
 
 
@@ -15,9 +12,7 @@ class HelloLifeSpan(BaseLifeSpan):
         self.count = 1
 
     async def on_startup(self) -> None:
-        self.count += 1
-
-    async def on_shutdown(self) -> None:
+        print("HelloLifeSpan startup")
         self.count += 1
 
     @property
@@ -29,9 +24,6 @@ class HelloLifeSpan2(BaseLifeSpan):
     def __init__(self, unfazed: Unfazed) -> None:
         self.unfazed = unfazed
         self.count = 1
-
-    async def on_startup(self) -> None:
-        self.count += 1
 
     async def on_shutdown(self) -> None:
         self.count += 1
@@ -62,8 +54,6 @@ async def test_registry() -> None:
     with Requestfactory(unfazed):
         assert hello_lifespan.count == 2
 
-    assert hello_lifespan.count == 3
-
 
 SETTINGS2 = {
     "DEBUG": True,
@@ -76,15 +66,10 @@ SETTINGS2 = {
 
 
 async def test_failed() -> None:
-    with patch(
-        "unfazed.core.Unfazed.settings",
-        new_callable=PropertyMock,
-        return_value=UnfazedSettings(**SETTINGS),
-    ):
-        unfazed = Unfazed()
+    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS2))
 
-        with pytest.raises(ValueError):
-            await unfazed.setup()
+    with pytest.raises(ValueError):
+        await unfazed.setup()
 
 
 SETTINGS3 = {
@@ -105,6 +90,6 @@ async def test_empty_state() -> None:
     )
 
     with Requestfactory(unfazed):
-        assert hello_lifespan.count == 2
+        assert hello_lifespan.count == 1
 
-    assert hello_lifespan.count == 3
+    assert hello_lifespan.count == 2
