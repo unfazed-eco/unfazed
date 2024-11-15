@@ -12,7 +12,6 @@ class HelloLifeSpan(BaseLifeSpan):
         self.count = 1
 
     async def on_startup(self) -> None:
-        print("HelloLifeSpan startup")
         self.count += 1
 
     @property
@@ -51,7 +50,7 @@ async def test_registry() -> None:
         "tests.test_lifespan.test_lifespan.HelloLifeSpan"
     )
 
-    with Requestfactory(unfazed):
+    async with Requestfactory(unfazed):
         assert hello_lifespan.count == 2
 
 
@@ -89,7 +88,7 @@ async def test_empty_state() -> None:
         "tests.test_lifespan.test_lifespan.HelloLifeSpan2"
     )
 
-    with Requestfactory(unfazed):
+    async with Requestfactory(unfazed):
         assert hello_lifespan.count == 1
 
     assert hello_lifespan.count == 2
