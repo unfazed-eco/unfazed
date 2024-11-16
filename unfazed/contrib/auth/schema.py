@@ -11,6 +11,7 @@ class LoginCtx(BaseModel):
 
     # for most oauth login
     token: str = ""
+    platform: str = ""
 
     extra: t.Dict[str, t.Any] | None = None
 
@@ -32,3 +33,10 @@ class LogoutSucceed(BaseModel):
 
 LOGIN_RESPONSE = [params.ResponseSpec(model=LoginSucceed)]
 LOUOUT_RESPONSE = [params.ResponseSpec(model=LogoutSucceed)]
+
+
+class RegisterCtx(BaseModel):
+    account: str = ""
+    password: str = ""
+
+    extra: t.Dict[str, t.Any] | None = None
