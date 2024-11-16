@@ -1,18 +1,43 @@
-from unfazed.conf import settings
+import typing as t
 
-from .schema import LoginCtx
-from .settings import UnfazedContribAuthSettings
+from unfazed.http import HttpRequest
+
+from .handler import AuthCenter
+from .schema import LoginCtx, RegisterCtx
 
 
-class UserService:
+class AuthService:
     @classmethod
-    def get_settings(cls) -> UnfazedContribAuthSettings:
-        return settings["UNFAZED_CONTRIB_AUTH_SETTINGS"]
+    def login(cls, request: HttpRequest, ctx: LoginCtx) -> t.Any:
+        ac = AuthCenter(request)
+        ret = ac.authenticate(ctx)
+
+        return ret
 
     @classmethod
-    def login(cls, ctx: LoginCtx):
-        auth_settings = cls.get_settings()
+    def logout(cls, request: HttpRequest) -> t.Any:
+        ac = AuthCenter(request)
+        ret = ac.logout()
+
+        return ret
 
     @classmethod
-    def logout(cls):
-        pass
+    def register(cls, request: HttpRequest, ctx: RegisterCtx) -> t.Any:
+        ac = AuthCenter(request)
+        ret = ac.register(ctx)
+
+        return ret
+
+    @classmethod
+    def login_redirect(cls, request: HttpRequest) -> t.Any:
+        ac = AuthCenter(request)
+        ret = ac.login_redirect()
+
+        return ret
+
+    @classmethod
+    def logout_redirect(cls, request: HttpRequest) -> t.Any:
+        ac = AuthCenter(request)
+        ret = ac.logout_redirect()
+
+        return ret
