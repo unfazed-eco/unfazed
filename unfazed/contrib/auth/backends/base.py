@@ -14,19 +14,18 @@ class BaseAuthBackend:
         raise NotImplementedError
 
     # login
-    async def authenticate(self, ctx: LoginCtx) -> HttpResponse:
+    async def login(self, ctx: LoginCtx) -> t.Tuple[t.Dict, t.Any]:
         raise NotImplementedError
 
-    async def login(
-        self, request: HttpRequest, user: AbstractUser, session_key: str
-    ) -> t.Any:
+    async def session_info(
+        self, user: AbstractUser, ctx: LoginCtx
+    ) -> t.Dict[str, t.Any]:
         session_info = {
             "id": user.id,
-            "name": user.username,
+            "account": user.account,
             "email": user.email,
             "is_superuser": user.is_superuser,
         }
-        request.session[session_key] = session_info
 
         return session_info
 

@@ -1,4 +1,10 @@
-from .auth import LoginRequired, PermissionDenied
+from .auth import (
+    AccountExisted,
+    AccountNotFound,
+    LoginRequired,
+    PermissionDenied,
+    WrongPassword,
+)
 from .base import BaseUnfazedException
 from .route import ParameterError
 
@@ -13,4 +19,7 @@ __all__ = [
     "PermissionDenied",
     "BaseUnfazedException",
     "LoginRequired",
+    "AccountNotFound",
+    "WrongPassword",
+    "AccountExisted",
 ]

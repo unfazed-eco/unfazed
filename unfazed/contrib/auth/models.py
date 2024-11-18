@@ -30,7 +30,7 @@ class AbstractUser(BaseModel):
     class Meta:
         abstract = True
 
-    username = fields.CharField(max_length=255, default="")
+    account = fields.CharField(max_length=255, default="")
     password = fields.CharField(max_length=255, default="")
     email = fields.CharField(max_length=255, default="")
     is_superuser = fields.SmallIntField(default=0)
@@ -48,6 +48,39 @@ class AbstractUser(BaseModel):
         user_cls = import_string(auth_setting.AUTH_USER)
         return user_cls
 
+    async def query_groups(cls) -> t.List["Group"]:
+        pass
+
+    async def bind_group(cls, group: "Group") -> None:
+        pass
+
+    async def bind_groups(cls, groups: t.List["Group"]) -> None:
+        pass
+
+    async def remove_groups(cls, groups: t.List["Group"]) -> None:
+        pass
+
+    async def clear_groups(cls) -> None:
+        pass
+
+    async def query_roles(cls) -> t.List["Role"]:
+        pass
+
+    async def bind_role(cls, role: "Role") -> None:
+        pass
+
+    async def bind_roles(cls, roles: t.List["Role"]) -> None:
+        pass
+
+    async def remove_roles(cls, roles: t.List["Role"]) -> None:
+        pass
+
+    async def clear_roles(cls) -> None:
+        pass
+
+    async def has_permission(cls, access: str) -> bool:
+        pass
+
 
 class Group(BaseModel):
     class Meta:
@@ -60,6 +93,36 @@ class Group(BaseModel):
         on_delete=fields.NO_ACTION,
         db_constraint=False,
     )
+
+    async def query_users(cls) -> t.List["AbstractUser"]:
+        pass
+
+    async def bind_user(cls, user: "AbstractUser") -> None:
+        pass
+
+    async def bind_users(cls, users: t.List["AbstractUser"]) -> None:
+        pass
+
+    async def remove_users(cls, users: t.List["AbstractUser"]) -> None:
+        pass
+
+    async def clear_users(cls) -> None:
+        pass
+
+    async def query_roles(cls) -> t.List["Role"]:
+        pass
+
+    async def bind_role(cls, role: "Role") -> None:
+        pass
+
+    async def bind_roles(cls, roles: t.List["Role"]) -> None:
+        pass
+
+    async def remove_roles(cls, roles: t.List["Role"]) -> None:
+        pass
+
+    async def clear_roles(cls) -> None:
+        pass
 
 
 class Role(BaseModel):
@@ -85,6 +148,51 @@ class Role(BaseModel):
         on_delete=fields.NO_ACTION,
         db_constraint=False,
     )
+
+    async def query_users(cls) -> t.List["AbstractUser"]:
+        pass
+
+    async def bind_user(cls, user: "AbstractUser") -> None:
+        pass
+
+    async def bind_users(cls, users: t.List["AbstractUser"]) -> None:
+        pass
+
+    async def remove_users(cls, users: t.List["AbstractUser"]) -> None:
+        pass
+
+    async def clear_users(cls) -> None:
+        pass
+
+    async def query_groups(cls) -> t.List["Group"]:
+        pass
+
+    async def bind_group(cls, group: "Group") -> None:
+        pass
+
+    async def bind_groups(cls, groups: t.List["Group"]) -> None:
+        pass
+
+    async def remove_groups(cls, groups: t.List["Group"]) -> None:
+        pass
+
+    async def clear_groups(cls) -> None:
+        pass
+
+    async def query_permissions(cls) -> t.List["Permission"]:
+        pass
+
+    async def bind_permission(cls, permission: "Permission") -> None:
+        pass
+
+    async def bind_permissions(cls, permissions: t.List["Permission"]) -> None:
+        pass
+
+    async def remove_permissions(cls, permissions: t.List["Permission"]) -> None:
+        pass
+
+    async def clear_permissions(cls) -> None:
+        pass
 
 
 class Permission(BaseModel):
