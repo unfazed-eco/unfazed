@@ -26,4 +26,4 @@ class UnfazedContribAuthSettings(BaseModel):
 
     USER_MODEL: CanBeImported
     BACKENDS: t.Dict[str, AuthBackend] = {}
-    SESSION_KEY: str = "unfazed.auth"
+    SESSION_KEY: str = "unfazed.auth_session"
