@@ -35,8 +35,8 @@ class BaseAuthBackend:
     async def logout(self, request: HttpRequest) -> HttpResponse:
         raise NotImplementedError
 
-    def get_signin_url(self, request: HttpRequest) -> str:
+    def login_redirect(self, request: HttpRequest) -> str:
         raise NotImplementedError
 
-    def get_signout_url(self, request: HttpRequest) -> str:
+    def logout_redirect(self, request: HttpRequest) -> str:
         raise NotImplementedError

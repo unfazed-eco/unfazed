@@ -1,3 +1,4 @@
+from .admin import BaseAdmin
 from .asgi import ASGIType
 from .cache import CacheBackend, CompressorBase, SerializerBase
 from .command import Command
@@ -20,4 +21,5 @@ __all__ = [
     "ASGIType",
     "SerializerBase",
     "CompressorBase",
+    "BaseAdmin",
 ]

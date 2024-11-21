@@ -8,6 +8,7 @@ from pydantic.fields import FieldInfo
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
+from unfazed.protocol import BaseAdmin as BaseAdminProtocol
 from unfazed.protocol import BaseSerializer, CacheBackend
 from unfazed.schema import AdminRoute
 
@@ -27,7 +28,7 @@ from .schema import (
 from .utils import convert_field_type
 
 
-class BaseAdmin:
+class BaseAdmin(BaseAdminProtocol):
     help_text: t.List[str] = []
     route_label: str | None = None
 

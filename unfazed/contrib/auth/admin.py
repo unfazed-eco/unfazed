@@ -1,4 +1,4 @@
-from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.contrib.admin.registry import ModelAdmin, register, action
 
 from .serializers import (
     GroupSerializer,
@@ -43,4 +43,8 @@ class InlineRoleAdmin(ModelAdmin):
 
 @register(PermissionSerializer)
 class PermissionAdmin(ModelAdmin):
-    pass
+
+    @action(name="Update Permissions", batch=True)
+    async def update_permissions(self, request, *args, **kw):
+        pass
+

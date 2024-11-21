@@ -18,7 +18,7 @@ class DefaultAuthBackend(BaseAuthBackend):
     async def login(self, ctx: LoginCtx) -> t.Tuple[t.Dict, t.Any]:
         # get user
         account, password = ctx.account, ctx.password
-        UserCls: Model = AbstractUser.user
+        UserCls: Model = AbstractUser.UserCls
 
         has_account = await UserCls.filter(account=account)
         if not has_account:
@@ -40,7 +40,7 @@ class DefaultAuthBackend(BaseAuthBackend):
         account, password = ctx.account, ctx.password
         email = ctx.extra.get("email", "")
 
-        UserCls: Model = AbstractUser.user
+        UserCls: Model = AbstractUser.UserCls
 
         existed = await UserCls.filter(account=account)
         if existed:

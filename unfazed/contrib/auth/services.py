@@ -60,8 +60,14 @@ class AuthService:
         ret = await backend.register(ctx)
         return ret
 
-    # def login_redirect(self, request: HttpRequest) -> str:
-    #     pass
+    def login_redirect(self, request: HttpRequest) -> t.Any:
+        # backend = self.choose_backend(request.GET.get("platform", "default"))
+        # return backend.login_redirect(request)
+        # TODO: implement login_redirect
+        pass
 
-    # def logout_redirect(self, request: HttpRequest) -> str:
-    #     pass
+    def logout_redirect(self, request: HttpRequest) -> t.Any:
+        # backend = self.choose_backend(request.GET.get("platform", "default"))
+        # return backend.logout_redirect(request)
+        # TODO: implement logout_redirect
+        pass
