@@ -2,6 +2,7 @@ import typing as t
 from enum import Enum
 
 from tortoise import fields
+from tortoise.fields.relational import ManyToManyRelation
 from tortoise.models import Model
 
 from unfazed.conf import settings
@@ -35,8 +36,11 @@ class AbstractUser(BaseModel):
     email = fields.CharField(max_length=255, default="")
     is_superuser = fields.SmallIntField(default=0)
 
+    groups: ManyToManyRelation["Group"]
+    roles: ManyToManyRelation["Role"]
+
     @property
-    def user(
+    def UserCls(
         cls,
     ) -> t.Annotated[
         t.Type["AbstractUser"],
@@ -48,38 +52,32 @@ class AbstractUser(BaseModel):
         user_cls = import_string(auth_setting.AUTH_USER)
         return user_cls
 
-    async def query_groups(cls) -> t.List["Group"]:
-        pass
+    async def query_roles(self):
+        await self.fetch_related("roles", "groups")
 
-    async def bind_group(cls, group: "Group") -> None:
-        pass
+        ret = self.roles
+        for group in self.groups:
+            await group.fetch_related("roles")
+            ret.extend(group.roles)
 
-    async def bind_groups(cls, groups: t.List["Group"]) -> None:
-        pass
+        return ret
 
-    async def remove_groups(cls, groups: t.List["Group"]) -> None:
-        pass
+    async def has_permission(self, access: str) -> bool:
+        if self.is_superuser:
+            return True
+        await self.fetch_related("roles", "groups")
 
-    async def clear_groups(cls) -> None:
-        pass
+        for role in self.roles:
+            if await role.has_permission(access):
+                return True
 
-    async def query_roles(cls) -> t.List["Role"]:
-        pass
+        for group in self.groups:
+            await group.fetch_related("roles")
+            for role in group.roles:
+                if await role.has_permission(access):
+                    return True
 
-    async def bind_role(cls, role: "Role") -> None:
-        pass
-
-    async def bind_roles(cls, roles: t.List["Role"]) -> None:
-        pass
-
-    async def remove_roles(cls, roles: t.List["Role"]) -> None:
-        pass
-
-    async def clear_roles(cls) -> None:
-        pass
-
-    async def has_permission(cls, access: str) -> bool:
-        pass
+        return False
 
 
 class Group(BaseModel):
@@ -93,36 +91,6 @@ class Group(BaseModel):
         on_delete=fields.NO_ACTION,
         db_constraint=False,
     )
-
-    async def query_users(cls) -> t.List["AbstractUser"]:
-        pass
-
-    async def bind_user(cls, user: "AbstractUser") -> None:
-        pass
-
-    async def bind_users(cls, users: t.List["AbstractUser"]) -> None:
-        pass
-
-    async def remove_users(cls, users: t.List["AbstractUser"]) -> None:
-        pass
-
-    async def clear_users(cls) -> None:
-        pass
-
-    async def query_roles(cls) -> t.List["Role"]:
-        pass
-
-    async def bind_role(cls, role: "Role") -> None:
-        pass
-
-    async def bind_roles(cls, roles: t.List["Role"]) -> None:
-        pass
-
-    async def remove_roles(cls, roles: t.List["Role"]) -> None:
-        pass
-
-    async def clear_roles(cls) -> None:
-        pass
 
 
 class Role(BaseModel):
@@ -149,50 +117,19 @@ class Role(BaseModel):
         db_constraint=False,
     )
 
-    async def query_users(cls) -> t.List["AbstractUser"]:
-        pass
+    async def query_users(self) -> t.List["AbstractUser"]:
+        await self.fetch_related("users", "groups")
 
-    async def bind_user(cls, user: "AbstractUser") -> None:
-        pass
+        ret = self.users
+        for group in self.groups:
+            await group.fetch_related("users")
+            ret.extend(group.users)
 
-    async def bind_users(cls, users: t.List["AbstractUser"]) -> None:
-        pass
+        return ret
 
-    async def remove_users(cls, users: t.List["AbstractUser"]) -> None:
-        pass
-
-    async def clear_users(cls) -> None:
-        pass
-
-    async def query_groups(cls) -> t.List["Group"]:
-        pass
-
-    async def bind_group(cls, group: "Group") -> None:
-        pass
-
-    async def bind_groups(cls, groups: t.List["Group"]) -> None:
-        pass
-
-    async def remove_groups(cls, groups: t.List["Group"]) -> None:
-        pass
-
-    async def clear_groups(cls) -> None:
-        pass
-
-    async def query_permissions(cls) -> t.List["Permission"]:
-        pass
-
-    async def bind_permission(cls, permission: "Permission") -> None:
-        pass
-
-    async def bind_permissions(cls, permissions: t.List["Permission"]) -> None:
-        pass
-
-    async def remove_permissions(cls, permissions: t.List["Permission"]) -> None:
-        pass
-
-    async def clear_permissions(cls) -> None:
-        pass
+    async def has_permission(self, access: str) -> bool:
+        await self.fetch_related("permissions")
+        return any([p.access == access for p in self.permissions])
 
 
 class Permission(BaseModel):
@@ -200,3 +137,4 @@ class Permission(BaseModel):
         table = "unfazed_auth_permission"
 
     access = fields.CharField(max_length=255)
+    remark = fields.TextField(default="")

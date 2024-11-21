@@ -1,6 +1,6 @@
 import typing as t
 
-from unfazed.http import HttpRequest, JsonResponse
+from unfazed.http import HttpRequest, JsonResponse, RedirctResponse
 from unfazed.utils import generic_response
 
 from .schema import LOGIN_RESPONSE, LoginCtx, RegisterCtx
@@ -30,14 +30,14 @@ async def register(request: HttpRequest, ctx: RegisterCtx) -> JsonResponse:
     return generic_response(ret)
 
 
-# Redirects for oauth
-# async def login_redirect(request: HttpRequest) -> RedirctResponse:
-#     s = AuthService(request)
-#     ret = s.login_redirect(request)
-#     return generic_response(ret)
+# for oauth login and logout
+async def login_redirect(request: HttpRequest) -> RedirctResponse:
+    s = AuthService(request)
+    ret = s.login_redirect(request)
+    return generic_response(ret)
 
 
-# async def logout_redirect(request: HttpRequest) -> JsonResponse:
-#     s = AuthService(request)
-#     ret = s.logout_redirect(request)
-#     return generic_response(ret)
+async def logout_redirect(request: HttpRequest) -> JsonResponse:
+    s = AuthService(request)
+    ret = s.logout_redirect(request)
+    return generic_response(ret)
