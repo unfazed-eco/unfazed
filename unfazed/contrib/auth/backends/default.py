@@ -18,7 +18,7 @@ class DefaultAuthBackend(BaseAuthBackend):
     async def login(self, ctx: LoginCtx) -> t.Tuple[t.Dict, t.Any]:
         # get user
         account, password = ctx.account, ctx.password
-        UserCls: Model = AbstractUser.UserCls
+        UserCls: Model = AbstractUser.UserCls()
 
         has_account = await UserCls.filter(account=account)
         if not has_account:
@@ -29,7 +29,7 @@ class DefaultAuthBackend(BaseAuthBackend):
             raise WrongPassword("Please Check your password")
 
         # build session info
-        session_info = self.session_info(user, ctx)
+        session_info = await self.session_info(user, ctx)
 
         # build response
         resp = session_info
@@ -40,7 +40,7 @@ class DefaultAuthBackend(BaseAuthBackend):
         account, password = ctx.account, ctx.password
         email = ctx.extra.get("email", "")
 
-        UserCls: Model = AbstractUser.UserCls
+        UserCls: Model = AbstractUser.UserCls()
 
         existed = await UserCls.filter(account=account)
         if existed:
@@ -51,4 +51,20 @@ class DefaultAuthBackend(BaseAuthBackend):
 
         await UserCls.create(account=account, password=password, email=email)
 
+        return {}
+
+    async def session_info(
+        self, user: AbstractUser, ctx: LoginCtx
+    ) -> t.Dict[str, t.Any]:
+        session_info = {
+            "id": user.id,
+            "account": user.account,
+            "email": user.email,
+            "is_superuser": user.is_superuser,
+            "platform": ctx.platform,
+        }
+
+        return session_info
+
+    async def logout(self, session: t.Dict) -> t.Any:
         return {}

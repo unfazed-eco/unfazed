@@ -20,4 +20,4 @@ class PermissionSerializer(TSerializer):
 
 class UserSerializer(TSerializer):
     class Meta:
-        model = AbstractUser.user
+        model = AbstractUser.UserCls()

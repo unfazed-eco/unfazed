@@ -2,7 +2,7 @@ import typing as t
 
 from pydantic import BaseModel
 
-from unfazed.type import CanBeImported
+from unfazed.type import CanBeImported, Doc
 
 
 class AuthBackend(BaseModel):
@@ -25,5 +25,15 @@ class UnfazedContribAuthSettings(BaseModel):
     """
 
     USER_MODEL: CanBeImported
+    ANONYMOUS_USER_INSTANCE: (
+        t.Annotated[
+            CanBeImported,
+            Doc(
+                description="function(sync/ async)",
+                examples=["unfazed.contrib.auth.models.init_anonymous_user"],
+            ),
+        ]
+        | None
+    ) = None
     BACKENDS: t.Dict[str, AuthBackend] = {}
-    SESSION_KEY: str = "unfazed.auth_session"
+    SESSION_KEY: str = "unfazed_auth_session"

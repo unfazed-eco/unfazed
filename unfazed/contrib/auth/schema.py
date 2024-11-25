@@ -11,9 +11,9 @@ class LoginCtx(BaseModel):
 
     # for most oauth login
     token: str = ""
-    platform: str = ""
+    platform: str = "default"
 
-    extra: t.Dict[str, t.Any] | None = None
+    extra: t.Dict[str, t.Any] = {}
 
 
 class LoginResponse(BaseModel):
@@ -39,4 +39,5 @@ class RegisterCtx(BaseModel):
     account: str = ""
     password: str = ""
 
-    extra: t.Dict[str, t.Any] | None = None
+    platform: str = "default"
+    extra: t.Dict[str, t.Any] = {}
