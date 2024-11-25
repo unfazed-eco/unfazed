@@ -22,16 +22,16 @@ class BaseModel(Model):
         abstract = True
 
     id = fields.IntField(primary_key=True)
-    created_at = fields.BigIntField()
-    updated_at = fields.BigIntField()
-    is_active = fields.SmallIntField(default=Status.ACTIVE, choices=Status)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+    is_active = fields.SmallIntField(default=Status.ACTIVE.value, choices=Status)
 
 
 class AbstractUser(BaseModel):
     class Meta:
         abstract = True
 
-    account = fields.CharField(max_length=255, default="")
+    account = fields.CharField(max_length=255, default="", unique=True)
     password = fields.CharField(max_length=255, default="")
     email = fields.CharField(max_length=255, default="")
     is_superuser = fields.SmallIntField(default=0)
@@ -39,7 +39,7 @@ class AbstractUser(BaseModel):
     groups: ManyToManyRelation["Group"]
     roles: ManyToManyRelation["Role"]
 
-    @property
+    @classmethod
     def UserCls(
         cls,
     ) -> t.Annotated[
@@ -49,7 +49,7 @@ class AbstractUser(BaseModel):
         auth_setting: UnfazedContribAuthSettings = settings[
             "UNFAZED_CONTRIB_AUTH_SETTINGS"
         ]
-        user_cls = import_string(auth_setting.AUTH_USER)
+        user_cls = import_string(auth_setting.USER_MODEL)
         return user_cls
 
     async def query_roles(self):

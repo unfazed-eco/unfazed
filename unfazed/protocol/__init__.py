@@ -1,5 +1,6 @@
 from .admin import BaseAdmin
 from .asgi import ASGIType
+from .auth import BaseAuthBackend
 from .cache import CacheBackend, CompressorBase, SerializerBase
 from .command import Command
 from .conf import Settings
@@ -22,4 +23,5 @@ __all__ = [
     "SerializerBase",
     "CompressorBase",
     "BaseAdmin",
+    "BaseAuthBackend",
 ]

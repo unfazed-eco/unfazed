@@ -1,10 +1,12 @@
 import typing as t
 
-from unfazed.http import HttpRequest, JsonResponse, RedirctResponse
+from unfazed.conf import settings
+from unfazed.http import HttpRequest, JsonResponse
 from unfazed.utils import generic_response
 
 from .schema import LOGIN_RESPONSE, LoginCtx, RegisterCtx
 from .services import AuthService
+from .settings import UnfazedContribAuthSettings
 
 _ = t.Annotated
 
@@ -12,32 +14,23 @@ _ = t.Annotated
 async def login(
     request: HttpRequest, ctx: LoginCtx
 ) -> _[JsonResponse, *LOGIN_RESPONSE]:
-    s = AuthService(request)
-    ret = await s.login(ctx)
-
+    s = AuthService()
+    auth_settings: UnfazedContribAuthSettings = settings[
+        "UNFAZED_CONTRIB_AUTH_SETTINGS"
+    ]
+    session_info, ret = await s.login(ctx)
+    request.session[auth_settings.SESSION_KEY] = session_info
     return generic_response(ret)
 
 
 async def logout(request: HttpRequest) -> JsonResponse:
-    s = AuthService(request)
-    ret = s.logout()
+    s = AuthService()
+    ret = s.logout(request.session)
+    request.session.flush()
     return generic_response(ret)
 
 
 async def register(request: HttpRequest, ctx: RegisterCtx) -> JsonResponse:
-    s = AuthService(request)
+    s = AuthService()
     ret = await s.register(ctx)
-    return generic_response(ret)
-
-
-# for oauth login and logout
-async def login_redirect(request: HttpRequest) -> RedirctResponse:
-    s = AuthService(request)
-    ret = s.login_redirect(request)
-    return generic_response(ret)
-
-
-async def logout_redirect(request: HttpRequest) -> JsonResponse:
-    s = AuthService(request)
-    ret = s.logout_redirect(request)
     return generic_response(ret)

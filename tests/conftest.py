@@ -41,14 +41,16 @@ def use_test_db() -> t.Any:
 
 _Settings = {
     "DEBUG": True,
-    "PROJECT_NAME": "test_app_db",
+    "PROJECT_NAME": "test_app",
     "ROOT_URLCONF": "tests.apps.routes",
     "INSTALLED_APPS": [
         "tests.apps.orm.common",
         "tests.apps.orm.serializer",
         "tests.apps.admin.account",
         "tests.apps.admin.article",
+        "tests.apps.auth",
         "unfazed.contrib.admin",
+        "unfazed.contrib.auth",
     ],
     "DATABASE": {
         "CONNECTIONS": {
