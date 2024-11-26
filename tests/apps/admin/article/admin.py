@@ -1,5 +1,5 @@
 from unfazed.contrib.admin.registry import ModelAdmin, register
-from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.serializer.tortoise import TSerializer
 
 from .models import Article
 

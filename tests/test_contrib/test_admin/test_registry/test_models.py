@@ -19,7 +19,7 @@ from unfazed.contrib.admin.registry import (
     register,
     site,
 )
-from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.serializer.tortoise import TSerializer
 
 
 def test_site() -> None:

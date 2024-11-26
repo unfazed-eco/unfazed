@@ -1,4 +1,4 @@
-from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.serializer.tortoise import TSerializer
 
 from .models import LogEntry
 

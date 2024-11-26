@@ -1,8 +1,5 @@
-import os
-import sys
 from unittest.mock import patch
 
-from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.openapi.service import OpenApiService
 from unfazed.schema import OpenAPI
@@ -32,31 +29,8 @@ def test_service():
     assert isinstance(redoc, str)
 
 
-_Setting = {
-    "DEBUG": True,
-    "PROJECT_NAME": "openapi",
-    "ROOT_URLCONF": "tests.apps.openapi.backend.routes",
-    "INSTALLED_APPS": ["common"],
-    "OPENAPI": {
-        "servers": [{"url": "http://127.0.0.1:9527", "description": "Local"}],
-    },
-}
-
-
-def _add_sys_path():
-    common_dir_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../apps/openapi")
-    )
-
-    sys.path.append(common_dir_path)
-
-
-async def test_api():
-    _add_sys_path()
-    unfazed = Unfazed(settings=UnfazedSettings(**_Setting))
-
-    await unfazed.setup()
-
+async def test_api(setup_openapi_unfazed: Unfazed):
+    unfazed = setup_openapi_unfazed
     assert unfazed.settings.OPENAPI is not None
 
     with patch.object(OpenApiService, "get_settings", return_value=unfazed.settings):

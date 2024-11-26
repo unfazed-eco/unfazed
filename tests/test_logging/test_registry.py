@@ -4,7 +4,7 @@ from unfazed.core import Unfazed
 from unfazed.logging import LogCenter
 
 if t.TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    pass
 
 
 LOGGING = {
@@ -31,7 +31,7 @@ LOGGING = {
 }
 
 
-def test_registry(mocker: "MockerFixture") -> None:
+def test_registry() -> None:
     unfazed = Unfazed()
 
     log_center = LogCenter(unfazed, LOGGING)

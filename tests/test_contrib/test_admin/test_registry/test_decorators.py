@@ -1,8 +1,8 @@
 from tortoise import Model, fields
 
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
-from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
+from unfazed.serializer.tortoise import TSerializer
 
 
 class Student(Model):

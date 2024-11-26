@@ -4,11 +4,10 @@ from unittest.mock import patch
 import pytest_asyncio
 
 from tests.apps.admin.article.models import Author
-from unfazed.conf import settings
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
 from unfazed.core import Unfazed
-from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest, HttpResponse
+from unfazed.serializer.tortoise import TSerializer
 from unfazed.test import Requestfactory
 
 
@@ -18,8 +17,8 @@ class User:
     email = "user@unfazed.com"
 
 
-@pytest_asyncio.fixture(loop_scope="session")
-async def setup_env():
+@pytest_asyncio.fixture(scope="module", autouse=True)
+async def setup_endpoint_env():
     admin_collector.clear()
     await Author.all().delete()
 
@@ -63,10 +62,9 @@ async def setup_env():
     await Author.all().delete()
 
 
-async def test_endpoints(setup_env: t.Generator, prepare_unfazed: Unfazed) -> None:
-    settings["UNFAZED_SETTINGS"] = prepare_unfazed.settings
+async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
     with patch.object(HttpRequest, "user", User()):
-        request = Requestfactory(prepare_unfazed)
+        request = Requestfactory(setup_admin_unfazed)
 
         resp = await request.get("/api/contrib/admin/route-list")
         assert resp.status_code == 200

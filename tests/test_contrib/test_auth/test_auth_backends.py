@@ -1,17 +1,12 @@
-import typing as t
-
 import pytest
-import pytest_asyncio
 
 from tests.apps.auth.models import User
-from unfazed.conf import settings
 from unfazed.contrib.auth.backends import DefaultAuthBackend
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
-from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
 from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest.fixture(autouse=True)
 async def setup_auth_backend_env():
     await User.all().delete()
 
@@ -20,16 +15,7 @@ async def setup_auth_backend_env():
     await User.all().delete()
 
 
-async def test_default_backend(setup_auth_backend_env: t.Generator) -> None:
-    settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = UnfazedContribAuthSettings(
-        USER_MODEL="tests.apps.auth.models.User",
-        BACKENDS={
-            "default": {
-                "BACKEND_CLS": "unfazed.contrib.auth.backends.default.DefaultAuthBackend",
-                "OPTIONS  ": {},
-            }
-        },
-    )
+async def test_default_backend() -> None:
     bkd = DefaultAuthBackend()
 
     assert bkd.alias == "default"
@@ -45,6 +31,7 @@ async def test_default_backend(setup_auth_backend_env: t.Generator) -> None:
         "account": u1.account,
         "email": u1.email,
         "is_superuser": u1.is_superuser,
+        
         "platform": ctx.platform,
     }
 

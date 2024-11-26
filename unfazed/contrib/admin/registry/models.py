@@ -6,11 +6,11 @@ from itertools import chain
 from pydantic.fields import FieldInfo
 
 from unfazed.conf import UnfazedSettings, settings
-from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseAdmin as BaseAdminProtocol
 from unfazed.protocol import BaseSerializer, CacheBackend
 from unfazed.schema import AdminRoute
+from unfazed.serializer.tortoise import TSerializer
 
 from .collector import admin_collector
 from .decorators import action

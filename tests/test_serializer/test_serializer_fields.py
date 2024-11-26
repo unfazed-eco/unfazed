@@ -6,9 +6,9 @@ from annotated_types import Ge, Le, MaxLen
 from pydantic import Field
 from tortoise import Model, fields
 
-from tests.apps.orm.serializer.models import Bag, Course, Student
-from tests.apps.orm.serializer.models import StudentProfile as Profile
-from unfazed.db.tortoise.serializer import TSerializer, create_common_field
+from tests.apps.serializer.models import Bag, Course, Student
+from tests.apps.serializer.models import StudentProfile as Profile
+from unfazed.serializer.tortoise import TSerializer, create_common_field
 
 
 class Sex(StrEnum):

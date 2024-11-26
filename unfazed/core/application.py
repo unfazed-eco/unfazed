@@ -88,6 +88,9 @@ class Unfazed(Starlette):
             )
         return self._model_center
 
+    async def migrate(self) -> None:
+        await self.model_center.migrate()
+
     def setup_routes(self) -> None:
         if not self.settings.ROOT_URLCONF:
             return
