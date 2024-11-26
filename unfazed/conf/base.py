@@ -1,18 +1,17 @@
 import typing as t
 
-from asgiref.local import Local
 from pydantic import BaseModel
 
 from unfazed import utils as u
 from unfazed.const import UNFAZED_SETTINGS_MODULE
+from unfazed.utils import Storage
 
 
-class SettingsProxy:
+class SettingsProxy(Storage[t.Type[BaseModel]]):
     unfazed_settings_module = UNFAZED_SETTINGS_MODULE
-    thread_critical = False
 
     def __init__(self) -> None:
-        self.storage = Local(self.thread_critical)
+        super().__init__()
         self._settingskv = None
 
     @property
@@ -37,29 +36,24 @@ class SettingsProxy:
 
         return u.import_string(client_str)
 
-    def __getitem__(self, alias: str) -> BaseModel:
-        try:
-            return getattr(self.storage, alias)
+    def __getitem__(self, key: str) -> BaseModel:
+        if key in self.storage:
+            return self.storage[key]
 
-        except AttributeError:
-            if alias not in self.settingskv:
-                raise KeyError(
-                    f"Key {alias} not found in {self.unfazed_settings_module} module"
-                )
-        client_cls = self.guess_client_cls(alias)
-        client = client_cls(**self.settingskv[alias])
-        setattr(self.storage, alias, client)
+        if key not in self.settingskv:
+            raise KeyError(
+                f"Key {key} not found in {self.unfazed_settings_module} module"
+            )
+
+        client_cls = self.guess_client_cls(key)
+        client = client_cls(**self.settingskv[key])
+        self.storage[key] = client
 
         return client
 
-    def __setitem__(self, alias: str, value: BaseModel) -> None:
-        setattr(self.storage, alias, value)
-
-    def __delitem__(self, alias: str) -> None:
-        delattr(self.storage, alias)
-
     def clear(self) -> None:
-        self.storage = Local(self.thread_critical)
+        self._settingskv = None
+        return super().clear()
 
 
 settings = SettingsProxy()

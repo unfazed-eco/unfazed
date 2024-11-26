@@ -1,6 +1,5 @@
 import typing as t
 
-from asgiref import typing as at
 from starlette.middleware.base import BaseHTTPMiddleware as StarletteBaseHTTPMiddleware
 
 from unfazed.http import HttpRequest, HttpResponse
@@ -9,9 +8,6 @@ RequestResponseEndpoint = t.Callable[[HttpRequest], t.Awaitable[HttpResponse]]
 
 
 class BaseHttpMiddleware(StarletteBaseHTTPMiddleware):
-    def __init__(self, app: at.ASGIApplication) -> None:
-        self.app = app
-
     async def dispatch(
         self, request: HttpRequest, call_next: RequestResponseEndpoint
     ) -> HttpResponse:

@@ -30,6 +30,10 @@ class Driver(DataBaseDriver):
         for c in self.list_aerich_command():
             self.unfazed.command_center.load_command(c)
 
+    async def migrate(self) -> None:
+        # must call after setup
+        await Tortoise.generate_schemas()
+
     def build_apps(self) -> t.Dict[str, t.Any]:
         models_list = ["aerich.models"]  # support aerich cmd
         for _, app in self.unfazed.app_center:

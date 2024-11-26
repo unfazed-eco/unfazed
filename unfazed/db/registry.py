@@ -19,3 +19,8 @@ class ModelCenter:
         driver_cls = import_string(self.conf.driver)
         driver: DataBaseDriver = driver_cls(self.unfazed, self.conf)
         await driver.setup()
+
+        self.driver = driver
+
+    async def migrate(self):
+        await self.driver.migrate()

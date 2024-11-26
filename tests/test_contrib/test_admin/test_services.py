@@ -17,15 +17,14 @@ from unfazed.contrib.admin.registry import (
     fields,
     register,
 )
-from unfazed.contrib.admin.registry.collector import AdminCollector
 from unfazed.contrib.admin.services import AdminModelService
-from unfazed.db.tortoise.serializer import TSerializer
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
+from unfazed.serializer.tortoise import TSerializer
 
 
-@pytest.fixture(scope="session")
-def collector():
+@pytest.fixture(scope="module", autouse=True)
+def setup_collector():
     # ===== relation test =======
     class UserSerializer(TSerializer):
         class Meta:
@@ -157,17 +156,7 @@ def collector():
     yield admin_collector
 
 
-def build_request():
-    class User:
-        is_superuser = True
-
-    class Request:
-        user = User()
-
-    return Request()
-
-
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_article():
     await Article.all().delete()
 
@@ -179,7 +168,7 @@ async def setup_article():
     await Article.all().delete()
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture()
 async def setup_user():
     await User.all().delete()
     await Group.all().delete()
@@ -194,9 +183,17 @@ async def setup_user():
     await Book.all().delete()
 
 
-async def test_without_relation(
-    setup_article: t.Generator, collector: AdminCollector
-) -> None:
+def build_request():
+    class User:
+        is_superuser = True
+
+    class Request:
+        user = User()
+
+    return Request()
+
+
+async def test_without_relation() -> None:
     # create article
     article = {"title": "test", "content": "test", "author": "test", "id": -1}
     request = build_request()
@@ -240,7 +237,7 @@ async def test_without_relation(
     assert ret == "async hello"
 
 
-async def test_model_data_with_relation(collector: AdminCollector) -> None:
+async def test_model_data_with_relation(setup_user: t.Generator) -> None:
     """
     model_data will not fetch relation data
 
@@ -264,7 +261,7 @@ async def test_model_data_with_relation(collector: AdminCollector) -> None:
     assert "groups" not in u1_dict
 
 
-async def test_m2m(collector: AdminCollector, setup_user: t.Generator) -> None:
+async def test_m2m(setup_user: t.Generator) -> None:
     # create
     user = {"name": "test", "age": 10, "id": -1}
     group_list = [
@@ -314,7 +311,7 @@ async def test_m2m(collector: AdminCollector, setup_user: t.Generator) -> None:
     assert len(theuser.groups) == 1
 
 
-async def test_bk_m2m(collector: AdminCollector, setup_user: t.Generator) -> None:
+async def test_bk_m2m(setup_user: t.Generator) -> None:
     # create
     request = build_request()
 
@@ -365,7 +362,7 @@ async def test_bk_m2m(collector: AdminCollector, setup_user: t.Generator) -> Non
     assert len(thegroup.users) == 1
 
 
-async def test_fk(collector: AdminCollector, setup_user: t.Generator) -> None:
+async def test_fk(setup_user: t.Generator) -> None:
     # create
     request = build_request()
 
@@ -454,7 +451,7 @@ async def test_fk(collector: AdminCollector, setup_user: t.Generator) -> None:
         )
 
 
-async def test_o2o(collector: AdminCollector, setup_user: t.Generator) -> None:
+async def test_o2o(setup_user: t.Generator) -> None:
     # create
     request = build_request()
 
@@ -541,7 +538,7 @@ def build_request_without_super():
     return Request()
 
 
-async def test_permission_denied(collector: AdminCollector) -> None:
+async def test_permission_denied() -> None:
     request = build_request_without_super()
 
     with pytest.raises(PermissionDenied):
@@ -563,7 +560,7 @@ async def test_permission_denied(collector: AdminCollector) -> None:
         await AdminModelService.model_action("ArticleAdmin", "sync_method", {}, request)
 
 
-async def test_failed(collector: AdminCollector) -> None:
+async def test_failed() -> None:
     request = build_request()
 
     with pytest.raises(KeyError):
@@ -581,7 +578,7 @@ async def test_failed(collector: AdminCollector) -> None:
         )
 
 
-async def test_routes(collector: AdminCollector) -> None:
+async def test_routes() -> None:
     request = build_request()
 
     ret = await AdminModelService.list_route(request)
@@ -608,7 +605,7 @@ def test_settings() -> None:
     assert "title" in ret
 
 
-async def test_model_desc(collector: AdminCollector) -> None:
+async def test_model_desc() -> None:
     request = build_request()
 
     ret = await AdminModelService.model_desc("ArticleAdmin", request)
@@ -623,7 +620,7 @@ async def test_model_desc(collector: AdminCollector) -> None:
     # assert "InlineM2MGroupAdmin" in [i["name"] for i in ret["inlines"]]
 
 
-async def test_model_detail(collector: AdminCollector) -> None:
+async def test_model_detail() -> None:
     request = build_request()
 
     ret = await AdminModelService.model_detail("M2MUserAdmin", {}, request)

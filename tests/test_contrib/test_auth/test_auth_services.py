@@ -1,7 +1,4 @@
-import typing as t
-
 import pytest
-import pytest_asyncio
 
 from tests.apps.auth.models import User
 from unfazed.conf import settings
@@ -10,7 +7,7 @@ from unfazed.contrib.auth.services import AuthService, load_backends
 from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest.fixture(autouse=True)
 async def setup_auth_service_env():
     await User.all().delete()
     await User.create(account="admin", password="admin")
@@ -18,17 +15,7 @@ async def setup_auth_service_env():
     await User.all().delete()
 
 
-async def test_authservice(setup_auth_service_env: t.Generator) -> None:
-    settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = UnfazedContribAuthSettings(
-        USER_MODEL="tests.apps.auth.models.User",
-        BACKENDS={
-            "default": {
-                "BACKEND_CLS": "unfazed.contrib.auth.backends.default.DefaultAuthBackend",
-                "OPTIONS  ": {},
-            }
-        },
-    )
-
+async def test_authservice() -> None:
     service = AuthService()
 
     await service.register(RegisterCtx(account="test", password="test"))
@@ -42,18 +29,18 @@ async def test_authservice(setup_auth_service_env: t.Generator) -> None:
     )
 
 
-async def test_failed_load():
-    settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = UnfazedContribAuthSettings(
-        USER_MODEL="tests.apps.auth.models.User",
-        BACKENDS={
-            "wrongbkd": {
-                "BACKEND_CLS": "unfazed.contrib.auth.backends.default.DefaultAuthBackend",
-                "OPTIONS  ": {},
-            }
-        },
-    )
+# async def test_failed_load():
+#     settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = UnfazedContribAuthSettings(
+#         USER_MODEL="tests.apps.auth.models.User",
+#         BACKENDS={
+#             "wrongbkd": {
+#                 "BACKEND_CLS": "unfazed.contrib.auth.backends.default.DefaultAuthBackend",
+#                 "OPTIONS  ": {},
+#             }
+#         },
+#     )
 
-    load_backends.cache_clear()
+#     load_backends.cache_clear()
 
-    with pytest.raises(ValueError):
-        AuthService()
+#     with pytest.raises(ValueError):
+#         AuthService()

@@ -2,7 +2,7 @@ import inspect
 import typing as t
 from functools import wraps
 
-from unfazed.db.tortoise.serializer import TSerializer
+from unfazed.serializer.tortoise import TSerializer
 
 from .collector import admin_collector
 from .schema import AdminAction

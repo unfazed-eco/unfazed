@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from pydantic import BaseModel, Field
 
-from tests.apps.orm.serializer.models import (
+from tests.apps.serializer.models import (
     Bag,
     Brand,
     Car,
@@ -13,8 +13,8 @@ from tests.apps.orm.serializer.models import (
     Course,
     Student,
 )
-from tests.apps.orm.serializer.models import StudentProfile as Profile
-from unfazed.db.tortoise.serializer import TSerializer
+from tests.apps.serializer.models import StudentProfile as Profile
+from unfazed.serializer.tortoise import TSerializer
 
 
 class CarSerializer(TSerializer):
