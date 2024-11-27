@@ -25,7 +25,7 @@ async def login(
 
 async def logout(request: HttpRequest) -> JsonResponse:
     s = AuthService()
-    ret = s.logout(request.session)
+    ret = await s.logout(request.session)
     request.session.flush()
     return generic_response(ret)
 
