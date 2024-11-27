@@ -55,10 +55,10 @@ class AbstractUser(BaseModel):
     async def query_roles(self):
         await self.fetch_related("roles", "groups")
 
-        ret = self.roles
+        ret = list(self.roles)
         for group in self.groups:
             await group.fetch_related("roles")
-            ret.extend(group.roles)
+            ret.extend(list(group.roles))
 
         return ret
 
@@ -120,10 +120,10 @@ class Role(BaseModel):
     async def query_users(self) -> t.List["AbstractUser"]:
         await self.fetch_related("users", "groups")
 
-        ret = self.users
+        ret = list(self.users)
         for group in self.groups:
             await group.fetch_related("users")
-            ret.extend(group.users)
+            ret.extend(list(group.users))
 
         return ret
 

@@ -1,4 +1,5 @@
 import os
+import uuid
 
 UNFAZED_SETTINGS = {
     "DEBUG": True,
@@ -22,6 +23,7 @@ UNFAZED_SETTINGS = {
             }
         }
     },
+    "MIDDLEWARE": ["unfazed.contrib.session.middleware.SessionMiddleware"],
 }
 
 
@@ -34,4 +36,11 @@ UNFAZED_CONTRIB_AUTH_SETTINGS = {
             "OPTIONS": {},
         }
     },
+}
+
+SESSION_SETTINGS = {
+    "CLIENT_CLASS": "unfazed.contrib.session.settings.SessionSettings",
+    "SECRET": uuid.uuid4().hex,
+    "COOKIE_DOMAIN": "gmail.com",
+    "COOKIE_SECURE": True,
 }

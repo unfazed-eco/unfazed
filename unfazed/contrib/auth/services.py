@@ -46,7 +46,11 @@ class AuthService:
         return session_info, resp
 
     async def logout(self, session: t.Dict) -> t.Any:
-        platform = session.get("platform", "default")
+        # platform = session.get("platform", "default")
+        if "platform" in session:
+            platform = session["platform"]
+        else:
+            platform = "default"
         backend = self.choose_backend(platform)
         resp = await backend.logout(session)
         return resp
