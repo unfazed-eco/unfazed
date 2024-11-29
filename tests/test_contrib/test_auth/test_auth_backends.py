@@ -1,6 +1,6 @@
 import pytest
 
-from tests.apps.auth.models import User
+from tests.apps.auth.common.models import User
 from unfazed.contrib.auth.backends import DefaultAuthBackend
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
 from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
@@ -31,7 +31,7 @@ async def test_default_backend() -> None:
         "account": u1.account,
         "email": u1.email,
         "is_superuser": u1.is_superuser,
-        
+
         "platform": ctx.platform,
     }
 

@@ -1,6 +1,6 @@
 import pytest
 
-from tests.apps.auth.models import User
+from tests.apps.auth.common.models import User
 from unfazed.conf import settings
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
 from unfazed.contrib.auth.services import AuthService, load_backends

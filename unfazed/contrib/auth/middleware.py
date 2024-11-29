@@ -1,3 +1,4 @@
+import typing as t
 from functools import cache
 
 from asgiref.typing import (
@@ -11,6 +12,9 @@ from unfazed.conf import settings
 from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
 from unfazed.utils import import_string
+
+if t.TYPE_CHECKING:
+    from unfazed.contrib.session.backends.base import SessionBase
 
 
 @cache
@@ -43,14 +47,14 @@ class AuthenticationMiddleware:
             await self.app(scope, receive, send)
             return
 
-        session = scope.get("session")
-        if session is None:
+        session: "SessionBase" = scope.get("session")
+        if session is None or (self.setting.SESSION_KEY not in session):
             user = self.anonymous_user
 
         else:
+            session_dict = session[self.setting.SESSION_KEY]
             UserCls = AbstractUser.UserCls()
-            user_id = session.get("id")
-            user = await UserCls.get(id=user_id)
+            user = await UserCls.from_session(session_dict)
 
         scope["user"] = user
 

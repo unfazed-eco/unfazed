@@ -1,6 +1,6 @@
 import pytest
 
-from tests.apps.auth.models import Phone, User
+from tests.apps.auth.common.models import Phone, User
 from unfazed.contrib.admin.registry import (
     BaseModelAdmin,
     action,
