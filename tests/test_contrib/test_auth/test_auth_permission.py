@@ -1,6 +1,6 @@
 import pytest
 
-from tests.apps.auth.models import User
+from tests.apps.auth.common.models import User
 from unfazed.contrib.auth.models import Group, Permission, Role
 
 

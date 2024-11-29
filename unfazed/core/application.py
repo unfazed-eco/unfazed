@@ -103,7 +103,7 @@ class Unfazed(Starlette):
             return
         for middleware in self.settings.MIDDLEWARE:
             cls = import_string(middleware)
-            self.user_middleware.insert(0, cls)
+            self.user_middleware.append(cls)
 
     def setup_cache(self) -> None:
         cache = self.settings.CACHE

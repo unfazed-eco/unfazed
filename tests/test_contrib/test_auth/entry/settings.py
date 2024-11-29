@@ -6,7 +6,8 @@ UNFAZED_SETTINGS = {
     "PROJECT_NAME": "test_auth",
     "ROOT_URLCONF": "tests.test_contrib.test_auth.entry.routes",
     "INSTALLED_APPS": [
-        "tests.apps.auth",
+        "tests.apps.auth.common",
+        "tests.apps.auth.deco",
         "unfazed.contrib.auth",
     ],
     "DATABASE": {
@@ -23,13 +24,16 @@ UNFAZED_SETTINGS = {
             }
         }
     },
-    "MIDDLEWARE": ["unfazed.contrib.session.middleware.SessionMiddleware"],
+    "MIDDLEWARE": [
+        "unfazed.contrib.session.middleware.SessionMiddleware",
+        "unfazed.contrib.auth.middleware.AuthenticationMiddleware",
+    ],
 }
 
 
 UNFAZED_CONTRIB_AUTH_SETTINGS = {
     "CLIENT_CLASS": "unfazed.contrib.auth.settings.UnfazedContribAuthSettings",
-    "USER_MODEL": "tests.apps.auth.models.User",
+    "USER_MODEL": "tests.apps.auth.common.models.User",
     "BACKENDS": {
         "default": {
             "BACKEND_CLS": "unfazed.contrib.auth.backends.default.DefaultAuthBackend",
@@ -41,6 +45,6 @@ UNFAZED_CONTRIB_AUTH_SETTINGS = {
 SESSION_SETTINGS = {
     "CLIENT_CLASS": "unfazed.contrib.session.settings.SessionSettings",
     "SECRET": uuid.uuid4().hex,
-    "COOKIE_DOMAIN": "gmail.com",
+    "COOKIE_DOMAIN": "http://testserver",
     "COOKIE_SECURE": True,
 }

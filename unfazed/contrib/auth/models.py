@@ -79,6 +79,11 @@ class AbstractUser(BaseModel):
 
         return False
 
+    @classmethod
+    async def from_session(cls, session_dict: t.Dict[str, t.Any]) -> "AbstractUser":
+        user_id = session_dict.get("id")
+        return await cls.get(id=user_id)
+
 
 class Group(BaseModel):
     class Meta:
