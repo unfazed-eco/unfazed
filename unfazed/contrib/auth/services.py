@@ -1,5 +1,4 @@
 import typing as t
-from functools import lru_cache
 
 from unfazed.conf import settings
 from unfazed.contrib.auth.backends.base import BaseAuthBackend
@@ -7,11 +6,12 @@ from unfazed.type import Doc
 from unfazed.utils import import_string
 
 from .schema import LoginCtx, RegisterCtx
+from .settings import UnfazedContribAuthSettings
 
 
-@lru_cache
-def load_backends() -> t.Dict[str, BaseAuthBackend]:
-    auth_setting = settings["UNFAZED_CONTRIB_AUTH_SETTINGS"]
+def load_backends(
+    auth_setting: UnfazedContribAuthSettings,
+) -> t.Dict[str, BaseAuthBackend]:
     ret = {}
 
     for alias, backend_config in auth_setting.BACKENDS.items():
@@ -28,7 +28,7 @@ def load_backends() -> t.Dict[str, BaseAuthBackend]:
 
 class AuthService:
     def __init__(self) -> None:
-        self.backends = load_backends()
+        self.backends = load_backends(settings["UNFAZED_CONTRIB_AUTH_SETTINGS"])
 
     def choose_backend(
         self, backend: str
@@ -46,7 +46,6 @@ class AuthService:
         return session_info, resp
 
     async def logout(self, session: t.Dict) -> t.Any:
-        # platform = session.get("platform", "default")
         if "platform" in session:
             platform = session["platform"]
         else:
