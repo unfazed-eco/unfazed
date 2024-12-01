@@ -4,6 +4,7 @@ import pytest
 from tortoise import Tortoise
 
 from unfazed.conf import settings
+from unfazed.contrib.admin.registry import admin_collector
 from unfazed.core import Unfazed
 
 
@@ -17,10 +18,14 @@ async def setup_auth_unfazed():
     )
 
     settings.clear()
+    admin_collector.clear()
 
     unfazed = Unfazed()
 
     await unfazed.setup()
     await unfazed.migrate()
+
+    auth_app = unfazed.app_center["unfazed.contrib.auth"]
+    auth_app.wakeup("admin")
 
     yield unfazed
