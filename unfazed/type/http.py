@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from .base import Doc
 
 if t.TYPE_CHECKING:
-    from unfazed.http import HttpResponse
+    from unfazed.http import HttpResponse  # pragma: no cover
 
 HttpMethod = t.Literal[
     "GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS", "PUT", "TRACE"
