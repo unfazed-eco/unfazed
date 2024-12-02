@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
 
-from unfazed.exception import TypeHintRequired
+from unfazed.exception import ParameterError, TypeHintRequired
 from unfazed.file import UploadFile
 from unfazed.http import HttpRequest
 
@@ -99,7 +99,7 @@ class EndpointHandler:
         try:
             model_cls(**request_params)
         except Exception as err:
-            ret_err = err
+            ret_err = ParameterError(str(err))
 
         if ret_err:
             return ret, ret_err

@@ -25,7 +25,6 @@ class Unfazed(Starlette):
     def __init__(
         self,
         *,
-        debug: bool = False,
         routes: t.Sequence[Route] | None = None,
         middlewares: t.Sequence[p.MiddleWare] | None = None,
         settings: UnfazedSettings | None = None,
@@ -42,7 +41,7 @@ class Unfazed(Starlette):
             settings_proxy["UNFAZED_SETTINGS"] = settings
         self._settings = settings
 
-        super().__init__(debug=debug, routes=routes, middleware=middlewares)
+        super().__init__(routes=routes, middleware=middlewares)
 
     @property
     def settings(self) -> UnfazedSettings:

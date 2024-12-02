@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from aerich import DowngradeError
+from tortoise import Tortoise
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
@@ -15,6 +17,15 @@ from unfazed.db.tortoise.commands import (
     migrate,
     upgrade,
 )
+
+
+@pytest.fixture(autouse=True)
+def setup_aerich_env():
+    Tortoise.apps = {}
+    Tortoise._inited = False
+
+    yield
+
 
 _Settings = {
     "DEBUG": True,

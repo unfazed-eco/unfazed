@@ -2,14 +2,11 @@ import typing as t
 from traceback import format_exception
 
 import orjson as json
-from click.core import Command
 from jinja2 import Template
 
-from unfazed.app import BaseAppConfig
+from unfazed.core import Unfazed
 from unfazed.http import HtmlResponse, HttpRequest, HttpResponse
 from unfazed.middleware.base import BaseHttpMiddleware, RequestResponseEndpoint
-from unfazed.protocol import BaseLifeSpan
-from unfazed.route import Route
 
 
 class CommonMiddleware(BaseHttpMiddleware):
@@ -21,8 +18,9 @@ class CommonMiddleware(BaseHttpMiddleware):
         try:
             response = await call_next(request)
         except Exception as e:
-            if self.unfazed.settings.DEBUG:
-                response = render_error_html(e, self.unfazed.to_dict())
+            unfazed: Unfazed = request.scope.get("app")
+            if unfazed.settings.DEBUG:
+                response = render_error_html(e, unfazed.settings.model_dump())
             else:
                 response = HttpResponse(
                     status_code=500, content="Internal Server Error"
@@ -73,7 +71,7 @@ TEMPLATE = """
 
     <div class="container">
         <h1>UNFAZED DETAIL</h1>
-        <pre>{{ unfazed_detail }}</pre>
+        <pre>{{ unfazed_settings }}</pre>
     </div>
 </body>
 </html>
@@ -82,33 +80,14 @@ TEMPLATE = """
 """
 
 
-def default_dump(obj: t.Any) -> str:
-    if isinstance(obj, Route):
-        return str(obj)
-
-    elif isinstance(obj, BaseAppConfig):
-        return str(obj)
-
-    elif isinstance(obj, BaseHttpMiddleware):
-        return str(obj)
-
-    elif isinstance(obj, BaseLifeSpan):
-        return str(obj)
-
-    elif isinstance(obj, Command):
-        return str(obj)
-    else:
-        return obj
-
-
 def render_error_html(
-    error: Exception, unfazed_detail: t.Dict[str, t.Any]
+    error: Exception, unfazed_settings: t.Dict[str, t.Any]
 ) -> HtmlResponse:
     error_content = format_exception(type(error), error, error.__traceback__)
-    unfazed_detail_str = json.dumps(unfazed_detail, default=default_dump).decode()
+    unfazed_settings_str = json.dumps(unfazed_settings).decode()
 
     content = Template(TEMPLATE).render(
-        {"error_message": error_content, "unfazed_detail": unfazed_detail_str}
+        {"error_message": error_content, "unfazed_settings": unfazed_settings_str}
     )
 
     return HtmlResponse(content=content, status_code=500)
