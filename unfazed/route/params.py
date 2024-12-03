@@ -13,7 +13,7 @@ class ResponseSpec(BaseModel):
 
 
 class Param(FieldInfo):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         self.example = kwargs.get("example", None)
         super().__init__(**kwargs)
 
@@ -35,21 +35,21 @@ class Cookie(Param):
 
 
 class Json(Param):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         kwargs["media_type"] = "application/json"
         super().__init__(**kwargs)
         self.media_type = "application/json"
 
 
 class Form(Param):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         kwargs["media_type"] = "application/x-www-form-urlencoded"
         super().__init__(**kwargs)
         self.media_type = "application/x-www-form-urlencoded"
 
 
 class File(Param):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         kwargs["media_type"] = "multipart/form-data"
         super().__init__(**kwargs)
         self.media_type = "multipart/form-data"

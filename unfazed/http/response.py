@@ -51,7 +51,7 @@ class JsonResponse(HttpResponse[T]):
 
     def render(self, content: T) -> bytes:
         if isinstance(content, (str, bytes)):
-            raise ValueError(f"content {content} must be dumpable in JsonResponse")
+            raise ValueError(f"content {content!r} must be dumpable in JsonResponse")
         if isinstance(content, BaseModel):
             content = content.model_dump()
         return json.dumps(content)
@@ -135,7 +135,10 @@ class StreamingResponse(HttpResponse[ContentStream]):
 
 class RangeFileHandler:
     def __init__(
-        self, path: str, download_name: str = None, chunk_size: int = 65536
+        self,
+        path: str | os.PathLike[str],
+        download_name: str | None = None,
+        chunk_size: int = 65536,
     ) -> None:
         if not os.path.exists(path):
             raise FileNotFoundError(f"File {path} not found")
@@ -207,11 +210,13 @@ class RangeFileHandler:
 
 
 def parse_request(
-    handler: RangeFileHandler, headers: t.Dict[str, t.Any]
+    handler: RangeFileHandler, headers: t.Dict[str, str]
 ) -> t.Tuple[int, int, int]:
     header_if_range = headers.get("If-Range", None)
     header_range = headers.get("Range", None)
 
+    range_start: int | str
+    range_end: int | str
     range_start, range_end = 0, handler.file_size
 
     # compare If-Range and etag if If-Range existed
@@ -227,6 +232,7 @@ def parse_request(
     if header_range and continue_download:
         # we only support "bytes =start-end"
         # if other range format, download the whole file
+
         try:
             range_start, range_end = header_range.split("=")[1].split("-")
         except Exception:
@@ -258,10 +264,12 @@ class FileResponse(StreamingResponse):
         filename: str | None = None,
         *,
         chunk_size: int = 65536,
-        headers: t.Mapping[str, str] | None = None,
+        headers: t.Dict[str, str] | None = None,
         background: BackgroundTask | None = None,
     ) -> None:
         handler = RangeFileHandler(path, filename, chunk_size)
+
+        headers = headers or {}
         range_start, range_end, status_code = parse_request(handler, headers)
         self.status_code = status_code
         handler.set_range(range_start, range_end)

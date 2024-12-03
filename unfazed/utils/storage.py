@@ -1,6 +1,9 @@
+import typing as t
+
+
 class Storage[T]:
     def __init__(self) -> None:
-        self.storage = {}
+        self.storage: t.Dict[str, T] = {}
 
     def __getitem__(self, key: str) -> T:
         try:

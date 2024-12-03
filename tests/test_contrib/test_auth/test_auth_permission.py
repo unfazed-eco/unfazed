@@ -62,7 +62,7 @@ async def test_permission():
 
     p1 = await Permission.create(access="p1")
     p2 = await Permission.create(access="p2")
-    p3 = await Permission.create(access="p3")
+    await Permission.create(access="p3")
 
     await u1.groups.add(g1, g2)
     await u1.roles.add(r1)

@@ -31,9 +31,7 @@ _Settings = {
 }
 
 
-async def test_cache_registry(
-        
-) -> None:
+async def test_cache_registry() -> None:
     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
 
     await unfazed.setup()

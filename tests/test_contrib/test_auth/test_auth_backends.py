@@ -31,7 +31,6 @@ async def test_default_backend() -> None:
         "account": u1.account,
         "email": u1.email,
         "is_superuser": u1.is_superuser,
-
         "platform": ctx.platform,
     }
 

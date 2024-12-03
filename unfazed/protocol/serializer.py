@@ -1,5 +1,4 @@
 import typing as t
-from abc import ABC
 
 from pydantic import BaseModel
 
@@ -9,7 +8,7 @@ if t.TYPE_CHECKING:
     from unfazed.schema import Relation, Result  # pragma: no cover
 
 
-class BaseSerializer(ABC):
+class BaseSerializer:
     class Meta:
         model: Model
         include: t.List[str] | None = None

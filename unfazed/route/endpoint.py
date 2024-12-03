@@ -88,10 +88,10 @@ class EndpointHandler:
 
     def _solve_params(
         self,
-        model_cls: BaseModel,
-        endpoint_params: t.Dict[str, t.Tuple[t.Type, BaseModel | FieldInfo]],
+        model_cls: t.Type[BaseModel],
+        endpoint_params: t.Dict[str, t.Tuple[t.Type, FieldInfo]],
         request_params: t.Dict[str, t.Any],
-    ) -> t.Tuple[t.Dict[str, t.Any], t.List[Exception]]:
+    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
         ret: t.Dict[str, t.Any] = {}
         ret_err: Exception | None = None
 
@@ -136,7 +136,7 @@ class EndpointHandler:
         return self._solve_params(
             self.endpoint_definition.query_model,
             self.endpoint_definition.query_params,
-            request.query_params,
+            t.cast(t.Dict[str, t.Any], request.query_params),
         )
 
     def _slove_header_params(
@@ -145,7 +145,7 @@ class EndpointHandler:
         return self._solve_params(
             self.endpoint_definition.header_model,
             self.endpoint_definition.header_params,
-            request.headers,
+            t.cast(t.Dict[str, t.Any], request.headers),
         )
 
     def _slove_cookie_params(
@@ -154,7 +154,7 @@ class EndpointHandler:
         return self._solve_params(
             self.endpoint_definition.cookie_model,
             self.endpoint_definition.cookie_params,
-            request.cookies,
+            t.cast(t.Dict[str, t.Any], request.cookies),
         )
 
     async def _slove_json_params(
@@ -163,14 +163,14 @@ class EndpointHandler:
         return self._solve_params(
             self.endpoint_definition.body_model,
             self.endpoint_definition.body_params,
-            await request.json(),
+            t.cast(t.Dict[str, t.Any], await request.json()),
         )
 
     async def _slove_form_params(self, request: HttpRequest):
         return self._solve_params(
             self.endpoint_definition.body_model,
             self.endpoint_definition.body_params,
-            await request._get_form(),
+            t.cast(t.Dict[str, t.Any], await request.form()),
         )
 
 
@@ -203,7 +203,7 @@ class EndPointDefinition(BaseModel):
     operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, **data):
+    def __init__(self, **data) -> None:
         super().__init__(**data)
         # stage 1
         self.handle_methods()
@@ -213,7 +213,7 @@ class EndPointDefinition(BaseModel):
         # stage 3
         self.build_models()
 
-    def _convert_args_to_params(self) -> t.Dict[str, inspect.Parameter]:
+    def _convert_args_to_params(self) -> None:
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
 
@@ -263,7 +263,7 @@ class EndPointDefinition(BaseModel):
 
         self.params = ret
 
-    def _convert_return_to_response(self):
+    def _convert_return_to_response(self) -> None:
         if self.response_models is None:
             self.response_models = []
         else:
@@ -289,13 +289,15 @@ class EndPointDefinition(BaseModel):
 
             self.response_models = response_models
 
-    def handle_signature(self):
+    def handle_signature(self) -> None:
         self._convert_args_to_params()
         self._convert_return_to_response()
 
-    def dispatch_params(self):
+    def dispatch_params(self) -> None:
         has_body_field = False
         has_form_field = False
+
+        self.params = self.params or {}
         for _, param in self.params.items():
             annotation = param.annotation
 
@@ -366,7 +368,7 @@ class EndPointDefinition(BaseModel):
         if has_form_field:
             self.body_type = "form"
 
-    def handle_methods(self):
+    def handle_methods(self) -> None:
         # for openapi
         if "HEAD" in self.methods:
             self.methods.remove("HEAD")
@@ -375,7 +377,7 @@ class EndPointDefinition(BaseModel):
     def endpoint_name(self) -> str:
         return f"{self.endpoint.__module__}.{self.endpoint.__name__}"
 
-    def build_models(self):
+    def build_models(self) -> None:
         self.path_model = self.create_param_model(
             self.path_params,
             f"{self.endpoint.__name__.capitalize()}PathModel",

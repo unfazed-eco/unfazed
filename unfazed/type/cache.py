@@ -2,7 +2,7 @@ import typing as t
 
 
 class CacheOptions(t.TypedDict):
-    TIMEOUT: int | None = None
-    PREFIX: str | None = None
-    VERSION: int | None = None
-    MAX_ENTRIES: int = 300
+    TIMEOUT: int | None
+    PREFIX: str | None
+    VERSION: int | None
+    MAX_ENTRIES: int

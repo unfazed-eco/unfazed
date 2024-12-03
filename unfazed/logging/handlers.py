@@ -10,23 +10,23 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         filename: str,
         mode: str = "a",
         maxBytes: int = 0,
-        encoding: str = None,
+        encoding: str | None = None,
         delay: bool = False,
-    ):
+    ) -> None:
         self.raw_filename = filename
         self.validate_filename(filename)
         filename = self.create_process_safe_name(filename)
         super().__init__(filename, mode, encoding, delay)
         self.maxBytes = maxBytes
 
-    def validate_filename(self, filename: str):
+    def validate_filename(self, filename: str) -> None:
         if not filename:
             raise ValueError("filename cannot be empty")
 
         if not filename.endswith(".log"):
             raise ValueError("filename must end with .log")
 
-    def create_process_safe_name(self, filename: str):
+    def create_process_safe_name(self, filename: str) -> str:
         # create a process safe name with pid
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
@@ -35,7 +35,7 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_archived.{suffix}"
 
-    def shouldRollover(self, record: LogRecord):
+    def shouldRollover(self, record: LogRecord) -> bool:
         """
         Determine if rollover should occur.
 
@@ -53,7 +53,7 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
                 return True
         return False
 
-    def doRollover(self):
+    def doRollover(self) -> None:
         """
         Do a rollover, as described in __init__().
         """

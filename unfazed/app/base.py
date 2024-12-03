@@ -100,7 +100,8 @@ class BaseAppConfig:
             return True
         except ImportError:
             warnings.warn(
-                f"Could not import {self.app_module.__name__}.{filename}, please check if the {filename} file exists."
+                f"Could not import {self.app_module.__name__}.{filename}, please check if the {filename} file exists.",
+                stacklevel=2,
             )
 
             return False
@@ -151,7 +152,7 @@ class BaseAppConfig:
 
         return app_cls(unfazed, module)
 
-    async def ready(self):
+    async def ready(self) -> None:
         raise NotImplementedError("Subclasses must implement this method.")
 
     def __str__(self) -> str:

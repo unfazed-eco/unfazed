@@ -29,7 +29,7 @@ async def test_client_init():
     # test retry
     client = SerializerBackend(f"redis://{HOST}:6379", options={"retry": False})
 
-    client.client.get_retry() is None
+    assert client.client.get_retry() is None
     await client.close()
 
     # test serializer is None
@@ -78,8 +78,6 @@ async def test_str_cmd(client: SerializerBackend):
 
     await client.set("foo1", 1)
     assert await client.get("foo1") == 1
-
-    
 
     await client.setex("foo2", 1, 1.1)
     assert await client.get("foo2") == 1.1

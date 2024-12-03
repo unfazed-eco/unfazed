@@ -10,7 +10,7 @@ class Field:
         readonly: bool = False,
         show: bool = True,
         blank: bool = True,
-        choices: t.Tuple[t.Tuple[t.Union[str, int]]] = None,
+        choices: t.Tuple[t.Tuple[t.Union[str, int]]] | None = None,
         help_text: str = "",
         default: t.Any = None,
     ) -> None:
@@ -22,7 +22,7 @@ class Field:
         self.help_text = help_text
         self.default = default
 
-    def to_json(self):
+    def to_json(self) -> AdminField:
         return AdminField(
             **{
                 "name": self.name,

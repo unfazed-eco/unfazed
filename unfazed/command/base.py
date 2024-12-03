@@ -59,7 +59,7 @@ class BaseCommand(ClickCommand, Command):
             raise TypeError("handle method must be a coroutine")
         asyncio.run(self.handle(**option))
 
-    def add_arguments(self) -> t.List[Parameter | None]:
+    def add_arguments(self) -> t.List[Parameter]:
         return []
 
     async def handle(self, **option: t.Any) -> None:

@@ -323,9 +323,9 @@ class ModelAdmin(BaseModelAdmin):
         return ret
 
     def get_attrs(self, field_list: t.List[str]) -> AdminAttrs:
-        detail_display = self.detail_display or [
-            name for name in self.serializer.Meta.model._meta.db_fields
-        ]
+        detail_display = self.detail_display or list(
+            self.serializer.Meta.model._meta.db_fields
+        )
         for item in chain(
             detail_display,
             self.list_filter,
@@ -382,9 +382,9 @@ class ModelInlineAdmin(ModelAdmin):
         return None
 
     def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:
-        list_display = self.list_display or [
-            name for name in self.serializer.Meta.model._meta.db_fields
-        ]
+        list_display = self.list_display or list(
+            self.serializer.Meta.model._meta.db_fields
+        )
 
         for item in chain(
             list_display,

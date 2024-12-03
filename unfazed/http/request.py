@@ -1,9 +1,11 @@
+import typing as t
+
 import orjson as json
 from starlette.requests import Request
 
 
 class HttpRequest(Request):
-    async def json(self):
+    async def json(self) -> t.Dict:
         """
         use orjson to parse the request body as json
         """
@@ -13,9 +15,9 @@ class HttpRequest(Request):
         return self._json
 
     @property
-    def scheme(self):
+    def scheme(self) -> str:
         return self.url.scheme
 
     @property
-    def path(self):
+    def path(self) -> str:
         return self.url.path

@@ -51,7 +51,7 @@ class LogCenter:
         # logger = getLogger("unfazed.server")
         # logger.debug("Logging system initialized")
 
-    def merge_default(self, dictconfig: t.Dict) -> None:
+    def merge_default(self, dictconfig: t.Dict) -> t.Dict:
         ret = copy.deepcopy(DEFAULT_LOGGING_CONFIG)
 
         if not dictconfig:

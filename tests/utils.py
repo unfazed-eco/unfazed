@@ -1,3 +1,4 @@
+import pymysql
 import pymysql.cursors
 
 
@@ -8,7 +9,7 @@ class DataBase:
         self._user = root_user
         self._password = password
 
-    def connect(self):
+    def connect(self) -> pymysql.connections.Connection:
         connection = pymysql.connect(
             host=self._host,
             user=self._user,
@@ -18,7 +19,7 @@ class DataBase:
         )
         return connection
 
-    def create_db(self, db_name: str):
+    def create_db(self, db_name: str) -> None:
         conn = self.connect()
 
         with conn:
@@ -29,7 +30,7 @@ class DataBase:
 
             conn.commit()
 
-    def drop_db(self, db_name: str):
+    def drop_db(self, db_name: str) -> None:
         conn = self.connect()
 
         with conn:

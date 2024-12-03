@@ -134,7 +134,10 @@ class Role(BaseModel):
 
     async def has_permission(self, access: str) -> bool:
         await self.fetch_related("permissions")
-        return any([p.access == access for p in self.permissions])
+        for permission in self.permissions:
+            if permission.access == access:
+                return True
+        return False
 
 
 class Permission(BaseModel):

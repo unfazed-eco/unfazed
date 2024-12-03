@@ -41,10 +41,10 @@ class Route(StartletteRoute):
         if methods is None:
             self.methods = {"GET", "HEAD"}
         else:
-            methods = set([method.upper() for method in methods])
-            if "GET" in methods:
-                methods.add("HEAD")
-            self.methods = methods
+            methods_set = {method.upper() for method in methods}
+            if "GET" in methods_set:
+                methods_set.add("HEAD")
+            self.methods = methods_set
 
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 

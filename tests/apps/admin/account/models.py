@@ -33,7 +33,7 @@ class Profile(BaseModel):
     class Meta:
         table = "test_unfazed_auth_profile"
 
-    user = fields.OneToOneField(
+    user: fields.OneToOneRelation = fields.OneToOneField(
         "models.User",
         related_name="profile",
         on_delete=fields.NO_ACTION,
@@ -48,7 +48,7 @@ class Book(BaseModel):
 
     title = fields.CharField(max_length=255)
     author = fields.CharField(max_length=255)
-    owner = fields.ForeignKeyField(
+    owner: fields.ForeignKeyRelation = fields.ForeignKeyField(
         "models.User",
         related_name="books",
         on_delete=fields.NO_ACTION,

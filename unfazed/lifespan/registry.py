@@ -14,7 +14,7 @@ class State(t.Dict):
 
 
 class LifeSpanHandler:
-    def __init__(self):
+    def __init__(self) -> None:
         self.lifespan: t.Dict[str, BaseLifeSpan] = {}
 
         self.unfazed: "Unfazed" | None = None
@@ -24,7 +24,7 @@ class LifeSpanHandler:
             raise ValueError(f"lifespan {name} already registered")
         self.lifespan[name] = lifespan
 
-    def get(self, name: str) -> BaseLifeSpan:
+    def get(self, name: str) -> BaseLifeSpan | None:
         return self.lifespan.get(name)
 
     async def on_startup(self) -> None:
@@ -43,7 +43,7 @@ class LifeSpanHandler:
 
         return ret
 
-    def clear(self):
+    def clear(self) -> None:
         self.lifespan = {}
 
 

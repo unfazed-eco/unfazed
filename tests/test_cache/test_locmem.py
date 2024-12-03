@@ -41,7 +41,7 @@ async def test_locmem():
     # test timeout
     await cache.set("foo3", "bar", timeout=0.5)
     await asyncio.sleep(0.6)
-    await cache.get("foo3") is None
+    assert await cache.get("foo3") is None
 
     # test incr
     await cache.set("foo4", 1)

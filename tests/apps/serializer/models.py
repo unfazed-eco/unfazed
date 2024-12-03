@@ -51,7 +51,7 @@ class Student(Model):
 
 class Bag(Model):
     id = f.BigIntField(primary_key=True)
-    student = f.ForeignKeyField(
+    student: f.ForeignKeyRelation = f.ForeignKeyField(
         "models.Student",
         related_name="bags",
         db_constraint=False,
@@ -66,7 +66,7 @@ class Bag(Model):
 class StudentProfile(Model):
     id = f.BigIntField(primary_key=True)
     nickname = f.CharField(max_length=100)
-    student = f.OneToOneField(
+    student: f.OneToOneRelation = f.OneToOneField(
         "models.Student",
         related_name="profile",
         on_delete=f.NO_ACTION,
@@ -80,7 +80,7 @@ class StudentProfile(Model):
 class Course(Model):
     id = f.BigIntField(primary_key=True)
     name = f.CharField(max_length=100)
-    students = f.ManyToManyField(
+    students: f.ManyToManyRelation = f.ManyToManyField(
         "models.Student",
         related_name="courses",
         on_delete=f.NO_ACTION,

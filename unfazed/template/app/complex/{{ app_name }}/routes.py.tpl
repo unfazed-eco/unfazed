@@ -1,3 +1,6 @@
-# from unfazed.route import include, path
+import typing as t
 
-patterns = []
+# from unfazed.route import include, path
+from unfazed.route import Route
+
+patterns: t.List[Route] = []
