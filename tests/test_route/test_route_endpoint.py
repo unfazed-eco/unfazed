@@ -492,14 +492,13 @@ async def endpoint5(
     bd2: t.Annotated[Body2, p.Json()],
     bd3: Body3,
     body6: t.Annotated[str, p.Json(default="foo")],
-) -> t.Annotated[JsonResponse[RespE5], p.ResponseSpec(model=RespE5)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE5)]:
     r = RespE5(
         body1=bd1.body1,
         body2=bd1.body2,
         body3=bd2.body3,
         body4=bd2.body4,
         body5=bd3.body5,
-        body6=body6,
     )
     return JsonResponse(r)
 
@@ -547,7 +546,8 @@ async def test_body() -> None:
     fieldinfo6 = definition.body_model.model_fields["body6"]
     assert fieldinfo6.default == "foo"
 
-    assert "foo" in definition.body_model.model_config["json_schema_extra"]
+    ret = definition.body_model.model_config["json_schema_extra"]
+    assert "foo" in t.cast(t.Dict, ret)
 
     scope = {
         "type": "http",
@@ -836,9 +836,9 @@ async def endpoint18(
     return JsonResponse({"method": "POST"})
 
 
-async def endpoint20(
+async def endpoint20(  # type: ignore
     request: HttpRequest,
-    bd1,  # type: ignore
+    bd1,
 ) -> JsonResponse:
     return JsonResponse({"method": "POST"})
 

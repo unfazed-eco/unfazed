@@ -52,10 +52,6 @@ async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
         ) -> HttpResponse:
             return HttpResponse("hello, unfazed")
 
-        @property
-        def name(self) -> str:
-            return "AuthorAdmin"
-
     yield
 
     admin_collector.clear()

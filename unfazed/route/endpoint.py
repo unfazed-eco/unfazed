@@ -181,8 +181,9 @@ class EndPointDefinition(BaseModel):
     path_parm_names: t.List[str]
 
     # stage 1: convert signature to params and response
-    params: t.Dict[str, inspect.Parameter] | None = None
-    response_models: t.List[p.ResponseSpec] | None = None
+    # move to type checking
+    # params: t.Dict[str, inspect.Parameter] | None = None
+    # response_models: t.List[p.ResponseSpec] | None = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
     path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
@@ -194,14 +195,27 @@ class EndPointDefinition(BaseModel):
     body_type: t.Optional[t.Literal["json", "form"]] = None
 
     # stage 3: create path, query, header, cookie, body models
-    path_model: t.Type[BaseModel] | None = None
-    query_model: t.Type[BaseModel] | None = None
-    header_model: t.Type[BaseModel] | None = None
-    cookie_model: t.Type[BaseModel] | None = None
-    body_model: t.Type[BaseModel] | None = None
+    # move to type checking
 
     operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    if t.TYPE_CHECKING:
+        response_models: t.List[p.ResponseSpec]
+        params: t.Dict[str, inspect.Parameter]
+        body_model: t.Type[BaseModel]
+        path_model: t.Type[BaseModel]
+        query_model: t.Type[BaseModel]
+        header_model: t.Type[BaseModel]
+        cookie_model: t.Type[BaseModel]
+    else:
+        params: t.Dict[str, inspect.Parameter] | None = None
+        response_models: t.List[p.ResponseSpec] | None = None
+        path_model: t.Type[BaseModel] | None = None
+        query_model: t.Type[BaseModel] | None = None
+        header_model: t.Type[BaseModel] | None = None
+        cookie_model: t.Type[BaseModel] | None = None
+        body_model: t.Type[BaseModel] | None = None
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
