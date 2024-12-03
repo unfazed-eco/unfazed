@@ -1,4 +1,5 @@
 import os
+import typing as t
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,7 +21,7 @@ from unfazed.db.tortoise.commands import (
 
 
 @pytest.fixture(autouse=True)
-def setup_aerich_env():
+def setup_aerich_env() -> t.Generator:
     Tortoise.apps = {}
     Tortoise._inited = False
 
@@ -128,12 +129,11 @@ async def test_cmd(tmp_path: Path) -> None:
 
 
 async def test_full_coverage():
-    unfazed1 = Unfazed(
-        settings=UnfazedSettings(
-            **_Settings,
-            INSTALLED_APPS=["tests.apps.orm.common"],
-        )
-    )
+    SETTINGS = {
+        **_Settings,
+        "INSTALLED_APPS": ["tests.apps.orm.common"],
+    }
+    unfazed1 = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS))
     await unfazed1.setup()
 
     with patch("aerich.Command.init") as init_func:

@@ -4,11 +4,14 @@ import httpx
 from asgiref.testing import ApplicationCommunicator
 from asgiref.typing import ASGIApplication, Scope
 
+if t.TYPE_CHECKING:
+    from unfazed.core import Unfazed
+
 
 class Requestfactory(httpx.AsyncClient):
     def __init__(
         self,
-        app: ASGIApplication,
+        app: "Unfazed",
         app_state: t.Dict[str, t.Any] = {},
         lifespan_on: bool = True,
         base_url: str = "http://testserver",
@@ -20,7 +23,7 @@ class Requestfactory(httpx.AsyncClient):
             "asgi": {"version": "3.0"},
             "state": app_state,
         }
-        self.communicator = ApplicationCommunicator(app, scope)
+        self.communicator = ApplicationCommunicator(t.cast(ASGIApplication, app), scope)
         self.lifespan_on = lifespan_on
         super().__init__(base_url=base_url, transport=transport)
 

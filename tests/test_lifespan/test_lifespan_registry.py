@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from unfazed.conf import UnfazedSettings
@@ -15,7 +17,7 @@ class HelloLifeSpan(BaseLifeSpan):
         self.count += 1
 
     @property
-    def state(self):
+    def state(self) -> t.Dict:
         return {"foo": "bar"}
 
 
@@ -28,7 +30,7 @@ class HelloLifeSpan2(BaseLifeSpan):
         self.count += 1
 
     @property
-    def state(self):
+    def state(self) -> t.Dict:
         return {}
 
 
@@ -36,18 +38,21 @@ SETTINGS = {
     "DEBUG": True,
     "PROJECT_NAME": "test_serializer",
     "LIFESPAN": [
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan",
+        "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan",
     ],
 }
 
 
 async def test_registry() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS))
     lifespan_handler.clear()
     await unfazed.setup()
 
-    hello_lifespan = lifespan_handler.get(
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan"
+    hello_lifespan: HelloLifeSpan = t.cast(
+        HelloLifeSpan,
+        lifespan_handler.get(
+            "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan"
+        ),
     )
 
     async with Requestfactory(unfazed):
@@ -58,14 +63,14 @@ SETTINGS2 = {
     "DEBUG": True,
     "PROJECT_NAME": "test_lifespan",
     "LIFESPAN": [
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan",
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan",
+        "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan",
+        "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan",
     ],
 }
 
 
 async def test_failed() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS2))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS2))
 
     with pytest.raises(ValueError):
         await unfazed.setup()
@@ -75,17 +80,20 @@ SETTINGS3 = {
     "DEBUG": True,
     "PROJECT_NAME": "test_lifespan",
     "LIFESPAN": [
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan2",
+        "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan2",
     ],
 }
 
 
 async def test_empty_state() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS3))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS3))
     lifespan_handler.clear()
     await unfazed.setup()
-    hello_lifespan = lifespan_handler.get(
-        "tests.test_lifespan.test_lifespan.HelloLifeSpan2"
+    hello_lifespan: HelloLifeSpan2 = t.cast(
+        HelloLifeSpan2,
+        lifespan_handler.get(
+            "tests.test_lifespan.test_lifespan_registry.HelloLifeSpan2"
+        ),
     )
 
     async with Requestfactory(unfazed):

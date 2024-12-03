@@ -28,9 +28,9 @@ _Settings2 = {
 }
 
 
-async def test_middleware_common():
+async def test_middleware_common() -> None:
     unfazed = Unfazed(
-        settings=UnfazedSettings(**_Settings),
+        settings=UnfazedSettings.model_validate(_Settings),
         routes=[
             Route("/enpoint1", endpoint=endpoint1),
             Route("/enpoint2", endpoint=endpoint2),
@@ -47,7 +47,7 @@ async def test_middleware_common():
         assert response.status_code == 500
 
     unfazed2 = Unfazed(
-        settings=UnfazedSettings(**_Settings2),
+        settings=UnfazedSettings.model_validate(_Settings2),
         routes=[
             Route("/enpoint1", endpoint=endpoint1),
             Route("/enpoint2", endpoint=endpoint2),

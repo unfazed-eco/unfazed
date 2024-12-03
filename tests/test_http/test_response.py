@@ -18,7 +18,7 @@ from unfazed.http import (
 from unfazed.http.response import RangeFileHandler, parse_request
 
 
-def test_str_esponse():
+def test_str_esponse() -> None:
     resp = HttpResponse(content="hello, world")
     assert resp.body == b"hello, world"
     assert resp.media_type == "text/plain"
@@ -32,7 +32,7 @@ def test_str_esponse():
     assert resp.media_type == "text/html"
 
 
-def test_jsonresponse():
+def test_jsonresponse() -> None:
     content = {"a": 1}
     resp = JsonResponse(content=content)
 
@@ -51,18 +51,18 @@ def test_jsonresponse():
         resp = JsonResponse(content="hello, world")
 
 
-def test_redirctresponse():
+def test_redirctresponse() -> None:
     resp = RedirctResponse(url="/api")
     assert resp.headers["location"] == "/api"
     assert resp.status_code == 302
 
 
 class StreamingApp:
-    def __init__(self):
+    def __init__(self) -> None:
         self.event = asyncio.Event()
         self.body = b""
 
-    async def send(self, msg: t.Dict[str, t.Any]):
+    async def send(self, msg: t.Dict[str, t.Any]) -> None:
         flag = "more_body" in msg and msg["more_body"] is False
         body = msg.get("body", b"")
 
@@ -71,13 +71,13 @@ class StreamingApp:
         if flag:
             self.event.set()
 
-    async def reiceive(self):
+    async def reiceive(self) -> t.Dict[str, str]:
         await self.event.wait()
 
         return {"type": "http.disconnect"}
 
 
-async def test_streamingresponse():
+async def test_streamingresponse() -> None:
     async def asynccontent():
         yield b"hello, "
         yield b"world"
@@ -110,7 +110,7 @@ async def test_streamingresponse():
     assert app3.body == b"hello, world"
 
 
-async def test_fileresponse():
+async def test_fileresponse() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
 
     _handler = RangeFileHandler(file_path)
@@ -142,7 +142,7 @@ async def test_fileresponse():
     )
 
 
-def test_rangehandler():
+def test_rangehandler() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
 
     stat = os.stat(file_path)
@@ -164,7 +164,7 @@ def test_rangehandler():
     assert handler.content_range == f"bytes 0-9/{stat.st_size}"
 
 
-def test_fileresponse_parse_request():
+def test_fileresponse_parse_request() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
 
     handler = RangeFileHandler(file_path)

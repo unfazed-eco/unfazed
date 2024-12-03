@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from tests.apps.auth.common.models import Phone, User
@@ -12,7 +14,7 @@ from unfazed.serializer.tortoise import TSerializer
 
 
 @pytest.fixture(autouse=True)
-async def setup_auth_mixin_env():
+async def setup_auth_mixin_env() -> t.AsyncGenerator:
     await Phone.all().delete()
     admin_collector.clear()
 
@@ -23,11 +25,11 @@ async def setup_auth_mixin_env():
     @register(PhoneSerializer)
     class PhoneAdmin(BaseModelAdmin, AuthMixin):
         @action(name="action1")
-        def action1(self):
+        def action1(self) -> None:
             pass
 
         @action(name="action2")
-        def action2(self):
+        def action2(self) -> None:
             pass
 
     yield
@@ -35,7 +37,7 @@ async def setup_auth_mixin_env():
     await Phone.all().delete()
 
 
-async def test_admin_mixin():
+async def test_admin_mixin() -> None:
     phone_ins: AuthMixin = admin_collector["PhoneAdmin"]
 
     assert phone_ins.view_permission == "models.unfazed_auth_phone.can_view"

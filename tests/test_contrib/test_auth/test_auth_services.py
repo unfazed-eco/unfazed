@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from tests.apps.auth.common.models import User
@@ -7,7 +9,7 @@ from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
 
 
 @pytest.fixture(autouse=True)
-async def setup_auth_service_env():
+async def setup_auth_service_env() -> t.AsyncGenerator:
     await User.all().delete()
     await User.create(account="admin", password="admin")
     yield
@@ -29,7 +31,7 @@ async def test_authservice() -> None:
     )
 
 
-async def test_failed_load():
+async def test_failed_load() -> None:
     auth_settings = UnfazedContribAuthSettings(
         USER_MODEL="tests.apps.auth.models.User",
         BACKENDS={

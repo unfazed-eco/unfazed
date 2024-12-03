@@ -6,9 +6,9 @@ from unfazed.schema import OpenAPI
 from unfazed.test import Requestfactory
 
 
-def test_service():
-    openapi_setting = OpenAPI(
-        servers=[{"url": "http://localhost:8000", "description": "dev"}]
+def test_service() -> None:
+    openapi_setting = OpenAPI.model_validate(
+        {"servers": [{"url": "http://localhost:8000", "description": "dev"}]}
     )
     docs = OpenApiService._get_docs(
         title="project",
@@ -29,7 +29,7 @@ def test_service():
     assert isinstance(redoc, str)
 
 
-async def test_api(setup_openapi_unfazed: Unfazed):
+async def test_api(setup_openapi_unfazed: Unfazed) -> None:
     unfazed = setup_openapi_unfazed
     assert unfazed.settings.OPENAPI is not None
 

@@ -1,4 +1,5 @@
 import os
+import typing as t
 
 import pytest
 from tortoise import Tortoise
@@ -9,7 +10,7 @@ from unfazed.core import Unfazed
 
 
 @pytest.fixture(scope="package", autouse=True)
-async def setup_auth_unfazed():
+async def setup_auth_unfazed() -> t.AsyncGenerator[Unfazed, None]:
     # clear Tortoise apps
     Tortoise.apps = {}
     Tortoise._inited = False

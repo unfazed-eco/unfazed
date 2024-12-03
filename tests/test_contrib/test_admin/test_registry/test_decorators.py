@@ -15,7 +15,7 @@ class StudentSerializer(TSerializer):
         model = Student
 
 
-async def test_decorator():
+async def test_decorator() -> None:
     admin_collector.clear()
 
     @register(StudentSerializer)

@@ -1,4 +1,5 @@
 import os
+import typing as t
 
 import pytest
 
@@ -8,7 +9,7 @@ HOST = os.getenv("REDIS_HOST", "redis")
 
 
 @pytest.fixture
-async def client():
+async def client() -> t.AsyncGenerator[SerializerBackend, None]:
     client: SerializerBackend = SerializerBackend(
         f"redis://{HOST}:6379", options={"PREFIX": "test"}
     )
@@ -18,7 +19,7 @@ async def client():
     await client.close()
 
 
-async def test_client_init():
+async def test_client_init() -> None:
     client = SerializerBackend(f"redis://{HOST}:6379")
 
     await client.flushdb()
@@ -54,7 +55,7 @@ async def test_client_init():
         SerializerBackend(f"redis://{HOST}:6379", options={"decode_responses": True})
 
 
-async def test_generic_cmd(client: SerializerBackend):
+async def test_generic_cmd(client: SerializerBackend) -> None:
     await client.flushdb()
 
     await client.set("foo", "bar")
@@ -67,7 +68,7 @@ async def test_generic_cmd(client: SerializerBackend):
     assert await client.touch("foo", "foo1") == 1
 
 
-async def test_str_cmd(client: SerializerBackend):
+async def test_str_cmd(client: SerializerBackend) -> None:
     await client.flushdb()
 
     await client.set("foo", "bar")
@@ -110,7 +111,7 @@ async def test_str_cmd(client: SerializerBackend):
     assert await client.get("foo10") == "baz"
 
 
-async def test_int_float_cmd(client: SerializerBackend):
+async def test_int_float_cmd(client: SerializerBackend) -> None:
     await client.flushdb()
 
     await client.set("foo", 1)

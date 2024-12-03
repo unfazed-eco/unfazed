@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from unfazed.http import HttpRequest, HttpResponse
@@ -9,7 +11,7 @@ class TestInclude:
     patterns = []
 
 
-def test_include():
+def test_include() -> None:
     import_path = "tests.apps.route.include.nopatternroutes"
 
     with pytest.raises(ValueError):
@@ -31,7 +33,7 @@ async def view(request: HttpRequest) -> HttpResponse:
     return "Hello, World!"
 
 
-def test_path():
+def test_path() -> None:
     # test both endpoint and routes provided
     with pytest.raises(ValueError):
         subpaths = path("/bar", endpoint=view)
@@ -46,7 +48,7 @@ def test_path():
         path("/foo", endpoint="foo")
 
 
-def test_parse_urlconf():
+def test_parse_urlconf() -> None:
     import_path = "tests.apps.route.include.nopatternroutes"
     app_center = {"not.existed.app": None}
 
@@ -61,12 +63,14 @@ def test_parse_urlconf():
 
 
 class Middleware1(BaseHttpMiddleware):
-    async def dispatch(self, request, call_next):
+    async def dispatch(
+        self, request: HttpRequest, call_next: t.Callable
+    ) -> HttpResponse:
         response = await call_next(request)
         return response
 
 
-def test_route():
+def test_route() -> None:
     with pytest.raises(ValueError):
         Route("foo", view)
 

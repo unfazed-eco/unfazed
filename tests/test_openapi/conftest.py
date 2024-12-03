@@ -1,5 +1,6 @@
 import os
 import sys
+import typing as t
 
 import pytest
 from tortoise import Tortoise
@@ -9,7 +10,7 @@ from unfazed.core import Unfazed
 
 
 @pytest.fixture(scope="package", autouse=True)
-async def setup_openapi_unfazed():
+async def setup_openapi_unfazed() -> t.AsyncGenerator[Unfazed, None]:
     common_dir_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../apps/openapi")
     )

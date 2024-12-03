@@ -7,7 +7,7 @@ import pytest
 from unfazed.logging.handlers import UnfazedRotatingFileHandler
 
 
-def test_rotating_file_handler(tmp_path: Path):
+def test_rotating_file_handler(tmp_path: Path) -> None:
     path = tmp_path / "test.log"
     filename = str(path)
 

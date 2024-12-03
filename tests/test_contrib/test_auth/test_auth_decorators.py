@@ -1,3 +1,5 @@
+import typing as t
+
 import httpx
 import pytest
 
@@ -9,7 +11,9 @@ from unfazed.test import Requestfactory
 
 
 @pytest.fixture
-async def logged_request(setup_auth_unfazed: Unfazed):
+async def logged_request(
+    setup_auth_unfazed: Unfazed,
+) -> t.AsyncGenerator[httpx.AsyncClient, None]:
     await User.create(account="auth_decorator", password="auth_decorator")
 
     async with Requestfactory(setup_auth_unfazed) as request:
@@ -22,7 +26,9 @@ async def logged_request(setup_auth_unfazed: Unfazed):
 
 
 @pytest.fixture
-async def logged_with_permission_request(setup_auth_unfazed: Unfazed):
+async def logged_with_permission_request(
+    setup_auth_unfazed: Unfazed,
+) -> t.AsyncGenerator[httpx.AsyncClient, None]:
     u1 = await User.create(account="auth_decorator2", password="auth_decorator2")
     r1 = await Role.create(name="auth_decorator")
     p1 = await Permission.create(access="auth.async_permission_succeed.can_access")

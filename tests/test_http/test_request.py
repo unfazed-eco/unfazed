@@ -1,7 +1,7 @@
 from unfazed.http import HttpRequest
 
 
-async def test_http_request():
+async def test_http_request() -> None:
     http_scope = {
         "type": "http",
         "http_version": "1.1",

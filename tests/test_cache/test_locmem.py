@@ -26,7 +26,7 @@ _Settings = {
 }
 
 
-async def test_locmem():
+async def test_locmem() -> None:
     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
     await unfazed.setup()
 
@@ -82,7 +82,7 @@ async def test_locmem():
     assert cache._cache == {}
 
 
-async def test_without_option():
+async def test_without_option() -> None:
     unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
     await unfazed.setup()
 

@@ -236,8 +236,7 @@ def test_create_relational_fields() -> None:
 
     # fk fields
     assert "bags" in StudentSerializer.model_fields
-    print(StudentSerializer.model_fields)
-    # one to one fields
+    # one to one fieldss
     assert "profile" in StudentSerializer.model_fields
 
     # init model

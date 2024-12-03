@@ -13,11 +13,11 @@ from unfazed.http import HttpRequest, HttpResponse
 from unfazed.route.routing import Route
 
 
-async def receive(*args: t.Any, **kwargs: t.Any):
+async def receive(*args: t.Any, **kwargs: t.Any) -> t.Any:
     pass
 
 
-async def send(*args: t.Any, **kwargs: t.Any):
+async def send(*args: t.Any, **kwargs: t.Any) -> t.Any:
     pass
 
 
@@ -33,7 +33,7 @@ DEFAULT_SESSION_SETTINGS = {
 
 
 @pytest.fixture(autouse=True)
-def setup_middle_env():
+def setup_middle_env() -> t.Generator:
     raw_auth_settings = None
     if "UNFAZED_CONTRIB_AUTH_SETTINGS" not in settings:
         raw_auth_settings = settings["UNFAZED_CONTRIB_AUTH_SETTINGS"]
@@ -53,7 +53,7 @@ def setup_middle_env():
         settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = raw_auth_settings
 
 
-async def test_auth_middleware():
+async def test_auth_middleware() -> None:
     unfazed = Unfazed(routes=[Route("/", endpoint)])
 
     m = AuthenticationMiddleware(unfazed)

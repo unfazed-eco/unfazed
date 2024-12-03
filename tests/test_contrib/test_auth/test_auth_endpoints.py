@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from tests.apps.auth.common.models import User
@@ -6,14 +8,14 @@ from unfazed.test import Requestfactory
 
 
 @pytest.fixture(autouse=True)
-async def setup_auth_endpoints_env():
+async def setup_auth_endpoints_env() -> t.AsyncGenerator[None, None]:
     await User.all().delete()
     await User.create(account="admin", password="admin")
     yield
     await User.all().delete()
 
 
-async def test_endpoints(setup_auth_unfazed: Unfazed):
+async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
     unfazed = setup_auth_unfazed
     async with Requestfactory(unfazed) as request:
         resp = await request.post(

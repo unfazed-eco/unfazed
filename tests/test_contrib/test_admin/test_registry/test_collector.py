@@ -11,7 +11,7 @@ class Admin2(BaseAdmin):
     pass
 
 
-def test_admin_collector():
+def test_admin_collector() -> None:
     admin1 = Admin1()
     admin_collector.set("admin1", admin1)
     assert admin_collector["admin1"] == admin1

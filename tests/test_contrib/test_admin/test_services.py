@@ -24,7 +24,7 @@ from unfazed.serializer.tortoise import TSerializer
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup_collector():
+def setup_collector() -> t.Generator:
     # ===== relation test =======
     class UserSerializer(TSerializer):
         class Meta:
@@ -150,14 +150,16 @@ def setup_collector():
 
     @register()
     class WithoutPermissionAdmin(ModelAdmin):
-        async def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
+        async def has_view_perm(
+            self, request: HttpRequest, *args: t.Any, **kw: t.Any
+        ) -> bool:
             return False
 
     yield admin_collector
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
-async def setup_article():
+async def setup_article() -> t.Generator:
     await Article.all().delete()
 
     for i in range(20):
@@ -169,7 +171,7 @@ async def setup_article():
 
 
 @pytest_asyncio.fixture()
-async def setup_user():
+async def setup_user() -> t.Generator:
     await User.all().delete()
     await Group.all().delete()
     await Profile.all().delete()
@@ -183,7 +185,7 @@ async def setup_user():
     await Book.all().delete()
 
 
-def build_request():
+def build_request() -> t.Any:
     class User:
         is_superuser = True
 

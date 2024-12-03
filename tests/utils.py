@@ -3,7 +3,7 @@ import pymysql.cursors
 
 
 class DataBase:
-    def __init__(self, host: str, port: int, root_user: str, password: str):
+    def __init__(self, host: str, port: int, root_user: str, password: str) -> None:
         self._host = host
         self._port = port
         self._user = root_user

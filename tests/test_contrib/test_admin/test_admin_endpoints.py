@@ -18,7 +18,7 @@ class User:
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
-async def setup_endpoint_env():
+async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     admin_collector.clear()
     await Author.all().delete()
 
@@ -53,7 +53,7 @@ async def setup_endpoint_env():
             return HttpResponse("hello, unfazed")
 
         @property
-        def name(self):
+        def name(self) -> str:
             return "AuthorAdmin"
 
     yield

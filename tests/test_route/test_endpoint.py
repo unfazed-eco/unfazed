@@ -16,7 +16,7 @@ from unfazed.route.endpoint import EndPointDefinition
 from unfazed.test import Requestfactory
 
 
-async def reiceive(*args, **kw):
+async def reiceive(*args, **kw) -> t.AsyncGenerator:
     # yield body
 
     yield {
@@ -31,7 +31,7 @@ async def reiceive(*args, **kw):
     }
 
 
-async def send(*args, **kw):
+async def send(*args, **kw) -> None:
     pass
 
 
@@ -73,7 +73,7 @@ async def endpoint1(
     return JsonResponse(r)
 
 
-async def test_path():
+async def test_path() -> None:
     route = Route(
         path="/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}",
         endpoint=endpoint1,
@@ -181,7 +181,7 @@ def syncendpoint2(
     return JsonResponse(r)
 
 
-async def test_query():
+async def test_query() -> None:
     route = Route(
         path="/",
         endpoint=endpoint2,
@@ -233,7 +233,7 @@ async def test_query():
     await route(scope=scope, receive=reiceive, send=send)
 
 
-async def test_query_sync():
+async def test_query_sync() -> None:
     route = Route(
         path="/",
         endpoint=syncendpoint2,
@@ -254,7 +254,7 @@ async def test_query_sync():
     await route(scope=scope, receive=reiceive, send=send)
 
 
-async def test_query_failed_slove():
+async def test_query_failed_slove() -> None:
     route = Route(
         path="/",
         endpoint=endpoint2,
@@ -313,7 +313,7 @@ async def endpoint3(
     return JsonResponse(r)
 
 
-async def test_header():
+async def test_header() -> None:
     route = Route(
         path="/",
         endpoint=endpoint3,
@@ -404,7 +404,7 @@ async def endpoint4(
     return JsonResponse(r)
 
 
-async def test_cookie():
+async def test_cookie() -> None:
     route = Route(
         path="/",
         endpoint=endpoint4,
@@ -504,7 +504,7 @@ async def endpoint5(
     return JsonResponse(r)
 
 
-async def body_receive(*args, **kw):
+async def body_receive(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"body1": "foo", "body2": 1, "body3": 2, "body4": "foo2", "body5": "foo3"}',
@@ -512,7 +512,7 @@ async def body_receive(*args, **kw):
     }
 
 
-async def test_body():
+async def test_body() -> None:
     route = Route(path="/", endpoint=endpoint5, tags=["tag1"], methods=["POST"])
 
     definition = route.endpoint_definition
@@ -591,9 +591,9 @@ async def endpoint6(
     form1: t.Annotated[Form1, p.Form()],
     form2: t.Annotated[Form2, p.Form()],
     form5: t.Annotated[str, p.Form(default="foo")],
-    *args,
-    **kw,
-) -> t.Annotated[JsonResponse[RespE6], p.ResponseSpec(model=RespE6)]:
+    *args: t.Any,
+    **kw: t.Any,
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE6)]:
     r = RespE6(
         form1=form1.form1,
         form2=form1.form2,
@@ -604,7 +604,7 @@ async def endpoint6(
     return JsonResponse(r)
 
 
-async def form_receive(*args, **kw):
+async def form_receive(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b"form1=foo&form2=1&form3=2&form4=foo2&form5=foo3",
@@ -612,7 +612,7 @@ async def form_receive(*args, **kw):
     }
 
 
-async def test_form():
+async def test_form() -> None:
     route = Route(path="/", endpoint=endpoint6, tags=["tag1"], methods=["POST"])
 
     definition = route.endpoint_definition
@@ -663,7 +663,7 @@ async def test_form():
 # === test failed slove =====
 
 
-async def body_receive2(*args, **kw):
+async def body_receive2(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"bd1": "error_body"}',
@@ -671,7 +671,7 @@ async def body_receive2(*args, **kw):
     }
 
 
-async def form_receive2(*args, **kw):
+async def form_receive2(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"form1": "error_form"}',
@@ -695,7 +695,7 @@ async def endpoint8(
     return JsonResponse({"form": form1})
 
 
-async def test_failed_slove():
+async def test_failed_slove() -> None:
     route = Route(
         path="/{pth1}",
         endpoint=endpoint7,
@@ -762,7 +762,7 @@ async def endpoint10(
     return JsonResponse({"method": "GET"})
 
 
-async def endpoint11(request: HttpRequest):
+async def endpoint11(request: HttpRequest):  # type: ignore
     return JsonResponse({"method": "GET"})
 
 
@@ -838,12 +838,12 @@ async def endpoint18(
 
 async def endpoint20(
     request: HttpRequest,
-    bd1,
+    bd1,  # type: ignore
 ) -> JsonResponse:
     return JsonResponse({"method": "POST"})
 
 
-async def test_definition():
+async def test_definition() -> None:
     # support class view
     # but not recommended
     endpointview = EndpointView()
@@ -969,7 +969,7 @@ class CtxFile(BaseModel):
 class RespFile(BaseModel):
     name: str
     age: int
-    file_name: str
+    file_name: str | None
 
 
 async def endpoint19(
@@ -986,7 +986,7 @@ async def endpoint19(
     )
 
 
-async def test_file():
+async def test_file() -> None:
     route = Route(
         path="/with-file",
         endpoint=endpoint19,

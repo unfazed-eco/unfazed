@@ -10,6 +10,7 @@ from unfazed.core import Unfazed
 from unfazed.lifespan import lifespan_handler
 
 HOST = os.getenv("REDIS_HOST", "redis")
+
 _Setting = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_launch",
@@ -65,7 +66,7 @@ _Setting = {
     "VERSION": "0.1.0",
 }
 
-Setting = UnfazedSettings(**_Setting)
+Setting = UnfazedSettings.model_validate(_Setting)
 
 
 async def test_app_launch() -> None:

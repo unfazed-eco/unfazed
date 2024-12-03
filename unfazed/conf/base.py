@@ -7,7 +7,7 @@ from unfazed.const import UNFAZED_SETTINGS_MODULE
 from unfazed.utils import Storage
 
 
-class SettingsProxy(Storage[t.Type[BaseModel]]):
+class SettingsProxy(Storage[BaseModel]):
     unfazed_settings_module = UNFAZED_SETTINGS_MODULE
 
     def __init__(self) -> None:

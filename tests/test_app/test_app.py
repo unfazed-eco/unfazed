@@ -11,7 +11,7 @@ SETTINGS = {
 
 
 async def test_installed_apps(capsys) -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**SETTINGS))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS))
 
     # Check if the installed apps are loaded correctly
 

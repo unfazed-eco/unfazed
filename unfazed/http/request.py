@@ -3,6 +3,9 @@ import typing as t
 import orjson as json
 from starlette.requests import Request
 
+if t.TYPE_CHECKING:
+    from unfazed.contrib.session.backends.base import SessionBase
+
 
 class HttpRequest(Request):
     async def json(self) -> t.Dict:
@@ -21,3 +24,10 @@ class HttpRequest(Request):
     @property
     def path(self) -> str:
         return self.url.path
+
+    @property
+    def session(self) -> "SessionBase":
+        assert (
+            "session" in self.scope
+        ), "SessionMiddleware must be installed to access request.session"
+        return self.scope["session"]

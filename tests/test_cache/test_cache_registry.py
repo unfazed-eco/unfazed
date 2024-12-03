@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from unfazed.cache import caches
@@ -32,12 +34,12 @@ _Settings = {
 
 
 async def test_cache_registry() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_Settings))
 
     await unfazed.setup()
 
-    default_cache = caches["default"]
-    other_cache = caches["other"]
+    default_cache: LocMemCache = t.cast(LocMemCache, caches["default"])
+    other_cache: LocMemCache = t.cast(LocMemCache, caches["other"])
 
     assert default_cache.prefix == "unfazed_cache1"
     assert other_cache.prefix == "unfazed_cache2"

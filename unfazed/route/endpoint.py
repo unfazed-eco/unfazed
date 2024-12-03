@@ -181,8 +181,8 @@ class EndPointDefinition(BaseModel):
     path_parm_names: t.List[str]
 
     # stage 1: convert signature to params and response
-    params: t.Optional[t.Dict[str, inspect.Parameter]] = None
-    response_models: t.Optional[t.List[p.ResponseSpec]] = None
+    params: t.Dict[str, inspect.Parameter] | None = None
+    response_models: t.List[p.ResponseSpec] | None = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
     path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}

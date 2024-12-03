@@ -45,7 +45,7 @@ async def endpoint2(
     return JsonResponse(data)
 
 
-def test_openapi_create():
+def test_openapi_create() -> None:
     route = Route("/endpoint1", endpoint=endpoint1, tags=["tag1"])
     route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
 

@@ -436,7 +436,7 @@ def test_inline_admin() -> None:
     assert bool(ret.attrs) is True
 
 
-def test_tool_admin():
+def test_tool_admin() -> None:
     class ExportTool(ToolAdmin):
         fields_set = [
             fields.CharField("name"),
@@ -463,7 +463,7 @@ def test_tool_admin():
     assert ret.attrs.output_field == "editor"
 
 
-async def test_cache_admin():
+async def test_cache_admin() -> None:
     class CacheTool(CacheAdmin):
         cache_client = LocMemCache("test_models")
 
