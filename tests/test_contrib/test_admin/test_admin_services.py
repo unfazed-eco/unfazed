@@ -41,7 +41,7 @@ def setup_collector() -> t.Generator:
     class ProfileSerializer(TSerializer):
         class Meta:
             model = Profile
-
+1204
     # =============================
 
     # ===== common test =======
