@@ -2,7 +2,7 @@ import typing as t
 
 import httpx
 from asgiref.testing import ApplicationCommunicator
-from asgiref.typing import ASGIApplication, Scope
+from asgiref.typing import Scope
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed
@@ -20,10 +20,10 @@ class Requestfactory(httpx.AsyncClient):
         self.app = app
         scope: Scope = {
             "type": "lifespan",
-            "asgi": {"version": "3.0"},
+            "asgi": {"version": "3.0", "spec_version": "2.1"},
             "state": app_state,
         }
-        self.communicator = ApplicationCommunicator(t.cast(ASGIApplication, app), scope)
+        self.communicator = ApplicationCommunicator(app, scope)  # type: ignore
         self.lifespan_on = lifespan_on
         super().__init__(base_url=base_url, transport=transport)
 
@@ -36,14 +36,14 @@ class Requestfactory(httpx.AsyncClient):
         if self.lifespan_on:
             await self.lifespan_shutdown()
 
-    async def lifespan_startup(self):
-        await self.communicator.send_input({"type": "lifespan.startup"})
-        message = await self.communicator.receive_output()
+    async def lifespan_startup(self) -> None:
+        await self.communicator.send_input({"type": "lifespan.startup"})  # type: ignore
+        message = await self.communicator.receive_output()  # type: ignore
         if message["type"] != "lifespan.startup.complete":
             raise RuntimeError("Startup failed")
 
-    async def lifespan_shutdown(self):
-        await self.communicator.send_input({"type": "lifespan.shutdown"})
-        message = await self.communicator.receive_output()
+    async def lifespan_shutdown(self) -> None:
+        await self.communicator.send_input({"type": "lifespan.shutdown"})  # type: ignore
+        message = await self.communicator.receive_output()  # type: ignore
         if message["type"] != "lifespan.shutdown.complete":
             raise RuntimeError("Shutdown failed")

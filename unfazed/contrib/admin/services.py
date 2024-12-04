@@ -148,7 +148,7 @@ class AdminModelService:
     @classmethod
     async def model_save(
         cls, admin_ins_name: str, data: t.Dict, inlines: t.Dict, request: HttpRequest
-    ) -> t.Dict:
+    ) -> BaseSerializer:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_change_perm(
@@ -265,7 +265,7 @@ class AdminModelService:
     @classmethod
     async def model_delete(
         cls, admin_ins_name: str, data: t.Dict, request: HttpRequest
-    ) -> t.Any:
+    ) -> None:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_delete_perm(request):

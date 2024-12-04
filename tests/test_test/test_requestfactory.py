@@ -21,12 +21,12 @@ async def endpoint1(request: HttpRequest) -> HttpResponse:
 
 
 class LifeSpanStartFailed(BaseLifeSpan):
-    async def on_startup(self):
+    async def on_startup(self) -> t.NoReturn:
         raise RuntimeError("LifeSpanStartFailed")
 
 
 class LifeSpanShutdownFailed(BaseLifeSpan):
-    async def on_shutdown(self):
+    async def on_shutdown(self) -> t.NoReturn:
         raise RuntimeError("LifeSpanShutdownFailed")
 
 

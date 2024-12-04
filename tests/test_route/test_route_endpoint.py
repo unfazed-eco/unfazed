@@ -4,6 +4,7 @@ import typing as t
 import pytest
 from pydantic import BaseModel, Field
 from starlette.routing import Match
+from starlette.types import Receive
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
@@ -16,7 +17,7 @@ from unfazed.route.endpoint import EndPointDefinition
 from unfazed.test import Requestfactory
 
 
-async def reiceive(*args, **kw) -> t.AsyncGenerator:
+async def _reiceive() -> t.AsyncGenerator[t.MutableMapping[str, t.Any], None]:
     # yield body
 
     yield {
@@ -31,7 +32,11 @@ async def reiceive(*args, **kw) -> t.AsyncGenerator:
     }
 
 
-async def send(*args, **kw) -> None:
+# cope with mypy checking
+reiceive = t.cast(Receive, _reiceive)
+
+
+async def send(*args: t.Any, **kw: t.Any) -> None:
     pass
 
 
@@ -61,7 +66,7 @@ async def endpoint1(
     pth2: t.Annotated[Pth2, p.Path()],
     path5: t.Annotated[str, p.Path(default="foo")],
     path6: str,
-) -> t.Annotated[JsonResponse[RespE1], p.ResponseSpec(model=RespE1)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE1)]:
     r = RespE1(
         path1=pth1.path1,
         path2=pth1.path2,
@@ -105,7 +110,7 @@ async def test_path() -> None:
         "path6" in definition.path_params and definition.path_params["path6"][0] is str
     )
 
-    pathmodel: BaseModel = definition.path_model
+    pathmodel = definition.path_model
     for ele in ["path1", "path2", "path3", "path4", "path5", "path6"]:
         assert ele in pathmodel.model_fields
 
@@ -113,13 +118,11 @@ async def test_path() -> None:
         "type": "http",
         "method": "GET",
         "scheme": "https",
-        "server": ("www.example.org", 80),
+        "server": ("www.unfazed.org", 80),
         "path": "/foo/1/2/foo2/foo3/foo4",
         "headers": [],
         "query_string": b"",
     }
-
-    # wait endpoint1 to be called and validate
     await route(scope=scope, receive=reiceive, send=send)
 
 
@@ -151,7 +154,7 @@ async def endpoint2(
     qry2: t.Annotated[Qry2, p.Query()],
     query5: t.Annotated[str, p.Query(default="foo")],
     query6: str,
-) -> t.Annotated[JsonResponse[RespE2], p.ResponseSpec(model=RespE2)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
         query2=qry1.query2,
@@ -169,7 +172,7 @@ def syncendpoint2(
     qry2: t.Annotated[Qry2, p.Query()],
     query5: t.Annotated[str, p.Query(default="foo")],
     query6: str,
-) -> t.Annotated[JsonResponse[RespE2], p.ResponseSpec(model=RespE2)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
         query2=qry1.query2,
@@ -302,7 +305,7 @@ async def endpoint3(
     hdr1: t.Annotated[Hdr1, p.Header()],
     hdr2: t.Annotated[Hdr2, p.Header()],
     header5: t.Annotated[str, p.Header(default="foo")],
-) -> t.Annotated[JsonResponse[RespE3], p.ResponseSpec(model=RespE3)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE3)]:
     r = RespE3(
         header1=hdr1.header1,
         header2=hdr1.header2,
@@ -393,7 +396,7 @@ async def endpoint4(
     ck1: t.Annotated[Ckie1, p.Cookie()],
     ck2: t.Annotated[Ckie2, p.Cookie()],
     cookie5: t.Annotated[str, p.Cookie(default="foo")],
-) -> t.Annotated[JsonResponse[RespE4], p.ResponseSpec(model=RespE4)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE4)]:
     r = RespE4(
         cookie1=ck1.cookie1,
         cookie2=ck1.cookie2,

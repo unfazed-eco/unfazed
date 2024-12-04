@@ -38,7 +38,6 @@ def import_setting(env: str) -> t.Mapping[str, t.Any]:
         ImportError: If the settings module specified by the environment variable `env` cannot be imported.
     """
     settings_module = os.environ.get(env)
-    print("settings_module", settings_module)
     if not settings_module:
         raise ValueError(f"environment variable {env} is not set")
     try:
