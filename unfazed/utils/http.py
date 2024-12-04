@@ -9,7 +9,7 @@ from unfazed.type import GenericReponse
 def generic_response(ret: GenericReponse) -> HttpResponse:
     if isinstance(ret, HttpResponse):
         return ret
-    elif isinstance(ret, (t.Dict, BaseModel)):
+    elif isinstance(ret, (t.Dict, BaseModel, t.List)):
         return JsonResponse(ret)
     else:
         return HttpResponse(ret)

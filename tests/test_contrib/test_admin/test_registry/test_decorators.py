@@ -6,8 +6,8 @@ from unfazed.serializer.tortoise import TSerializer
 
 
 class Student(Model):
-    name: str = fields.CharField(max_length=255)
-    age: int = fields.IntField()
+    name = fields.CharField(max_length=255)
+    age = fields.IntField()
 
 
 class StudentSerializer(TSerializer):
@@ -28,13 +28,9 @@ async def test_decorator() -> None:
         async def test_action2(self, request: HttpRequest | None = None) -> str:
             return "test_action2"
 
-        @property
-        def name(self):
-            return "StudentAdmin"
-
     assert "StudentAdmin" in admin_collector
 
-    ins = admin_collector["StudentAdmin"]
+    ins: ModelAdmin = admin_collector["StudentAdmin"]
     assert ins.serializer == StudentSerializer
 
     actions = ins.get_actions()

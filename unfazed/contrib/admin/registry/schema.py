@@ -64,10 +64,22 @@ class AdminAction(BaseModel):
     extra: t.Dict[str, t.Any]
 
 
-class AdminSerializeModel(BaseModel):
+class BaseAdminSerializeModel(BaseModel):
     fields: t.Dict[str, AdminField]
     actions: t.Dict[str, AdminAction]
-    attrs: t.Union[AdminAttrs, AdminInlineAttrs, AdminToolAttrs]
+    # attrs: t.Union[AdminAttrs, AdminInlineAttrs, AdminToolAttrs]
+
+
+class AdminSerializeModel(BaseAdminSerializeModel):
+    attrs: AdminAttrs
+
+
+class AdminInlineSerializeModel(BaseAdminSerializeModel):
+    attrs: AdminInlineAttrs
+
+
+class AdminToolSerializeModel(BaseAdminSerializeModel):
+    attrs: AdminToolAttrs
 
 
 class AdminSite(BaseModel):

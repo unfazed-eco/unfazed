@@ -3,6 +3,7 @@ import typing as t
 import pytest
 from starlette.concurrency import run_in_threadpool
 
+from unfazed.command import BaseCommand
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 
@@ -26,7 +27,7 @@ async def test_cmd_common() -> None:
     await unfazed.setup()
     assert "common" in unfazed.command_center.commands
     assert "_ignore" not in unfazed.command_center.commands
-    cmd = unfazed.command_center.commands["common"]
+    cmd: BaseCommand = unfazed.command_center.commands["common"]
     await run_in_threadpool(cmd._callback)
 
 
@@ -39,7 +40,7 @@ async def test_cmd_noasync() -> None:
     unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
     await unfazed.setup()
     with pytest.raises(TypeError):
-        cmd = unfazed.command_center.commands["noasync"]
+        cmd: BaseCommand = unfazed.command_center.commands["noasync"]
         cmd._callback()
 
 
@@ -52,7 +53,7 @@ async def test_cmd_wrong(mocker: "MockerFixture") -> None:
     unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
     await unfazed.setup()
     with pytest.raises(NotImplementedError):
-        cmd = unfazed.command_center.commands["nohandle"]
+        cmd: BaseCommand = unfazed.command_center.commands["nohandle"]
         await cmd.handle()
 
 

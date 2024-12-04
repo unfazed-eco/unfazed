@@ -13,6 +13,8 @@ class User(BaseModel):
     age = fields.IntField()
 
     profile: fields.BackwardOneToOneRelation["Profile"]
+    groups: fields.ManyToManyRelation["Group"]
+    books: fields.ReverseRelation["Book"]
 
     class Meta:
         table = "test_unfazed_auth_user"

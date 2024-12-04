@@ -1,14 +1,20 @@
 import pytest
+from pydantic import BaseModel
 
 from unfazed.contrib.admin.registry import BaseAdmin, admin_collector
 
 
-class Admin1(BaseAdmin):
+# for mypy check
+class HypoSerializer(BaseModel):
     pass
+
+
+class Admin1(BaseAdmin):
+    serializer = HypoSerializer
 
 
 class Admin2(BaseAdmin):
-    pass
+    serializer = HypoSerializer
 
 
 def test_admin_collector() -> None:

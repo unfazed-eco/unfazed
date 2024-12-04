@@ -5,9 +5,9 @@ if t.TYPE_CHECKING:
 
 
 class BaseAdmin(t.Protocol):
-    name: str
-    title: str
-    serializer: t.Type
+    if t.TYPE_CHECKING:
+        name: str
+        title: str
 
     async def has_view_perm(
         self, request: "HttpRequest", *args: t.Any, **kw: t.Any

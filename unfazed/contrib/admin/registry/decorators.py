@@ -19,7 +19,7 @@ class ActionOutput:
     Table = 5
 
 
-def register(serializer_cls: t.Type[TSerializer] | None = None):
+def register(serializer_cls: t.Type[TSerializer] | None = None) -> t.Callable:
     def wrapper(admin_cls: t.Type["BaseAdmin"]):
         admin_ins = admin_cls()
         if serializer_cls:
@@ -40,7 +40,7 @@ def action(
     batch: bool = False,
     *,
     extra: t.Dict[str, t.Any] = {},
-):
+) -> t.Callable:
     def wrapper(method: t.Callable):
         @wraps(method)
         async def asyncinner(*args, **kwargs):

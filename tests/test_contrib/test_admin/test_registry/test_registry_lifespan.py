@@ -20,7 +20,7 @@ async def test_registry_lifespan() -> None:
 
     lifespan = AdminWakeup(unfazed)
 
-    await lifespan.startup()
+    await lifespan.on_startup()
 
     assert "ArticleAdmin" in admin_collector
     assert "UserAdmin" in admin_collector

@@ -9,7 +9,7 @@ from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseAdmin as BaseAdminProtocol
 from unfazed.protocol import BaseSerializer, CacheBackend
-from unfazed.schema import AdminRoute
+from unfazed.schema import AdminRoute, RouteMeta
 from unfazed.serializer.tortoise import TSerializer
 
 from .collector import admin_collector
@@ -21,9 +21,11 @@ from .schema import (
     AdminAttrs,
     AdminField,
     AdminInlineAttrs,
+    AdminInlineSerializeModel,
     AdminSerializeModel,
     AdminSite,
     AdminToolAttrs,
+    AdminToolSerializeModel,
 )
 from .utils import convert_field_type
 
@@ -49,19 +51,29 @@ class BaseAdmin(BaseAdminProtocol):
     def title(self):
         return self.__class__.__name__
 
-    async def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_view_perm(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         return request.user.is_superuser
 
-    async def has_change_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_change_perm(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         return request.user.is_superuser
 
-    async def has_delete_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_delete_perm(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         return request.user.is_superuser
 
-    async def has_create_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_create_perm(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         return request.user.is_superuser
 
-    async def has_action_perm(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_action_perm(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         return request.user.is_superuser
 
     def to_serialize(self, *args, **kw) -> dict:
@@ -80,17 +92,17 @@ class BaseAdmin(BaseAdminProtocol):
 
         return actions
 
-    def to_route(self) -> AdminRoute | None:
+    def to_route(self) -> AdminRoute:
         return AdminRoute(
             title=self.title,
             component=self.component,
             name=self.name,
             children=[],
-            meta={
-                "icon": self.icon,
-                "hidden": self.hidden,
-                "hideChildrenInMenu": self.hidden_children,
-            },
+            meta=RouteMeta(
+                icon=self.icon,
+                hidden=self.hidden,
+                hiddenChildren=self.hidden_children,
+            ),
         )
 
 
@@ -129,8 +141,8 @@ class SiteSettings(BaseAdmin):
 
     def to_serialize(self) -> AdminSite:
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
-        ret = AdminSite(
-            **{
+        ret = AdminSite.model_validate(
+            {
                 "title": self.title,
                 "navTheme": self.navTheme,
                 "colorPrimary": self.colorPrimary,
@@ -156,7 +168,10 @@ site = SiteSettings()
 
 
 class BaseModelAdmin(BaseAdmin):
-    serializer: t.Type[TSerializer] | None = None
+    if t.TYPE_CHECKING:
+        serializer: t.Type[TSerializer]
+    else:
+        serializer: t.Type[TSerializer] | None = None
 
     # fields description
     image_fields: t.List[str] = []
@@ -183,11 +198,11 @@ class BaseModelAdmin(BaseAdmin):
     can_search: bool = True
     search_fields: t.List[str] = []
 
-    def get_fields(self) -> t.Dict[str, t.Dict]:
+    def get_fields(self) -> t.Dict[str, AdminField]:
         if not self.serializer:
             raise ValueError(f"serializer is not set for {self.__class__.__name__}")
 
-        fields_mapping: t.Dict[str, t.Dict] = {}
+        fields_mapping: t.Dict[str, AdminField] = {}
         fields = self.serializer.model_fields
         fieldinfo: FieldInfo
 
@@ -336,8 +351,8 @@ class ModelAdmin(BaseModelAdmin):
             if item not in field_list:
                 raise ValueError(f"field {item} not found in {field_list}")
 
-        attrs = AdminAttrs(
-            **{
+        attrs = AdminAttrs.model_validate(
+            {
                 "editable": self.editable,
                 "help_text": self.help_text,
                 "can_show_all": self.can_show_all,
@@ -396,8 +411,8 @@ class ModelInlineAdmin(ModelAdmin):
             if item not in field_list:
                 raise ValueError(f"field {item} not found in {field_list}")
 
-        attrs = AdminInlineAttrs(
-            **{
+        attrs = AdminInlineAttrs.model_validate(
+            {
                 "help_text": self.help_text,
                 "max_num": self.max_num,
                 "min_num": self.min_num,
@@ -418,11 +433,11 @@ class ModelInlineAdmin(ModelAdmin):
 
         return attrs
 
-    def to_serialize(self) -> AdminSerializeModel:
+    def to_serialize(self) -> AdminInlineSerializeModel:
         fields_map = self.get_fields()
         attrs = self.get_attrs(list(fields_map.keys()))
 
-        return AdminSerializeModel(
+        return AdminInlineSerializeModel(
             fields=fields_map, attrs=attrs, actions=self.get_actions()
         )
 
@@ -432,7 +447,7 @@ class ToolAdmin(BaseAdmin):
     route_label: str = "Tools"
     output_field: str
 
-    def to_serialize(self) -> AdminSerializeModel:
+    def to_serialize(self) -> AdminToolSerializeModel:
         fields_map = {}
         for field in self.fields_set:
             fields_map[field.name] = field.to_json()
@@ -441,7 +456,7 @@ class ToolAdmin(BaseAdmin):
 
         actions = self.get_actions()
 
-        return AdminSerializeModel(
+        return AdminToolSerializeModel(
             fields=fields_map,
             actions=actions,
             attrs=attrs,

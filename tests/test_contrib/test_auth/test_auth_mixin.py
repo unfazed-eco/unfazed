@@ -10,6 +10,7 @@ from unfazed.contrib.admin.registry import (
     register,
 )
 from unfazed.contrib.auth.mixin import AuthMixin
+from unfazed.http import HttpRequest
 from unfazed.serializer.tortoise import TSerializer
 
 
@@ -59,8 +60,10 @@ async def test_admin_mixin() -> None:
     class Request:
         user = User(is_superuser=True)
 
-    assert await phone_ins.has_view_permission(Request()) is True
-    assert await phone_ins.has_create_permission(Request()) is True
-    assert await phone_ins.has_change_permission(Request()) is True
-    assert await phone_ins.has_delete_permission(Request()) is True
-    assert await phone_ins.has_action_permission(Request(), "action1") is True
+    request = t.cast(HttpRequest, Request())
+
+    assert await phone_ins.has_view_permission(request) is True
+    assert await phone_ins.has_create_permission(request) is True
+    assert await phone_ins.has_change_permission(request) is True
+    assert await phone_ins.has_delete_permission(request) is True
+    assert await phone_ins.has_action_permission(request, "action1") is True

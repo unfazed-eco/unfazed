@@ -26,9 +26,6 @@ def test_site() -> None:
     settings["UNFAZED_SETTINGS"] = UnfazedSettings(
         VERSION="0.1.0", PROJECT_NAME="Unfazed Admin"
     )
-    route = site.to_route()
-
-    assert route is None
 
     ret = site.to_serialize()
     assert ret.title == "Unfazed Admin"
@@ -172,48 +169,48 @@ def test_failed_base_model_admin() -> None:
 
     # dont have field in list_display
     with pytest.raises(ValueError):
-        instance = CarAdmin2()
-        instance.get_fields()
+        instance2 = CarAdmin2()
+        instance2.get_fields()
 
     class CarAdmin3(BaseModelAdmin):
         serializer = CarSerializer
         datetime_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin3()
-        instance.get_fields()
+        instance3 = CarAdmin3()
+        instance3.get_fields()
 
     class CarAdmin4(BaseModelAdmin):
         serializer = CarSerializer
         editor_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin4()
-        instance.get_fields()
+        instance4 = CarAdmin4()
+        instance4.get_fields()
 
     class CarAdmin5(BaseModelAdmin):
         serializer = CarSerializer
         readonly_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin5()
-        instance.get_fields()
+        instance5 = CarAdmin5()
+        instance5.get_fields()
 
     class CarAdmin6(BaseModelAdmin):
         serializer = CarSerializer
         not_null_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin6()
-        instance.get_fields()
+        instance6 = CarAdmin6()
+        instance6.get_fields()
 
     class CarAdmin7(BaseModelAdmin):
         serializer = CarSerializer
         json_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin7()
-        instance.get_fields()
+        instance7 = CarAdmin7()
+        instance7.get_fields()
 
     # image_fields
     class CarAdmin8(BaseModelAdmin):
@@ -221,8 +218,8 @@ def test_failed_base_model_admin() -> None:
         image_fields = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin8()
-        instance.get_fields()
+        instance8 = CarAdmin8()
+        instance8.get_fields()
 
     # wrong datetime_fields
     class CarAdmin9(BaseModelAdmin):
@@ -230,8 +227,8 @@ def test_failed_base_model_admin() -> None:
         datetime_fields = ["alias"]
 
     with pytest.raises(ValueError):
-        instance = CarAdmin9()
-        instance.get_fields()
+        instance9 = CarAdmin9()
+        instance9.get_fields()
 
 
 def test_model_admin() -> None:
@@ -279,13 +276,13 @@ def test_model_admin() -> None:
 
     assert attrs.help_text == ["help_text"]
 
-    class CarAdmin(ModelAdmin):
+    class CarAdmin2(ModelAdmin):
         serializer = CarSerializer
 
         detail_display = ["not_exist"]
 
     with pytest.raises(ValueError):
-        instance2 = CarAdmin()
+        instance2 = CarAdmin2()
         instance2.get_attrs(list(instance.get_fields().keys()))
 
     # test to_serialize
@@ -294,7 +291,7 @@ def test_model_admin() -> None:
     assert bool(ret.attrs) is True
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def setup_inline() -> None:
     admin_collector.clear()
 
@@ -347,7 +344,7 @@ def setup_inline() -> None:
         inlines = ["InlineUserAdmin4"]
 
 
-def test_model_admin_inlines(setup_inline) -> None:
+def test_model_admin_inlines() -> None:
     # normal
     instance1: ModelAdmin = admin_collector["UserAdmin1"]
     ret = instance1.to_inlines()
@@ -360,18 +357,18 @@ def test_model_admin_inlines(setup_inline) -> None:
         instance2.to_inlines()
 
     # no inlines
-    instance3 = admin_collector["UserAdmin3"]
+    instance3: ModelAdmin = admin_collector["UserAdmin3"]
     ret3 = instance3.to_inlines()
     assert ret3 == {}
 
     # bk_fk
     with pytest.raises(ValueError):
-        instance4 = admin_collector["BookAdmin2"]
+        instance4: ModelAdmin = admin_collector["BookAdmin2"]
         instance4.to_inlines()
 
     # bk_o2o
     with pytest.raises(ValueError):
-        instance5 = admin_collector["ProfileAdmin"]
+        instance5: ModelAdmin = admin_collector["ProfileAdmin"]
         instance5.to_inlines()
 
 

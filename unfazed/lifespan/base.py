@@ -10,11 +10,11 @@ class BaseLifeSpan(BaseLifeSpanProtocol):
     def __init__(self, unfazed: "Unfazed") -> None:
         self.unfazed = unfazed
 
-    async def startup(self) -> None:
-        pass  # pragma: no cover
+    async def on_startup(self) -> None:
+        return None
 
-    async def shutdown(self) -> None:
-        pass  # pragma: no cover
+    async def on_shutdown(self) -> None:
+        return None
 
     @property
     def state(self) -> t.Dict[str, t.Any]:
