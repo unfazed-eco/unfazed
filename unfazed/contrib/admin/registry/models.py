@@ -3,12 +3,14 @@ import typing as t
 from enum import Enum
 from itertools import chain
 
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseAdmin as BaseAdminProtocol
-from unfazed.protocol import BaseSerializer, CacheBackend
+from unfazed.protocol import CacheBackend
 from unfazed.schema import AdminRoute, RouteMeta
 from unfazed.serializer.tortoise import TSerializer
 
@@ -29,6 +31,8 @@ from .schema import (
 )
 from .utils import convert_field_type
 
+PYDANTIC_MODEL = t.TypeVar("PYDANTIC_MODEL", bound=BaseModel)
+
 
 class BaseAdmin(BaseAdminProtocol):
     help_text: t.List[str] = []
@@ -44,11 +48,11 @@ class BaseAdmin(BaseAdminProtocol):
     override: bool = False
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.__class__.__name__
 
     async def has_view_perm(
@@ -76,7 +80,7 @@ class BaseAdmin(BaseAdminProtocol):
     ) -> bool:
         return request.user.is_superuser
 
-    def to_serialize(self, *args, **kw) -> dict:
+    def to_serialize(self) -> PYDANTIC_MODEL:
         raise NotImplementedError  # pragma: no cover
 
     def get_actions(self) -> t.Dict[str, AdminAction]:
@@ -217,7 +221,9 @@ class BaseModelAdmin(BaseAdmin):
 
             raw_field_type = json_schema_extra.get("field_type", None)
             if not raw_field_type:
-                raw_field_type = fieldinfo.annotation.__name__
+                raw_field_type = (
+                    fieldinfo.annotation.__name__ if fieldinfo.annotation else ""
+                )
 
             field_type = convert_field_type(raw_field_type)
 
@@ -310,11 +316,11 @@ class ModelAdmin(BaseModelAdmin):
             return {}
 
         ret = {}
-        self_serializer: BaseSerializer = self.serializer
+        self_serializer: t.Type[TSerializer] = self.serializer
         for name in inlines:
             inline = admin_collector[name]
 
-            inline_serializer: BaseSerializer = inline.serializer
+            inline_serializer: TSerializer = inline.serializer
             relation = inline_serializer.find_relation(self_serializer)
 
             if not relation:
@@ -338,9 +344,8 @@ class ModelAdmin(BaseModelAdmin):
         return ret
 
     def get_attrs(self, field_list: t.List[str]) -> AdminAttrs:
-        detail_display = self.detail_display or list(
-            self.serializer.Meta.model._meta.db_fields
-        )
+        model = t.cast(TModel, self.serializer.Meta.model)
+        detail_display = self.detail_display or list(model._meta.db_fields)
         for item in chain(
             detail_display,
             self.list_filter,
@@ -372,7 +377,8 @@ class ModelAdmin(BaseModelAdmin):
 
         return attrs
 
-    def to_serialize(self, *args, **kw) -> AdminSerializeModel:
+    @t.override
+    def to_serialize(self) -> AdminSerializeModel:
         fields_map = self.get_fields()
         actions = self.get_actions()
         attrs = self.get_attrs(list(fields_map.keys()))
@@ -397,9 +403,8 @@ class ModelInlineAdmin(ModelAdmin):
         return None
 
     def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:
-        list_display = self.list_display or list(
-            self.serializer.Meta.model._meta.db_fields
-        )
+        model = t.cast(TModel, self.serializer.Meta.model)
+        list_display = self.list_display or list(model._meta.db_fields)
 
         for item in chain(
             list_display,
@@ -433,6 +438,7 @@ class ModelInlineAdmin(ModelAdmin):
 
         return attrs
 
+    @t.override
     def to_serialize(self) -> AdminInlineSerializeModel:
         fields_map = self.get_fields()
         attrs = self.get_attrs(list(fields_map.keys()))
@@ -447,6 +453,7 @@ class ToolAdmin(BaseAdmin):
     route_label: str = "Tools"
     output_field: str
 
+    @t.override
     def to_serialize(self) -> AdminToolSerializeModel:
         fields_map = {}
         for field in self.fields_set:

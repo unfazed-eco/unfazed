@@ -8,12 +8,10 @@ from .schema import LOGIN_RESPONSE, LoginCtx, RegisterCtx
 from .services import AuthService
 from .settings import UnfazedContribAuthSettings
 
-_ = t.Annotated
-
 
 async def login(
     request: HttpRequest, ctx: LoginCtx
-) -> _[JsonResponse, *LOGIN_RESPONSE]:
+) -> t.Annotated[JsonResponse, *LOGIN_RESPONSE]:
     s = AuthService()
     auth_settings: UnfazedContribAuthSettings = settings[
         "UNFAZED_CONTRIB_AUTH_SETTINGS"

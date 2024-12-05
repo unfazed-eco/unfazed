@@ -6,8 +6,10 @@ from unfazed import utils as u
 from unfazed.const import UNFAZED_SETTINGS_MODULE
 from unfazed.utils import Storage
 
+T = t.TypeVar("T", bound=BaseModel)
 
-class SettingsProxy(Storage[BaseModel]):
+
+class SettingsProxy(Storage[T]):
     unfazed_settings_module = UNFAZED_SETTINGS_MODULE
 
     def __init__(self) -> None:
@@ -20,7 +22,7 @@ class SettingsProxy(Storage[BaseModel]):
             self._settingskv = u.import_setting(self.unfazed_settings_module)
         return self._settingskv
 
-    def guess_client_cls(self, alias: str) -> t.Type[BaseModel]:
+    def guess_client_cls(self, alias: str) -> t.Type[T]:
         if alias == "UNFAZED_SETTINGS":
             client_str = "unfazed.conf.UnfazedSettings"
 
@@ -36,7 +38,7 @@ class SettingsProxy(Storage[BaseModel]):
 
         return u.import_string(client_str)
 
-    def __getitem__(self, key: str) -> BaseModel:
+    def __getitem__(self, key: str) -> T:
         if key in self.storage:
             return self.storage[key]
 

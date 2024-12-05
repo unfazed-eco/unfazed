@@ -13,9 +13,9 @@ from unfazed.serializer.tortoise import TSerializer
 from unfazed.type import Doc
 
 from .registry import (
-    BaseAdmin,
     ModelAdmin,
     ModelInlineAdmin,
+    ToolAdmin,
     admin_collector,
     parse_cond,
     site,
@@ -38,7 +38,7 @@ class AdminModelService:
     async def list_route(cls, request: HttpRequest) -> t.List[t.Dict]:
         temp = {}
 
-        admin_ins: BaseAdmin
+        admin_ins: t.Union[ModelAdmin, ModelInlineAdmin, ToolAdmin]
         for _, admin_ins in admin_collector:
             if not await admin_ins.has_view_perm(request):
                 continue
@@ -49,7 +49,7 @@ class AdminModelService:
                 continue
 
             if isinstance(admin_ins, ModelAdmin):
-                m: TModel = admin_ins.serializer.Meta.model
+                m: TModel = t.cast(TModel, admin_ins.serializer.Meta.model)
                 route_label = admin_ins.route_label or m._meta.app or "Default"
             else:
                 route_label = admin_ins.route_label or "Default"
@@ -160,7 +160,7 @@ class AdminModelService:
         ) and not await admin_ins.has_create_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[TSerializer] = admin_ins.serializer
 
         # handle main model
         idschema = IdSchema(**data)

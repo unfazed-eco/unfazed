@@ -11,7 +11,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "Run unfazed server"
 
-    def add_arguments(self) -> t.Sequence[Parameter]:
+    def add_arguments(self) -> t.List[Parameter]:
         return [
             Option(
                 ["--host"],
@@ -50,6 +50,7 @@ class Command(BaseCommand):
             ),
         ]
 
+    @t.override
     async def handle(
         self,
         host: str,
@@ -61,7 +62,7 @@ class Command(BaseCommand):
         config = Config(
             self.unfazed,
             host=host,
-            port=port,
+            port=int(port),
             reload=reload,
             workers=workers,
             log_level=log_level,

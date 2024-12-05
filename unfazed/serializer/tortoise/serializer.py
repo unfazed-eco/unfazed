@@ -19,7 +19,9 @@ from unfazed.schema import Relation, Result
 from unfazed.serializer import BaseSerializer
 
 
-def create_m2m_field(field: ManyToManyFieldInstance) -> t.Tuple[t.Type, FieldInfo]:
+def create_m2m_field(
+    field: ManyToManyFieldInstance,
+) -> t.Tuple[t.Optional[t.List[t.Type]], FieldInfo]:
     model: Model = field.related_model
 
     related_model_m2m_fields = model._meta.m2m_fields
@@ -50,7 +52,9 @@ def create_fk_field(field: ForeignKeyFieldInstance) -> t.Tuple[t.Type, FieldInfo
     return t.Optional[pydantic_model], FieldInfo(default=None)
 
 
-def create_bk_fk_field(field: BackwardFKRelation) -> t.Tuple[t.Type, FieldInfo]:
+def create_bk_fk_field(
+    field: BackwardFKRelation,
+) -> t.Tuple[t.Optional[t.Type], FieldInfo]:
     model: Model = field.related_model
 
     related_model_fk_fields = model._meta.fk_fields
@@ -67,7 +71,9 @@ def create_bk_fk_field(field: BackwardFKRelation) -> t.Tuple[t.Type, FieldInfo]:
     return t.Optional[t.List[pydantic_model]], FieldInfo(default=None)
 
 
-def create_o2o_field(field: OneToOneFieldInstance) -> t.Tuple[t.Type, FieldInfo]:
+def create_o2o_field(
+    field: OneToOneFieldInstance,
+) -> t.Tuple[t.Optional[t.Type], FieldInfo]:
     model = field.related_model
 
     exclude: t.List[str] = list(model._meta.fetch_fields) + [field.model_field_name]
@@ -80,7 +86,9 @@ def create_o2o_field(field: OneToOneFieldInstance) -> t.Tuple[t.Type, FieldInfo]
     return t.Optional[pydantic_model], FieldInfo(default=None)
 
 
-def create_bk_o2o_field(field: BackwardOneToOneRelation) -> t.Tuple[t.Type, FieldInfo]:
+def create_bk_o2o_field(
+    field: BackwardOneToOneRelation,
+) -> t.Tuple[t.Optional[t.Type], FieldInfo]:
     model: Model = field.related_model
 
     related_model_o2o_fields = model._meta.o2o_fields
@@ -153,7 +161,7 @@ def create_model_from_tortoise(
 ) -> BaseModel:
     namespace = namespace or {}
     annotations = namespace.get("__annotations__", {})
-    params: t.Dict[str, t.Tuple[t.Type, FieldInfo]] = {}
+    params: t.Dict[str, t.Tuple[t.Type | None, FieldInfo] | ConfigDict] = {}
     exclude = exclude or []
 
     relation_created_fields = []
@@ -166,22 +174,22 @@ def create_model_from_tortoise(
             params[name] = create_common_field(field)
 
         elif name in model._meta.m2m_fields:
-            params[name] = create_m2m_field(field)
+            params[name] = create_m2m_field(t.cast(ManyToManyFieldInstance, field))
 
         elif name in model._meta.fk_fields:
-            params[name] = create_fk_field(field)
+            params[name] = create_fk_field(t.cast(ForeignKeyFieldInstance, field))
             relation_created_fields.append(field.source_field)
 
         elif name in model._meta.backward_fk_fields:
-            params[name] = create_bk_fk_field(field)
+            params[name] = create_bk_fk_field(t.cast(BackwardFKRelation, field))
 
         elif name in model._meta.o2o_fields:
-            params[name] = create_o2o_field(field)
+            params[name] = create_o2o_field(t.cast(OneToOneFieldInstance, field))
             relation_created_fields.append(field.source_field)
 
         else:
             # backward_o2o_fields
-            params[name] = create_bk_o2o_field(field)
+            params[name] = create_bk_o2o_field(t.cast(BackwardOneToOneRelation, field))
 
     # delete fields created by relation
     # for field_name in relation_created_fields:
@@ -207,8 +215,8 @@ def prepare_meta_config(cls_name: str, meta: t.Any) -> Model:
             f"Unfazed.Serializer Error: model not found in class {cls_name}"
         )
 
-    include = getattr(meta, "include", set())
-    exclude = getattr(meta, "exclude", set())
+    include: t.Set = getattr(meta, "include", set())
+    exclude: t.Set = getattr(meta, "exclude", set())
 
     if include and exclude:
         raise ValueError(
@@ -232,11 +240,11 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
         cls_name: str,
         bases: t.Tuple[t.Type],
         namespace: t.Dict[str, t.Any],
-        *args,
-        **kwargs,
-    ) -> t.Type[BaseModel]:
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> BaseModel:
         cls = super().__new__(mcs, cls_name, bases, namespace, *args, **kwargs)
-        thebase: "TSerializer" = None
+        thebase: "TSerializer" | None = None
         for base in bases:
             if base.__name__ == "TSerializer":
                 thebase = base
@@ -359,17 +367,19 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
 
     @t.final
     @classmethod
-    async def list(cls, queryset: QuerySet, page: int, size: int, **kwargs) -> Result:
+    async def list(
+        cls, queryset: QuerySet, page: int, size: int, **kwargs: t.Any
+    ) -> Result:
         total = await queryset.count()
 
         if page == 0 or size <= 0:
-            queryset = await queryset.all()
+            ins_list = await queryset.all()
         else:
-            queryset = await queryset.limit(size).offset((page - 1) * size)
+            ins_list = await queryset.limit(size).offset((page - 1) * size)
 
         return Result(
             count=total,
-            data=[cls.from_instance(ins) for ins in queryset],
+            data=[cls.from_instance(ins) for ins in ins_list],
         )
 
     @classmethod
@@ -383,57 +393,67 @@ class TSerializer(BaseSerializer, metaclass=MetaClass):
         other_model: Model = other_cls.Meta.model
 
         # check if it is a m2m relation
-        for field_name in self_model._meta.m2m_fields:
-            field = self_model._meta.fields_map[field_name]
-            if field.related_model == other_model:
+        for m2m_field_name in self_model._meta.m2m_fields:
+            m2mfield: ManyToManyFieldInstance = self_model._meta.fields_map[
+                m2m_field_name
+            ]
+            if m2mfield.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=field_name,  # alse field.related_name
+                    source_field=m2m_field_name,  # alse field.related_name
                     dest_field="",
                     relation="m2m",
                 )
 
         # check if it is a fk relation
-        for field_name in self_model._meta.fk_fields:
-            field = self_model._meta.fields_map[field_name]
-            if field.related_model == other_model:
+        for fk_field_name in self_model._meta.fk_fields:
+            fk_field: ForeignKeyFieldInstance = self_model._meta.fields_map[
+                fk_field_name
+            ]
+            if fk_field.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=field.source_field,  # alse field.source_field
-                    dest_field=field.to_field,
+                    source_field=fk_field.source_field,  # alse field.source_field
+                    dest_field=fk_field.to_field,
                     relation="fk",
                 )
 
         # check if it is a bk_fk relation
-        for field_name in self_model._meta.backward_fk_fields:
-            field = self_model._meta.fields_map[field_name]
-            if field.related_model == other_model:
+        for bk_fk_field_name in self_model._meta.backward_fk_fields:
+            bk_fk_field: BackwardFKRelation = self_model._meta.fields_map[
+                bk_fk_field_name
+            ]
+            if bk_fk_field.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
                     source_field="",
-                    dest_field=field.relation_source_field,
+                    dest_field=bk_fk_field.relation_source_field,
                     relation="bk_fk",
                 )
 
         # check if it is a o2o relation
-        for field_name in self_model._meta.o2o_fields:
-            field = self_model._meta.fields_map[field_name]
-            if field.related_model == other_model:
+        for o2o_field_name in self_model._meta.o2o_fields:
+            o2o_field: OneToOneFieldInstance = self_model._meta.fields_map[
+                o2o_field_name
+            ]
+            if o2o_field.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=field.source_field,
-                    dest_field=field.to_field,
+                    source_field=o2o_field.source_field,
+                    dest_field=o2o_field.to_field,
                     relation="o2o",
                 )
 
         # check if it is a bk_o2o relation
-        for field_name in self_model._meta.backward_o2o_fields:
-            field = self_model._meta.fields_map[field_name]
-            if field.related_model == other_model:
+        for bk_o2o_field_name in self_model._meta.backward_o2o_fields:
+            bk_o2o_field: BackwardOneToOneRelation = self_model._meta.fields_map[
+                bk_o2o_field_name
+            ]
+            if bk_o2o_field.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
                     source_field="",
-                    dest_field=field.relation_source_field,
+                    dest_field=bk_o2o_field.relation_source_field,
                     relation="bk_o2o",
                 )
 

@@ -16,7 +16,7 @@ class AuthMixin(BaseAdmin):
         return model.describe()
 
     @property
-    def permission_prefix(self):
+    def permission_prefix(self) -> str:
         return f"{self.model_description['app']}.{self.model_description['table']}"
 
     @property
@@ -46,24 +46,32 @@ class AuthMixin(BaseAdmin):
             self.create_permission,
         ] + [self.action_permission(action) for action in self.get_actions()]
 
-    async def has_view_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_view_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.view_permission)
 
-    async def has_change_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_change_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.change_permission)
 
-    async def has_delete_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_delete_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.delete_permission)
 
-    async def has_create_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_create_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.create_permission)
 
     async def has_action_permission(
-        self, request: HttpRequest, action: str, *args, **kw
+        self, request: HttpRequest, action: str, *args: t.Any, **kw: t.Any
     ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.action_permission(action))
