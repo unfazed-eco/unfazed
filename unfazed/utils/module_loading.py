@@ -6,15 +6,14 @@ from importlib import import_module
 def import_string(name: str) -> t.Type:
     """
     Import a class or object from a module using its fully qualified name.
-    Args:
-        name (str): The fully qualified name of the class or object to import.
-    Returns:
-        Type: The imported class or object.
+
     Raises:
-        ImportError: If the name doesn't look like a valid module path.
+    ImportError: If the module path is invalid or the module cannot be imported.
+
     Example:
-        >>> import_string('path.to.module.ClassName')
-        <class 'path.to.module.ClassName'>
+    >>> import_string("unfazed.http.HttpResponse")
+    <class 'unfazed.http.HttpResponse'>
+
     """
 
     try:
@@ -29,13 +28,13 @@ def import_string(name: str) -> t.Type:
 def import_setting(env: str) -> t.Mapping[str, t.Any]:
     """
     Import the settings module specified by the environment variable `env`.
-    Args:
-        env (str): The name of the environment variable containing the settings module.
-    Returns:
-        Mapping[str, Any]: A dictionary-like object containing the settings module's attributes.
+
     Raises:
-        Exception: If the environment variable `env` is not set.
-        ImportError: If the settings module specified by the environment variable `env` cannot be imported.
+    ValueError: If the environment variable is not set.
+    ImportError: If the settings module cannot be imported.
+
+    Example:
+    >>> import_setting("UNFAZED_SETTINGS_MODULE")
     """
     settings_module = os.environ.get(env)
     if not settings_module:

@@ -5,7 +5,7 @@ from asgiref.testing import ApplicationCommunicator
 from asgiref.typing import Scope
 
 if t.TYPE_CHECKING:
-    from unfazed.core import Unfazed
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 class Requestfactory(httpx.AsyncClient):
