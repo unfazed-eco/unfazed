@@ -100,13 +100,3 @@ warn_unused_configs = true
 allow_redefinition = true
 strict_equality = true
 show_error_context = true
-
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-ignore_errors = true
-
-
-[[tool.mypy.overrides]]
-module = "unfazed.cache.backends.redis.*"
-ignore_errors = true

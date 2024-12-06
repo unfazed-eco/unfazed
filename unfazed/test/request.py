@@ -2,13 +2,33 @@ import typing as t
 
 import httpx
 from asgiref.testing import ApplicationCommunicator
-from asgiref.typing import Scope
+from starlette.types import Scope
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
 class Requestfactory(httpx.AsyncClient):
+    """
+    Requestfactory is a helper class that allows you test your Unfazed app
+
+    Usage:
+    ```python
+
+    from unfazed import Unfazed
+    from unfazed.test.request import Requestfactory
+
+    async def test_your_app() -> None:
+
+        unfazed = Unfazed()
+        await unfazed.setup()
+
+        async with Requestfactory(unfazed) as request:
+            response = await request.get("/")
+            assert response.status_code == 200
+
+    """
+
     def __init__(
         self,
         app: "Unfazed",
