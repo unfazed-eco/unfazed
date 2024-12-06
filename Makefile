@@ -8,4 +8,4 @@ format:
 	@echo "Formatting code..."
 	ruff format tests/ unfazed/
 	ruff check tests/ unfazed/  --fix
-	mypy --check-untyped-defs --explicit-package-bases unfazed/test/
+	mypy --check-untyped-defs --explicit-package-bases unfazed/serializer/

@@ -1,23 +1,23 @@
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .models import Book, Group, Profile, User
 
 
-class UserSerializer(TSerializer):
+class UserSerializer(Serializer):
     class Meta:
         model = User
 
 
-class GroupSerializer(TSerializer):
+class GroupSerializer(Serializer):
     class Meta:
         model = Group
 
 
-class BookSerializer(TSerializer):
+class BookSerializer(Serializer):
     class Meta:
         model = Book
 
 
-class ProfileSerializer(TSerializer):
+class ProfileSerializer(Serializer):
     class Meta:
         model = Profile

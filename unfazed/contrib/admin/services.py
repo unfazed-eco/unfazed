@@ -9,7 +9,7 @@ from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
 from unfazed.protocol import BaseSerializer
 from unfazed.schema import AdminRoute, Condtion, RouteMeta
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
 from .registry import (
@@ -160,7 +160,7 @@ class AdminModelService:
         ) and not await admin_ins.has_create_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        serializer_cls: t.Type[TSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
 
         # handle main model
         idschema = IdSchema(**data)
@@ -175,7 +175,7 @@ class AdminModelService:
         # handle inlines
         for name, inline_data_list in inlines.items():
             ins: ModelInlineAdmin = admin_collector[name]
-            inline_serializer_cls: t.Type[TSerializer] = ins.serializer
+            inline_serializer_cls: t.Type[Serializer] = ins.serializer
             relation = inline_serializer_cls.find_relation(serializer_cls)
 
             if not relation:
@@ -280,7 +280,7 @@ class AdminModelService:
         if idschema.id <= 0:
             raise ValueError("id must be greater than 0")
 
-        serializer_cls: t.Type[TSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
         db_model = await serializer_cls.get_object(idschema)
 
         return await serializer_cls.destroy(db_model)

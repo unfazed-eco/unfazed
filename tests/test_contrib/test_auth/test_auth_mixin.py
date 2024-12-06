@@ -11,7 +11,7 @@ from unfazed.contrib.admin.registry import (
 )
 from unfazed.contrib.auth.mixin import AuthMixin
 from unfazed.http import HttpRequest
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,7 @@ async def setup_auth_mixin_env() -> t.AsyncGenerator:
     await Phone.all().delete()
     admin_collector.clear()
 
-    class PhoneSerializer(TSerializer):
+    class PhoneSerializer(Serializer):
         class Meta:
             model = Phone
 

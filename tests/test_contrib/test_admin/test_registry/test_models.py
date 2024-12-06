@@ -19,7 +19,7 @@ from unfazed.contrib.admin.registry import (
     register,
     site,
 )
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
 def test_site() -> None:
@@ -75,7 +75,7 @@ class Car(Model):
 def test_base_model_admin() -> None:
     # test get_fields
 
-    class CarSerializer(TSerializer):
+    class CarSerializer(Serializer):
         class Meta:
             model = Car
 
@@ -151,7 +151,7 @@ def test_base_model_admin() -> None:
 
 
 def test_failed_base_model_admin() -> None:
-    class CarSerializer(TSerializer):
+    class CarSerializer(Serializer):
         class Meta:
             model = Car
 
@@ -233,7 +233,7 @@ def test_failed_base_model_admin() -> None:
 
 def test_model_admin() -> None:
     # test to_serialize
-    class CarSerializer(TSerializer):
+    class CarSerializer(Serializer):
         class Meta:
             model = Car
 
@@ -295,7 +295,7 @@ def test_model_admin() -> None:
 def setup_inline() -> None:
     admin_collector.clear()
 
-    class CarSerializer(TSerializer):
+    class CarSerializer(Serializer):
         class Meta:
             model = Car
 
@@ -303,7 +303,7 @@ def setup_inline() -> None:
     class CarAdmin(ModelAdmin):
         pass
 
-    class BookSerializer(TSerializer):
+    class BookSerializer(Serializer):
         class Meta:
             model = Book
 
@@ -311,7 +311,7 @@ def setup_inline() -> None:
     class BookAdmin(ModelAdmin):
         pass
 
-    class UserSerializer(TSerializer):
+    class UserSerializer(Serializer):
         class Meta:
             model = User
 
@@ -335,7 +335,7 @@ def setup_inline() -> None:
     class BookAdmin2(ModelAdmin):
         inlines = ["InlineUserAdmin4"]
 
-    class ProfileSerializer(TSerializer):
+    class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
 
@@ -373,7 +373,7 @@ def test_model_admin_inlines() -> None:
 
 
 def test_inline_admin() -> None:
-    class BookSerializer(TSerializer):
+    class BookSerializer(Serializer):
         class Meta:
             model = Book
 

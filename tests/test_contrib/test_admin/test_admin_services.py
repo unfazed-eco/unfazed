@@ -20,25 +20,25 @@ from unfazed.contrib.admin.registry import (
 from unfazed.contrib.admin.services import AdminModelService
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_collector() -> t.Generator:
     # ===== relation test =======
-    class UserSerializer(TSerializer):
+    class UserSerializer(Serializer):
         class Meta:
             model = User
 
-    class GroupSerializer(TSerializer):
+    class GroupSerializer(Serializer):
         class Meta:
             model = Group
 
-    class BookSerializer(TSerializer):
+    class BookSerializer(Serializer):
         class Meta:
             model = Book
 
-    class ProfileSerializer(TSerializer):
+    class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
 
@@ -46,7 +46,7 @@ def setup_collector() -> t.Generator:
 
     # ===== common test =======
 
-    class ArticleSerializer(TSerializer):
+    class ArticleSerializer(Serializer):
         class Meta:
             model = Article
 

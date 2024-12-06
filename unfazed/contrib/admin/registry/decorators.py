@@ -2,7 +2,7 @@ import inspect
 import typing as t
 from functools import wraps
 
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .collector import admin_collector
 from .schema import AdminAction
@@ -19,7 +19,7 @@ class ActionOutput:
     Table = 5
 
 
-def register(serializer_cls: t.Type[TSerializer] | None = None) -> t.Callable:
+def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
     def wrapper(admin_cls: t.Type["BaseAdmin"]) -> t.Type["BaseAdmin"]:
         admin_ins = admin_cls()
         if serializer_cls:

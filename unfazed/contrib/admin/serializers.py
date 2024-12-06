@@ -1,8 +1,8 @@
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .models import LogEntry
 
 
-class LogEntrySerializer(TSerializer):
+class LogEntrySerializer(Serializer):
     class Meta:
         model = LogEntry

@@ -1,23 +1,23 @@
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .models import AbstractUser, Group, Permission, Role
 
 
-class GroupSerializer(TSerializer):
+class GroupSerializer(Serializer):
     class Meta:
         model = Group
 
 
-class RoleSerializer(TSerializer):
+class RoleSerializer(Serializer):
     class Meta:
         model = Role
 
 
-class PermissionSerializer(TSerializer):
+class PermissionSerializer(Serializer):
     class Meta:
         model = Permission
 
 
-class UserSerializer(TSerializer):
+class UserSerializer(Serializer):
     class Meta:
         model = AbstractUser.UserCls()

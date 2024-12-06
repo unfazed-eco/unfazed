@@ -14,10 +14,10 @@ from tests.apps.serializer.models import (
     Student,
 )
 from tests.apps.serializer.models import StudentProfile as Profile
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
-class CarSerializer(TSerializer):
+class CarSerializer(Serializer):
     override: int = 100
     cb_field: str = Field(default="cb")
 
@@ -242,13 +242,13 @@ async def test_relations() -> None:
 
     await Profile.create(student=s1, nickname="profile1")
 
-    class StudentSerializer(TSerializer):
+    class StudenSerializer(Serializer):
         class Meta:
             model = Student
 
     student = await Student.filter(id=s1.id).first()
 
-    student_serializer = await StudentSerializer.retrieve(student)
+    student_serializer = await StudenSerializer.retrieve(student)
 
     assert student_serializer.name == "student1"
     assert student_serializer.age == 18
@@ -256,7 +256,7 @@ async def test_relations() -> None:
     assert student_serializer.bags[1].name == "bag2"
     assert student_serializer.profile.nickname == "profile1"
 
-    class CourseSerializer(TSerializer):
+    class CourseSerializer(Serializer):
         class Meta:
             model = Course
 
@@ -268,7 +268,7 @@ async def test_relations() -> None:
     assert course_serializer.students[0].name == "student1"
     assert course_serializer.students[1].name == "student2"
 
-    class BagSerializer(TSerializer):
+    class BagSerializer(Serializer):
         class Meta:
             model = Bag
 
@@ -279,7 +279,7 @@ async def test_relations() -> None:
     assert bag_serializer.name == "bag1"
     assert bag_serializer.student.name == "student1"
 
-    class ProfileSerializer(TSerializer):
+    class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
 
@@ -292,7 +292,7 @@ async def test_relations() -> None:
 
     # list_from_ctx
 
-    ret = await StudentSerializer.list_from_ctx({"id": s1.id}, page=1, size=2)
+    ret = await StudenSerializer.list_from_ctx({"id": s1.id}, page=1, size=2)
 
     assert ret.count == 1
     assert len(ret.data) == 1

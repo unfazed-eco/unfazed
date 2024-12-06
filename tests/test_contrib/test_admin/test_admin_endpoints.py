@@ -7,7 +7,7 @@ from tests.apps.admin.article.models import Author
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 from unfazed.test import Requestfactory
 
 
@@ -22,7 +22,7 @@ async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     admin_collector.clear()
     await Author.all().delete()
 
-    class AuthorSerializer(TSerializer):
+    class AuthorSerializer(Serializer):
         class Meta:
             model = Author
 

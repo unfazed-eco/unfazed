@@ -12,7 +12,7 @@ from unfazed.http import HttpRequest
 from unfazed.protocol import BaseAdmin as BaseAdminProtocol
 from unfazed.protocol import CacheBackend
 from unfazed.schema import AdminRoute, RouteMeta
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .collector import admin_collector
 from .decorators import action
@@ -173,9 +173,9 @@ site = SiteSettings()
 
 class BaseModelAdmin(BaseAdmin):
     if t.TYPE_CHECKING:
-        serializer: t.Type[TSerializer]
+        serializer: t.Type[Serializer]
     else:
-        serializer: t.Type[TSerializer] | None = None
+        serializer: t.Type[Serializer] | None = None
 
     # fields description
     image_fields: t.List[str] = []
@@ -316,11 +316,11 @@ class ModelAdmin(BaseModelAdmin):
             return {}
 
         ret = {}
-        self_serializer: t.Type[TSerializer] = self.serializer
+        self_serializer: t.Type[Serializer] = self.serializer
         for name in inlines:
             inline = admin_collector[name]
 
-            inline_serializer: TSerializer = inline.serializer
+            inline_serializer: Serializer = inline.serializer
             relation = inline_serializer.find_relation(self_serializer)
 
             if not relation:
