@@ -1,7 +1,6 @@
 import inspect
 import typing as t
 
-from starlette.middleware import Middleware
 from starlette.routing import Route as StartletteRoute
 from starlette.routing import compile_path
 
@@ -14,6 +13,7 @@ from .endpoint import EndPointDefinition, EndpointHandler
 
 
 class Route(StartletteRoute):
+    @t.override
     def __init__(
         self,
         path: str,
@@ -22,7 +22,7 @@ class Route(StartletteRoute):
         methods: t.List[HttpMethod] | None = None,
         name: str | None = None,
         include_in_schema: bool = True,
-        middleware: t.Sequence[Middleware] | None = None,
+        middlewares: t.List[t.Type[MiddleWareProtocol]] | None = None,
         app_label: str | None = None,
         tags: t.List[str] | None = None,
         response_models: t.List[p.ResponseSpec] | None = None,
@@ -39,12 +39,12 @@ class Route(StartletteRoute):
         self.include_in_schema = include_in_schema
 
         if methods is None:
-            self.methods = {"GET", "HEAD"}
+            methods_set = {"GET", "HEAD"}
         else:
             methods_set = {method.upper() for method in methods}
             if "GET" in methods_set:
                 methods_set.add("HEAD")
-            self.methods = methods_set
+        self.methods = methods_set
 
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 
@@ -66,11 +66,9 @@ class Route(StartletteRoute):
 
         self.app = EndpointHandler(self.endpoint_definition)
 
-        self.load_middlewares(middleware)
+        self.load_middlewares(middlewares or [])
 
-    def load_middlewares(
-        self, middlewares: t.Sequence[t.Type[MiddleWareProtocol]]
-    ) -> None:
+    def load_middlewares(self, middlewares: t.List[t.Type[MiddleWareProtocol]]) -> None:
         if middlewares is not None:
             for cls in reversed(middlewares):
                 self.app = cls(app=self.app)
@@ -83,7 +81,7 @@ class Route(StartletteRoute):
 
         self.endpoint_definition = EndPointDefinition(
             endpoint=self.endpoint,
-            methods=list(self.methods),
+            methods=self.methods,
             tags=self.tags,
             path_parm_names=self.param_convertors.keys(),
             response_models=self.response_models,

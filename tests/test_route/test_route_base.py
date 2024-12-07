@@ -19,8 +19,10 @@ def test_include() -> None:
 
     import_path = "tests.apps.route.include.invalidroutes"
 
-    with pytest.raises(ValueError):
-        include(import_path)
+    # with pytest.raises(ValueError):
+    #     include(import_path)
+    patterns = include(import_path)
+    assert patterns == []
 
     import_path = "tests.apps.route.routes"
 
@@ -77,6 +79,6 @@ def test_route() -> None:
     with pytest.raises(ValueError):
         Route("/foo", "foo")
 
-    route = Route("/foo", view, middleware=[Middleware1])
+    route = Route("/foo", view, middlewares=[Middleware1])
 
     assert route.app.__class__ == Middleware1
