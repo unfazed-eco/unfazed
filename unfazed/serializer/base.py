@@ -60,6 +60,77 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
 
 
 class Serializer(BaseModel, metaclass=MetaClass):
+    """
+    Serializer provides three functionalities:
+
+    1. Generate a Serializer instance from a Tortoise Model instance
+    2. Provide CRUD operations for Model instances
+    3. Link with contrib.admin's ModelAdmin to support admin page functionality
+
+
+    Usage:
+
+
+    ```python
+
+    from tortoise import Model, fields
+    from unfazed.serializer import Serializer
+
+    class Student(Model):
+        name = fields.CharField(max_length=255)
+        age = fields.IntField()
+
+
+    class StudentSerializer(Serializer):
+        class Meta:
+            model = Student
+
+    # create a student
+
+    class StudentCreate(BaseModel):
+        name: str
+        age: int
+
+    StudentSerializer.list_from_ctx(StudentCreate(name="student1", age=18))
+
+    # update a student
+
+    class StudentUpdate(BaseModel):
+        id: int
+        name: str
+        age: int
+
+    StudentSerializer.update_from_ctx(StudentUpdate(id=1, name="student1", age=19))
+
+
+    # delete a student
+
+    class StudentDelete(BaseModel):
+        id: int
+
+    StudentSerializer.destroy_from_ctx(StudentDelete(id=1))
+
+    # retrieve a student
+    class StudentRetrieve(BaseModel):
+        id: int
+
+    StudentSerializer.retrieve_from_ctx(StudentRetrieve(id=1))
+
+
+    # find relation
+
+
+    class Course(Model):
+        name = fields.CharField(max_length=255)
+        students = fields.ManyToManyField("models.Student", related_name="courses")
+
+    class CourseSerializer(Serializer):
+        class Meta:
+            model = Course
+
+    StudentSerializer.find_relation(CourseSerializer)
+    """
+
     class Meta:
         model: Model
         include: t.List[str] = []
