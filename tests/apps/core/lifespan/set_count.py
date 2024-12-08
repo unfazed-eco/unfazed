@@ -1,6 +1,6 @@
 import typing as t
 
-from unfazed.protocol import BaseLifeSpan
+from unfazed.lifespan import BaseLifeSpan
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover

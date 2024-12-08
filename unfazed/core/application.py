@@ -11,11 +11,10 @@ from unfazed.command import CliCommandCenter, CommandCenter
 from unfazed.conf import UnfazedSettings
 from unfazed.conf import settings as settings_proxy
 from unfazed.db import ModelCenter
-from unfazed.lifespan import lifespan_context, lifespan_handler
+from unfazed.lifespan import BaseLifeSpan, lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.protocol import BaseLifeSpan
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
