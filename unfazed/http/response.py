@@ -21,7 +21,7 @@ AsyncContentStream = t.AsyncIterable[Content]
 ContentStream = t.Union[AsyncContentStream, SyncContentStream]
 
 
-T = t.TypeVar("T", t.Dict, t.List, str, bytes, BaseModel, ContentStream)
+T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentStream])
 
 
 class HttpResponse[T](Response):

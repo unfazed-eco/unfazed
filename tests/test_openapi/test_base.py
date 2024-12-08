@@ -1,5 +1,6 @@
 import typing as t
 
+import pytest
 from pydantic import BaseModel
 
 from unfazed.http import HttpRequest, JsonResponse
@@ -112,13 +113,12 @@ def test_openapi_create() -> None:
     assert isinstance(schema, dict)
 
     # no openapi settings
-    ret = OpenApi.create_openapi_model(
-        [route, route2],
-        project_name="myproject",
-        version="1.0.0",
-    )
-
-    assert ret is None
+    with pytest.raises(ValueError):
+        OpenApi.create_openapi_model(
+            [route, route2],
+            project_name="myproject",
+            version="1.0.0",
+        )
 
     # include_in_schema
     route3 = Route(
