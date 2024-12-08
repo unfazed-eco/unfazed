@@ -1,5 +1,6 @@
 import os
 import time
+import typing as t
 from logging import LogRecord
 from logging.handlers import BaseRotatingHandler
 
@@ -31,7 +32,8 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
 
-    def namer(self, filename: str) -> str:
+    @t.override
+    def namer(self, filename: str) -> str:  # type: ignore
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_archived.{suffix}"
 
@@ -59,7 +61,7 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         """
         if self.stream:
             self.stream.close()
-            self.stream = None
+            self.stream = None  # type: ignore
 
         archived_filename = self.rotation_filename(self.baseFilename)
         if os.path.exists(archived_filename):
