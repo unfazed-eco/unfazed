@@ -1,9 +1,8 @@
-import typing as t
-
 import pytest
+from starlette.types import Receive, Scope, Send
 
 from unfazed.http import HttpRequest, HttpResponse
-from unfazed.middleware import BaseHttpMiddleware
+from unfazed.middleware import BaseMiddleware
 from unfazed.route import Route, include, parse_urlconf, path
 
 
@@ -64,12 +63,13 @@ def test_parse_urlconf() -> None:
         parse_urlconf(import_path, app_center)
 
 
-class Middleware1(BaseHttpMiddleware):
-    async def dispatch(
-        self, request: HttpRequest, call_next: t.Callable
-    ) -> HttpResponse:
-        response = await call_next(request)
-        return response
+class Middleware1(BaseMiddleware):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        return await self.app(scope, receive, send)
 
 
 def test_route() -> None:
