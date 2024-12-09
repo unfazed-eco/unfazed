@@ -4,7 +4,6 @@ import typing as t
 from asyncio import Lock
 from collections import OrderedDict
 
-from unfazed.protocol import CacheBackend
 from unfazed.schema import LocOptions
 
 # Global in-memory store of cache data. Keyed by name, to provide
@@ -14,7 +13,7 @@ _expire_info: t.Dict[str, t.Dict[str, float | None]] = {}
 _locks: t.Dict[str, Lock] = {}
 
 
-class LocMemCache(CacheBackend):
+class LocMemCache:
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
     def __init__(

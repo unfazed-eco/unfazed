@@ -24,12 +24,12 @@ class RedisOptions(BaseModel):
     socket_timeout: int | None = None
     socket_connect_timeout: int | None = None
     socket_keepalive: bool | None = None
-    socket_keepalive_options: t.Dict[str, t.Any] | None = None
+    socket_keepalive_options: t.Mapping[int, t.Union[int, bytes]] | None = None
 
     # set decode responses to True
     decode_responses: bool = False
     retry_on_timeout: bool = False
-    retry_on_error: bool | None = None
+    retry_on_error: t.List | None = None
     max_connections: int = 10
     single_connection_client: bool = False
     health_check_interval: int = 30
@@ -41,7 +41,7 @@ class RedisOptions(BaseModel):
     ssl_ca_certs: str | None = None
     ssl_ca_data: str | None = None
     ssl_check_hostname: bool = False
-    ssl_min_version: str | None = None
+    ssl_min_version: t.Any = None
     ssl_ciphers: str | None = None
 
     serializer: CanBeImported | None = Field(

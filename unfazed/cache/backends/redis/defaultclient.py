@@ -4,11 +4,10 @@ from redis.asyncio import Redis
 from redis.asyncio.connection import parse_url
 from redis.asyncio.retry import Retry
 from redis.backoff import ConstantBackoff
-from unfazed.protocol import CacheBackend as CacheBackendProtocol
 from unfazed.schema import RedisOptions
 
 
-class AsyncDefaultBackend(CacheBackendProtocol):
+class AsyncDefaultBackend:
     """
     Redis cache backend
 

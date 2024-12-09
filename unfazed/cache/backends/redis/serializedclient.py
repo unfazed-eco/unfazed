@@ -5,12 +5,11 @@ from redis.asyncio import Redis
 from redis.asyncio.connection import parse_url
 from redis.asyncio.retry import Retry
 from redis.backoff import ConstantBackoff
-from unfazed.protocol import CacheBackend as CacheBackendProtocol
 from unfazed.schema import RedisOptions
 from unfazed.utils import import_string
 
 
-class SerializerBackend(CacheBackendProtocol):
+class SerializerBackend:
     """
     Redis backend with serializer and compressor
 
@@ -110,7 +109,10 @@ class SerializerBackend(CacheBackendProtocol):
             return value
 
         try:
-            value_str = value.decode("utf-8")
+            if isinstance(value, bytes):
+                value_str = value.decode("utf-8")
+            else:
+                value_str = value
 
             if value_str.isdigit():
                 return int(value_str)
@@ -262,3 +264,7 @@ class SerializerBackend(CacheBackendProtocol):
     async def incrbyfloat(self, name: str, amount: float = 1.0) -> float:
         key = self.make_key(name)
         return await self.client.incrbyfloat(key, amount)
+
+    async def delete(self, *names: str) -> t.Any:
+        names = [self.make_key(key) for key in names]
+        return await self.client.delete(*names)
