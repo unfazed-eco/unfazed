@@ -27,7 +27,7 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, project_name: str, location: str):
+    async def handle(self, project_name: str, location: str) -> None:
         template_path = Path(unfazed.__path__[0], "template/project")
 
         location_path = Path(location)

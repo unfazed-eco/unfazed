@@ -8,6 +8,8 @@ class DataBaseDriver(t.Protocol):
     @property
     def config(self) -> t.Dict: ...
 
+    async def migrate(self) -> None: ...
+
 
 @t.runtime_checkable
 class Model(t.Protocol):

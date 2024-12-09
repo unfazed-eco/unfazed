@@ -1,5 +1,5 @@
+import typing as t
 from pathlib import Path
-from typing import List
 
 from aerich import Command as AerichCommand
 from aerich.enums import Color
@@ -11,7 +11,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "aerich: Init config file and generate root migrate location."
 
-    def add_arguments(self) -> List[Option | None]:
+    def add_arguments(self) -> t.List[Option]:
         return [
             Option(
                 ["--safe", "-s"],
@@ -29,11 +29,15 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option) -> None:
-        location = option.get("location")
+    async def handle(self, **option: t.Any) -> None:
+        location = t.cast(str, option.get("location"))
         safe = option.get("safe")
 
         app = "models"
+
+        if not self.unfazed.settings.DATABASE:
+            return secho("No database found in settings", fg=Color.yellow)
+
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
 

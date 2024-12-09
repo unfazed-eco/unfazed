@@ -31,30 +31,30 @@ async def test_cmd_common() -> None:
     await run_in_threadpool(cmd._callback)
 
 
-async def test_cmd_noasync() -> None:
-    # 1、test if handle method is not a coroutine
-    _SETTINGS = {
-        **SETTINGS,
-        "INSTALLED_APPS": ["tests.apps.cmd.wrong"],
-    }
-    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
-    await unfazed.setup()
-    with pytest.raises(TypeError):
-        cmd: BaseCommand = unfazed.command_center.commands["noasync"]
-        cmd._callback()
+# async def test_cmd_noasync() -> None:
+#     # 1、test if handle method is not a coroutine
+#     _SETTINGS = {
+#         **SETTINGS,
+#         "INSTALLED_APPS": ["tests.apps.cmd.wrong"],
+#     }
+#     unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
+#     await unfazed.setup()
+#     with pytest.raises(TypeError):
+#         cmd: BaseCommand = unfazed.command_center.commands["noasync"]
+#         cmd._callback()
 
 
-async def test_cmd_wrong(mocker: "MockerFixture") -> None:
-    # 2、test if handle method exists
-    _SETTINGS = {
-        **SETTINGS,
-        "INSTALLED_APPS": ["tests.apps.cmd.wrong"],
-    }
-    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
-    await unfazed.setup()
-    with pytest.raises(NotImplementedError):
-        cmd: BaseCommand = unfazed.command_center.commands["nohandle"]
-        await cmd.handle()
+# async def test_cmd_wrong(mocker: "MockerFixture") -> None:
+#     # 2、test if handle method exists
+#     _SETTINGS = {
+#         **SETTINGS,
+#         "INSTALLED_APPS": ["tests.apps.cmd.wrong"],
+#     }
+#     unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
+#     await unfazed.setup()
+#     with pytest.raises(NotImplementedError):
+#         cmd: BaseCommand = unfazed.command_center.commands["nohandle"]
+#         await cmd.handle()
 
 
 async def test_cmd_failed(mocker: "MockerFixture") -> None:

@@ -1,18 +1,18 @@
 import asyncio
 import typing as t
+from abc import ABC, abstractmethod
 
 from click import Command as ClickCommand
-from click import Parameter
-
-from unfazed.protocol import Command
+from click import Option, Parameter
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
-class BaseCommand(ClickCommand, Command):
+class BaseCommand(ClickCommand, ABC):
     help_text = ""
 
+    @t.override
     def __init__(
         self,
         unfazed: "Unfazed",
@@ -55,12 +55,20 @@ class BaseCommand(ClickCommand, Command):
         )
 
     def _callback(self, **option: t.Optional[t.Any]) -> None:
-        if not asyncio.iscoroutinefunction(self.handle):
-            raise TypeError("handle method must be a coroutine")
-        asyncio.run(self.handle(**option))
+        if asyncio.iscoroutinefunction(self.handle):
+            asyncio.run(self.handle(**option))
 
-    def add_arguments(self) -> t.List[Parameter]:
+        else:
+            self.handle(**option)
+
+    def add_arguments(self) -> t.List[Option]:
         return []
 
-    async def handle(self, **option: t.Any) -> None:
-        raise NotImplementedError("handle method must be implemented")
+    # @t.overload
+    # def handle(self, **option: t.Any) -> None: ...
+
+    # @t.overload
+    # async def handle(self, **option: t.Any) -> None: ...
+
+    @abstractmethod
+    async def handle(self, **option: t.Any) -> None: ...

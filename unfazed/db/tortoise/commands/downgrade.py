@@ -1,3 +1,4 @@
+import typing as t
 from typing import List
 
 from aerich import Command as AerichCommand
@@ -11,7 +12,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "aerich: Downgrade to a specific version."
 
-    def add_arguments(self) -> List[Option | None]:
+    def add_arguments(self) -> List[Option]:
         return [
             Option(
                 ["--location", "-l"],
@@ -36,10 +37,13 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option) -> None:
+    async def handle(self, **option: t.Any) -> None:
         location = option.get("location")
         version = option.get("version")
         delete = option.get("delete")
+
+        if not self.unfazed.settings.DATABASE:
+            return secho("No database found in settings", fg=Color.yellow)
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
         await aerich_cmd.init()
