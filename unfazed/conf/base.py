@@ -14,10 +14,10 @@ class SettingsProxy(Storage[T]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._settingskv = None
+        self._settingskv: t.Dict[str, t.Any] | None = None
 
     @property
-    def settingskv(self) -> None:
+    def settingskv(self) -> t.Dict[str, t.Any]:
         if self._settingskv is None:
             self._settingskv = u.import_setting(self.unfazed_settings_module)
         return self._settingskv
@@ -48,7 +48,7 @@ class SettingsProxy(Storage[T]):
             )
 
         client_cls = self.guess_client_cls(key)
-        client = client_cls(**self.settingskv[key])
+        client = client_cls.model_validate(self.settingskv[key])
         self.storage[key] = client
 
         return client
@@ -58,4 +58,4 @@ class SettingsProxy(Storage[T]):
         return super().clear()
 
 
-settings = SettingsProxy()
+settings: SettingsProxy = SettingsProxy()

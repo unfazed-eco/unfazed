@@ -25,7 +25,7 @@ def import_string(name: str) -> t.Type:
     return getattr(module, class_name)
 
 
-def import_setting(env: str) -> t.Mapping[str, t.Any]:
+def import_setting(env: str) -> t.Dict[str, t.Any]:
     """
     Import the settings module specified by the environment variable `env`.
 
