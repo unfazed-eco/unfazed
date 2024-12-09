@@ -2,6 +2,7 @@ import time
 import uuid
 
 from unfazed.cache import caches
+from unfazed.contrib.session.settings import SessionSettings
 from unfazed.protocol import CacheBackend as CacheBackendProtocol
 
 from .base import SessionBase
@@ -10,7 +11,9 @@ from .base import SessionBase
 class CacheSession(SessionBase):
     PREFIX = "cachesession:"
 
-    def __init__(self, session_setting, session_key=None):
+    def __init__(
+        self, session_setting: SessionSettings, session_key: str | None = None
+    ) -> None:
         super().__init__(session_setting, session_key)
 
         _cache_alias = session_setting.cache_alias
@@ -36,7 +39,7 @@ class CacheSession(SessionBase):
 
         return f"{self.PREFIX}{timestamp}:{uuid_hex_str1}:{uuid_hex_str2}"
 
-    async def save(self):
+    async def save(self) -> None:
         if not self.session_key:
             self.session_key = self.generate_session_key()
 

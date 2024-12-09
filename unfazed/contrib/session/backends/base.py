@@ -1,10 +1,11 @@
 import typing as t
+from abc import ABC, abstractmethod
 
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.type import Doc
 
 
-class SessionBase:
+class SessionBase(ABC):
     """
     refer: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
 
@@ -16,13 +17,13 @@ class SessionBase:
         session_key: str | None = None,
     ) -> None:
         self.setting = session_setting
-        self.session_key = session_key
+        self.session_key: str | None = session_key
         self.modified = False
         self.accessed = False
 
-        self._session: (
-            t.Dict[str, t.Annotated[t.Any, Doc(description="can be dumpable")]] | None
-        ) = None
+        self._session: t.Dict[
+            str, t.Annotated[t.Any, Doc(description="can be dumpable")]
+        ] = {}
 
     def __contains__(self, key: str) -> bool:
         return key in self._session
@@ -36,7 +37,8 @@ class SessionBase:
         self.modified = True
 
     def __delitem__(self, key: str) -> None:
-        del self._session[key]
+        if key in self._session:
+            del self._session[key]
         self.modified = True
 
     def __bool__(self) -> bool:
@@ -60,6 +62,7 @@ class SessionBase:
     async def flush(self) -> None:
         await self.delete()
 
+    @abstractmethod
     def generate_session_key(self) -> str:
         """
         Usage:
@@ -67,8 +70,9 @@ class SessionBase:
             make sure the session key is unique
 
         """
-        raise NotImplementedError()  # pragma: no cover
+        ...
 
+    @abstractmethod
     async def save(self) -> None:
         """
         Usage:
@@ -81,8 +85,9 @@ class SessionBase:
                 and use the session key as the key to store the session data
 
         """
-        raise NotImplementedError()  # pragma: no cover
+        ...
 
+    @abstractmethod
     async def load(self) -> None:
         """
         Uasge:
@@ -99,4 +104,4 @@ class SessionBase:
             ```
 
         """
-        raise NotImplementedError()  # pragma: no cover
+        ...
