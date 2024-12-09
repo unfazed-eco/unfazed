@@ -15,6 +15,11 @@ if t.TYPE_CHECKING:
 
 
 class Base(Group):
+    @t.override
+    def __init__(self, unfazed: "Unfazed", name: str) -> None:
+        super().__init__(name=name)
+        self.unfazed = unfazed
+
     def load_command(self, command: Command) -> None:
         cls = import_string(command.path)
 
@@ -32,10 +37,10 @@ class Base(Group):
 
 
 class CommandCenter(Base):
+    @t.override
     def __init__(self, unfazed: "Unfazed", app_center: "AppCenter", name: str) -> None:
-        self.unfazed = unfazed
+        super().__init__(unfazed=unfazed, name=name)
         self.app_center = app_center
-        super().__init__(name=name)
 
     async def setup(self) -> None:
         # load all the commands from the unfazed internal
@@ -70,9 +75,7 @@ class CommandCenter(Base):
 
 class CliCommandCenter(Base):
     def __init__(self, unfazed: "Unfazed") -> None:
-        self.unfazed = unfazed
-        super().__init__(name="unfazed-cli")
-
+        super().__init__(unfazed=unfazed, name="unfazed-cli")
         self.cli_command = ["startproject"]
 
     def setup(self) -> None:

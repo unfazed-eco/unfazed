@@ -10,6 +10,35 @@ if t.TYPE_CHECKING:
 
 
 class BaseCommand(ClickCommand, ABC):
+    """
+    Base class for all commands.
+
+    Usage:
+    ```python
+
+    from unfazed.command import BaseCommand
+    from click import Option
+
+    class Command(BaseCommand):
+        help_text = "This is a command"
+        def add_arguments(self) -> t.List[Option]:
+            return [
+                Option(
+                    ["--host"],
+                    type=str,
+                    help="The host to listen on",
+                    default="")
+                ]
+
+        async def handle(self, **option: t.Any) -> None:
+
+            host = option["host"]
+            print(f"Host: {host}")
+
+    ```
+
+    """
+
     help_text = ""
 
     @t.override
@@ -57,18 +86,11 @@ class BaseCommand(ClickCommand, ABC):
     def _callback(self, **option: t.Optional[t.Any]) -> None:
         if asyncio.iscoroutinefunction(self.handle):
             asyncio.run(self.handle(**option))
-
         else:
-            self.handle(**option)
+            raise NotImplementedError("handle method must be a coroutine")
 
     def add_arguments(self) -> t.List[Option]:
         return []
-
-    # @t.overload
-    # def handle(self, **option: t.Any) -> None: ...
-
-    # @t.overload
-    # async def handle(self, **option: t.Any) -> None: ...
 
     @abstractmethod
     async def handle(self, **option: t.Any) -> None: ...
