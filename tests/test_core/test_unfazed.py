@@ -79,15 +79,6 @@ async def test_app_launch() -> None:
     await unfazed.setup()
     assert unfazed.ready is True
 
-    unfazed_dict = unfazed.to_dict()
-
-    assert "settings" in unfazed_dict
-    assert "routes" in unfazed_dict
-    assert "middlewares" in unfazed_dict
-    assert "apps" in unfazed_dict
-    assert "lifespan" in unfazed_dict
-    assert "commands" in unfazed_dict
-
 
 async def test_failed_unfazed() -> None:
     unfazed = Unfazed(settings=Setting)

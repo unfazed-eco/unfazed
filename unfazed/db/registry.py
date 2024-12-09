@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
 
 
 class ModelCenter:
-    def __init__(self, unfazed: "Unfazed", conf: Database) -> None:
+    def __init__(self, unfazed: "Unfazed", conf: Database | None) -> None:
         self.unfazed = unfazed
         self.conf = conf
 

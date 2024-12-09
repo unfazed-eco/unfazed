@@ -1,8 +1,9 @@
 import typing as t
 
-from asgiref import typing as at
-from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
+from starlette.datastructures import State, URLPath
+from starlette.routing import Router
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
@@ -15,32 +16,98 @@ from unfazed.lifespan import BaseLifeSpan, lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
+from unfazed.protocol import CacheBackend
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
 
 
-class Unfazed(Starlette):
+class Unfazed:
+    """
+    Core Asgi Application implementation
+
+    Usage:
+
+    ```python
+
+    import os
+    from unfazed import Unfazed
+
+    async def main():
+
+        os.environ["UNFAZED_SETTINGS_MODULE"] = "path.to.settings"
+        app = Unfazed()
+        await app.setup()
+
+    ```
+
+    Step to setup Unfazed:
+
+    1. setup settings
+        unfazed loads settings from os.environ["UNFAZED_SETTINGS_MODULE"], see `unfazed.conf.UnfazedSettings`
+
+    2. setup logging
+        unfazed setup logging from settings.LOGGING, unfazed has default logging config
+        and default config will merge with settings.LOGGING
+
+    3. setup cache
+        unfazed setup cache from settings.CACHE
+        unfazed provide two cache backend: Memory Backend, Redis Backend
+        if settings.CACHE is empty, unfazed will skip
+
+    4. setup app center
+        unfazed setup app center from settings.INSTALLED_APPS
+        unfazed loop through all apps and call app.setup()
+
+    5. setup routes
+        unfazed use settings.ROOT_URLCONF to setup routes as the entry point
+        then loop through all apps and extract routes from app.routes
+
+    6. setup middleware
+        unfazed setup middleware from settings.MIDDLEWARE
+
+    7. setup command center
+        unfazed loop through all apps and extract commands from app.commands
+
+    8. setup model center
+        unfazed setup model center from settings.DATABASE
+        now unfazed only support tortoise orm
+
+    9. setup lifespan
+        unfazed setup lifespan from settings.LIFESPAN
+
+    10. setup openapi
+        unfazed setup openapi from settings.OPENAPI
+
+    """
+
     def __init__(
         self,
         *,
-        routes: t.Sequence[Route] | None = None,
-        middlewares: t.Sequence[p.MiddleWare] | None = None,
+        routes: t.List[Route] | None = None,
+        middlewares: t.List[t.Type[p.MiddleWare]] | None = None,
         settings: UnfazedSettings | None = None,
     ) -> None:
         self._ready = False
         self._loading = False
 
-        self._app_center: AppCenter = None
-        self._command_center: CommandCenter = None
-        self._model_center: ModelCenter = None
+        self._app_center: AppCenter | None = None
+        self._command_center: CommandCenter | None = None
+        self._model_center: ModelCenter | None = None
 
         # convinient for building test
         if settings:
             settings_proxy["UNFAZED_SETTINGS"] = settings
         self._settings = settings
 
-        super().__init__(routes=routes, middleware=middlewares)
+        self.state = State()
+        self.router = Router(routes)
+        self.user_middleware = middlewares or []
+        self.middleware_stack: ASGIApp | None = None
+
+    @property
+    def debug(self) -> bool:
+        return self.settings.DEBUG
 
     @property
     def settings(self) -> UnfazedSettings:
@@ -86,6 +153,19 @@ class Unfazed(Starlette):
             )
         return self._model_center
 
+    @property
+    def routes(self) -> t.List[Route]:
+        return self.router.routes  # type: ignore
+
+    def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
+        return self.router.url_path_for(name, **path_params)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        scope["app"] = self
+        if self.middleware_stack is None:
+            self.middleware_stack = self.build_middleware_stack()
+        await self.middleware_stack(scope, receive, send)
+
     async def migrate(self) -> None:
         await self.model_center.migrate()
 
@@ -112,8 +192,8 @@ class Unfazed(Starlette):
             backend_cls = import_string(conf.BACKEND)
             location = conf.LOCATION
             options = conf.OPTIONS
-            cache = backend_cls(location, options)
-            caches[alias] = cache
+            cache_backend: CacheBackend = backend_cls(location, options)
+            caches[alias] = cache_backend
 
     def setup_logging(self) -> None:
         if not self.settings.LOGGING:
@@ -145,30 +225,25 @@ class Unfazed(Starlette):
             return
 
         OpenApi.create_schema(
-            self.router.routes,
+            t.cast(t.List[Route], self.router.routes),
             self.settings.PROJECT_NAME,
             self.settings.VERSION,
             self.settings.OPENAPI,
         )
-        for pattern in patterns:
+
+        pattern: Route
+        for pattern in patterns:  # type: ignore
             self.router.routes.append(pattern)
 
-    def build_middleware_stack(
-        self,
-    ) -> at.ASGIApplication:
+    def build_middleware_stack(self) -> ASGIApp:
         middleware = self.user_middleware
         app = self.router
         for cls in reversed(middleware):
-            app = cls(app)
+            app = cls(app)  # type: ignore
         return app
 
     @unfazed_locker
     async def setup(self) -> None:
-        """
-        app center setup may be required for cache
-
-        so we setup cache first
-        """
         self.setup_logging()
         self.setup_cache()
         await self.app_center.setup()
@@ -188,13 +263,3 @@ class Unfazed(Starlette):
 
     async def execute_command_from_cli(self) -> None:
         await run_in_threadpool(self.cli_command_center.main)
-
-    def to_dict(self) -> t.Dict[str, t.Any]:
-        return {
-            "settings": self.settings.model_dump(),
-            "routes": self.router.routes,
-            "apps": self.app_center.store,
-            "middlewares": self.user_middleware,
-            "lifespan": lifespan_handler.lifespan,
-            "commands": self.command_center.commands,
-        }
