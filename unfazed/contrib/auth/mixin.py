@@ -4,15 +4,14 @@ from functools import cached_property
 from tortoise import Model
 
 from unfazed.http import HttpRequest
-from unfazed.protocol import BaseAdmin
 
 from .models import AbstractUser
 
 
-class AuthMixin(BaseAdmin):
+class AuthMixin:
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:
-        model: Model = self.serializer.Meta.model
+        model: t.Type[Model] = self.serializer.Meta.model  # type: ignore
         return model.describe()
 
     @property
@@ -44,7 +43,7 @@ class AuthMixin(BaseAdmin):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     async def has_view_permission(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any

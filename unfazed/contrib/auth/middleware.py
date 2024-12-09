@@ -27,7 +27,7 @@ class AuthenticationMiddleware:
             await self.app(scope, receive, send)
             return
 
-        session: "SessionBase" = scope.get("session")
+        session: "SessionBase" = t.cast("SessionBase", scope.get("session"))
         if session is None or (self.setting.SESSION_KEY not in session):
             user = None
 

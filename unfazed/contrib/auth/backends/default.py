@@ -1,9 +1,8 @@
 import typing as t
 
-from tortoise import Model
-
 from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
+from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
 
 from .base import BaseAuthBackend
@@ -18,7 +17,7 @@ class DefaultAuthBackend(BaseAuthBackend):
     async def login(self, ctx: LoginCtx) -> t.Tuple[t.Dict, t.Any]:
         # get user
         account, password = ctx.account, ctx.password
-        UserCls: t.Type[Model] = AbstractUser.UserCls()
+        UserCls: t.Type[AbstractUser] = AbstractUser.UserCls()
 
         has_account = await UserCls.filter(account=account)
         if not has_account:
@@ -40,7 +39,7 @@ class DefaultAuthBackend(BaseAuthBackend):
         account, password = ctx.account, ctx.password
         email = ctx.extra.get("email", "")
 
-        UserCls: Model = AbstractUser.UserCls()
+        UserCls: t.Type[AbstractUser] = AbstractUser.UserCls()
 
         existed = await UserCls.filter(account=account)
         if existed:
@@ -66,5 +65,5 @@ class DefaultAuthBackend(BaseAuthBackend):
 
         return session_info
 
-    async def logout(self, session: t.Dict) -> t.Any:
+    async def logout(self, session: SessionBase) -> t.Any:
         return {}
