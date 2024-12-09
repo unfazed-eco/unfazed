@@ -78,10 +78,10 @@ class SerializerBackend(CacheBackendProtocol):
             ssl_ciphers=options_model.ssl_ciphers,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> t.Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(self, *args: t.Any, **kw: t.Any) -> None:
         await self.client.aclose()
 
     async def close(self) -> None:
@@ -130,7 +130,7 @@ class SerializerBackend(CacheBackendProtocol):
         return value
 
     # general commands
-    async def flushdb(self, asynchronous: bool = False, **kw) -> t.Any:
+    async def flushdb(self, asynchronous: bool = False, **kw: t.Any) -> t.Any:
         await self.client.flushdb(asynchronous, **kw)
 
     async def exists(self, name: str) -> int:
@@ -149,11 +149,11 @@ class SerializerBackend(CacheBackendProtocol):
         key = self.make_key(name)
         return await self.client.expire(key, time, nx, xx, gt, lt)
 
-    async def touch(self, *args) -> int:
+    async def touch(self, *args: t.Any) -> int:
         args = [self.make_key(key) for key in args]
         return await self.client.touch(*args)
 
-    async def ttl(self, name: str):
+    async def ttl(self, name: str) -> int:
         key = self.make_key(name)
         return await self.client.ttl(key)
 
@@ -192,7 +192,7 @@ class SerializerBackend(CacheBackendProtocol):
         value = await self.client.getset(key, new_value)
         return self.decode(value)
 
-    async def mget(self, keys: t.List[str], *args) -> t.List:
+    async def mget(self, keys: t.List[str], *args: t.Any) -> t.List:
         keys = [self.make_key(key) for key in keys]
         values = await self.client.mget(keys, *args)
         return [self.decode(value) for value in values]
@@ -221,7 +221,7 @@ class SerializerBackend(CacheBackendProtocol):
         get: bool = False,
         exat: int | datetime | None = None,
         pxat: int | datetime | None = None,
-    ):
+    ) -> t.Any:
         key = self.make_key(name)
         value = self.encode(value)
         await self.client.set(key, value, ex, px, nx, xx, keepttl, get, exat, pxat)

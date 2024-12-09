@@ -8,4 +8,4 @@ class CacheHandler(Storage[CacheBackend]):
             await backend.close()
 
 
-caches = CacheHandler()
+caches: CacheHandler = CacheHandler()

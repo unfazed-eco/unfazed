@@ -3,8 +3,5 @@ from unfazed.lifespan import BaseLifeSpan
 
 
 class CacheClear(BaseLifeSpan):
-    def __init__(self, unfazed) -> None:
-        self.unfazed = unfazed
-
-    async def on_shutdown(self):
+    async def on_shutdown(self) -> None:
         await caches.close()

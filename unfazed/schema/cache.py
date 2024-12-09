@@ -28,7 +28,7 @@ class RedisOptions(BaseModel):
 
     # set decode responses to True
     decode_responses: bool = False
-    retry_on_timeout: bool | None = None
+    retry_on_timeout: bool = False
     retry_on_error: bool | None = None
     max_connections: int = 10
     single_connection_client: bool = False
