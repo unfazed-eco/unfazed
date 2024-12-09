@@ -25,3 +25,9 @@ GenericReponse = t.Annotated[
         """,
     ),
 ]
+
+
+Content = t.Union[str, bytes, memoryview]
+SyncContentStream = t.Iterable[Content]
+AsyncContentStream = t.AsyncIterable[Content]
+ContentStream = t.Union[AsyncContentStream, SyncContentStream]
