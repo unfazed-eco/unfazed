@@ -27,7 +27,7 @@ async def test_cmd_common() -> None:
     await unfazed.setup()
     assert "common" in unfazed.command_center.commands
     assert "_ignore" not in unfazed.command_center.commands
-    cmd: BaseCommand = unfazed.command_center.commands["common"]
+    cmd: BaseCommand = t.cast(BaseCommand, unfazed.command_center.commands["common"])
     await run_in_threadpool(cmd._callback)
 
 

@@ -30,7 +30,9 @@ async def test_runserver() -> None:
         cr.run.return_value = None
 
         commond = runserver.Command(
-            unfazed="unfazed", name="runserver", app_label="runserver"
+            unfazed="unfazed",  # type: ignore
+            name="runserver",
+            app_label="runserver",
         )
         await commond.handle(
             host="127.0.0.1",

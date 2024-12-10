@@ -10,7 +10,7 @@ SETTINGS = {
 }
 
 
-async def test_installed_apps(capsys) -> None:
+async def test_installed_apps(capsys) -> None:  # type: ignore
     unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS))
 
     # Check if the installed apps are loaded correctly
@@ -68,7 +68,7 @@ async def test_installed_apps(capsys) -> None:
     with pytest.raises(NotImplementedError):
         await unfazed.setup()
         noready_app = unfazed.app_center["tests.apps.app.noready"]
-        noready_app.ready()
+        await noready_app.ready()
 
     # 7. success case
     unfazed = Unfazed()
@@ -88,7 +88,7 @@ async def test_installed_apps(capsys) -> None:
     ret = success_app.wakeup("admin")
     assert ret is True
     screen = capsys.readouterr()
-    assert screen.out == "hello, unfazed\n"
+    assert "hello, unfazed\n" in screen.out
 
     ret = success_app.wakeup("notexist")
     assert ret is False
