@@ -1,5 +1,5 @@
 import os
-from logging import getLogger
+from logging import LogRecord, getLogger
 from pathlib import Path
 
 import pytest
@@ -38,14 +38,23 @@ def test_rotating_file_handler(tmp_path: Path) -> None:
     handler = UnfazedRotatingFileHandler(filename=str(path), maxBytes=10)
     filename = handler.create_process_safe_name(str(path))
 
+    record = LogRecord(
+        name="test",
+        level=20,
+        pathname="",
+        lineno=0,
+        msg="foobar",
+        args=(),
+        exc_info=None,
+    )
     # delete the file
     if os.path.exists(filename):
         os.remove(filename)
     os.mkdir(filename)
 
-    assert handler.shouldRollover("foobar") is False
+    assert handler.shouldRollover(record) is False
 
     # maxBytes is 0
     path = tmp_path / "test3.log"
     handler = UnfazedRotatingFileHandler(filename=str(path), maxBytes=0)
-    assert handler.shouldRollover("foobar") is False
+    assert handler.shouldRollover(record) is False
