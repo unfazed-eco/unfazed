@@ -49,6 +49,34 @@ def include(route_path: str) -> t.List[Route]:
     return patterns
 
 
+@t.overload
+def path(
+    path: str,
+    *,
+    endpoint: t.Callable,
+    methods: t.List[HttpMethod] | None = None,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    include_in_schema: bool = True,
+    tags: t.List[str] | None = None,
+) -> Route: ...
+
+
+@t.overload
+def path(
+    path: str,
+    *,
+    routes: t.List[Route] | None = None,
+    methods: t.List[HttpMethod] | None = None,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    include_in_schema: bool = True,
+    tags: t.List[str] | None = None,
+) -> t.List[Route]: ...
+
+
 def path(
     path: str,
     *,
