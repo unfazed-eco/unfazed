@@ -1,5 +1,6 @@
 import asyncio
 import os
+import typing as t
 from unittest.mock import patch
 
 import pytest
@@ -84,7 +85,7 @@ async def test_failed_unfazed() -> None:
     unfazed = Unfazed(settings=Setting)
 
     # test loading state
-    async def new_app_center_setup(self):
+    async def new_app_center_setup(self: t.Any) -> None:
         await asyncio.sleep(1)
 
     with patch.object(AppCenter, "setup", new=new_app_center_setup):
