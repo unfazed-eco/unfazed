@@ -87,10 +87,13 @@ async def test_path() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "pth1" in definition.params
     assert "pth2" in definition.params
     assert "path5" in definition.params
     assert "path6" in definition.params
+
+    assert definition.path_params is not None
     assert (
         "pth1" in definition.path_params
         and definition.path_params["pth1"][0] == Pth1
@@ -111,6 +114,7 @@ async def test_path() -> None:
     )
 
     pathmodel = definition.path_model
+    assert pathmodel is not None
     for ele in ["path1", "path2", "path3", "path4", "path5", "path6"]:
         assert ele in pathmodel.model_fields
 
@@ -194,10 +198,13 @@ async def test_query() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "qry1" in definition.params
     assert "qry2" in definition.params
     assert "query5" in definition.params
     assert "query6" in definition.params
+
+    assert definition.query_params is not None
     assert (
         "qry1" in definition.query_params
         and definition.query_params["qry1"][0] == Qry1
@@ -219,6 +226,7 @@ async def test_query() -> None:
     )
 
     querymodel = definition.query_model
+    assert querymodel is not None
     for ele in ["query1", "query2", "query3", "query4", "query5", "query6"]:
         assert ele in querymodel.model_fields
 
@@ -325,10 +333,12 @@ async def test_header() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "hdr1" in definition.params
     assert "hdr2" in definition.params
     assert "header5" in definition.params
 
+    assert definition.header_params is not None
     assert (
         "hdr1" in definition.header_params
         and definition.header_params["hdr1"][0] == Hdr1
@@ -347,6 +357,7 @@ async def test_header() -> None:
         and definition.header_params["header5"][1].default == "foo"
     )
 
+    assert definition.header_model is not None
     for ele in ["header1", "header2", "header3", "header4", "header5"]:
         assert ele in definition.header_model.model_fields
 
@@ -416,10 +427,12 @@ async def test_cookie() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "ck1" in definition.params
     assert "ck2" in definition.params
     assert "cookie5" in definition.params
 
+    assert definition.cookie_params is not None
     assert (
         "ck1" in definition.cookie_params
         and definition.cookie_params["ck1"][0] == Ckie1
@@ -438,6 +451,7 @@ async def test_cookie() -> None:
         and definition.cookie_params["cookie5"][1].default == "foo"
     )
 
+    assert definition.cookie_model is not None
     for ele in ["cookie1", "cookie2", "cookie3", "cookie4", "cookie5"]:
         assert ele in definition.cookie_model.model_fields
 
@@ -519,11 +533,13 @@ async def test_body() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "bd1" in definition.params
     assert "bd2" in definition.params
     assert "bd3" in definition.params
     assert "body6" in definition.params
 
+    assert definition.body_params is not None
     assert (
         "bd1" in definition.body_params
         and definition.body_params["bd1"][0] == Body1
@@ -543,6 +559,7 @@ async def test_body() -> None:
         and definition.body_params["body6"][1].default == "foo"
     )
 
+    assert definition.body_model is not None
     for ele in ["body1", "body2", "body3", "body4", "body5", "body6"]:
         assert ele in definition.body_model.model_fields
 
@@ -622,10 +639,12 @@ async def test_form() -> None:
 
     assert definition.body_type == "form"
 
+    assert definition.params is not None
     assert "form1" in definition.params
     assert "form2" in definition.params
     assert "form5" in definition.params
 
+    assert definition.body_params is not None
     assert (
         "form1" in definition.body_params
         and definition.body_params["form1"][0] == Form1
@@ -644,6 +663,7 @@ async def test_form() -> None:
         and definition.body_params["form5"][1].default == "foo"
     )
 
+    assert definition.body_model is not None
     for ele in ["form1", "form2", "form3", "form4", "form5"]:
         assert ele in definition.body_model.model_fields
 
@@ -858,6 +878,7 @@ async def test_definition() -> None:
         debug=True,
     )
 
+    assert ed.params is not None
     assert "self" not in ed.params
     assert "qry1" in ed.params
 
@@ -898,6 +919,7 @@ async def test_definition() -> None:
         response_models=[p.ResponseSpec(model=RespE122)],
     )
 
+    assert ed.response_models is not None
     assert ed.response_models[0].model == RespE122
 
     # body / form conflict
@@ -999,8 +1021,10 @@ async def test_file() -> None:
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "file1" in definition.params
     assert "file1" in definition.body_params
+    assert definition.body_model is not None
     assert "file1" in definition.body_model.model_fields
 
     unfazed = Unfazed(

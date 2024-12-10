@@ -172,11 +172,11 @@ class EndPointDefinition(BaseModel):
     # response_models: t.List[p.ResponseSpec] | None = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
-    path_params: t.Dict[str, t.Tuple[t.Type[BaseModel], p.Path]] = {}
-    query_params: t.Dict[str, t.Tuple[t.Type[BaseModel], p.Query]] = {}
-    header_params: t.Dict[str, t.Tuple[t.Type[BaseModel], p.Header]] = {}
-    cookie_params: t.Dict[str, t.Tuple[t.Type[BaseModel], p.Cookie]] = {}
-    body_params: t.Dict[str, t.Tuple[t.Type[BaseModel], p.Json | p.Form | p.File]] = {}
+    path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
+    query_params: t.Dict[str, t.Tuple[t.Type, p.Query]] = {}
+    header_params: t.Dict[str, t.Tuple[t.Type, p.Header]] = {}
+    cookie_params: t.Dict[str, t.Tuple[t.Type, p.Cookie]] = {}
+    body_params: t.Dict[str, t.Tuple[t.Type, p.Json | p.Form | p.File]] = {}
 
     body_type: t.Optional[t.Literal["json", "form"]] = None
 
