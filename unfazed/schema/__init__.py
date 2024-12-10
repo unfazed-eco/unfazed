@@ -2,7 +2,7 @@ from .admin import AdminRoute, Condtion, RouteMeta
 from .cache import Cache, LocOptions, RedisOptions
 from .command import Command
 from .logging import LogConfig
-from .openapi import OpenAPI
+from .openapi import OpenAPI, Server
 from .orm import AppModels, Database
 from .serializer import Relation, Result
 
@@ -20,4 +20,5 @@ __all__ = [
     "Relation",
     "AdminRoute",
     "RouteMeta",
+    "Server",
 ]

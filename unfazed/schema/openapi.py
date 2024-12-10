@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from unfazed.type import Domain
 
 
-class _Server(BaseModel):
+class Server(BaseModel):
     url: Domain
     description: str | None
 
@@ -23,7 +23,7 @@ class Redoc(BaseModel):
 
 
 class OpenAPI(BaseModel):
-    servers: t.List[_Server]
+    servers: t.List[Server]
     json_route: str = "/openapi/openapi.json"
     swagger_ui: SwaggerUI = SwaggerUI()
     redoc: Redoc = Redoc()
