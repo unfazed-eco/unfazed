@@ -33,15 +33,15 @@ class HttpResponse[T](Response):
         super().__init__(content, status_code, headers, media_type, background)
 
 
-class PlainTextResponse(HttpResponse[T]):
+class PlainTextResponse(HttpResponse[str]):
     pass
 
 
-class HtmlResponse(HttpResponse[T]):
+class HtmlResponse(HttpResponse[str]):
     media_type = "text/html"
 
 
-class JsonResponse(HttpResponse[T]):
+class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
     media_type = "application/json"
 
     def render(self, content: T) -> bytes:

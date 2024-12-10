@@ -34,14 +34,14 @@ class Resp(BaseModel):
 
 async def endpoint1(
     request: HttpRequest, ctx: Ctx, hdr: t.Annotated[Hdr, params.Header()]
-) -> t.Annotated[JsonResponse[Resp], ResponseSpec(model=Resp)]:
+) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp)]:
     data = Resp(message="Hello, World!")
     return JsonResponse(data)
 
 
 async def endpoint2(
     request: HttpRequest, ctx: Body1
-) -> t.Annotated[JsonResponse[Resp], ResponseSpec(model=Resp)]:
+) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp)]:
     data = Resp(message="Hello, World!")
     return JsonResponse(data)
 

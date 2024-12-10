@@ -48,7 +48,7 @@ def test_jsonresponse() -> None:
     assert resp.body == b'{"name":"tom","age":18}'
 
     with pytest.raises(ValueError):
-        resp = JsonResponse(content="hello, world")
+        resp = JsonResponse(content="hello, world")  # type: ignore
 
 
 def test_redirctresponse() -> None:
@@ -62,7 +62,7 @@ class StreamingApp:
         self.event = asyncio.Event()
         self.body = b""
 
-    async def send(self, msg: t.Dict[str, t.Any]) -> None:
+    async def send(self, msg: t.MutableMapping[str, t.Any]) -> None:
         flag = "more_body" in msg and msg["more_body"] is False
         body = msg.get("body", b"")
 
@@ -78,15 +78,15 @@ class StreamingApp:
 
 
 async def test_streamingresponse() -> None:
-    async def asynccontent():
+    async def asynccontent() -> t.AsyncGenerator[bytes, None]:
         yield b"hello, "
         yield b"world"
 
-    def synccontent():
+    def synccontent() -> t.Generator[bytes, bytes, None]:
         yield b"hello, "
         yield b"world"
 
-    def strcontent():
+    def strcontent() -> t.Generator[str, str, None]:
         yield "hello, "
         yield "world"
 
