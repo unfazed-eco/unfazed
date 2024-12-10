@@ -132,7 +132,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     """
 
     class Meta:
-        model: Model
+        model: t.Type[Model]
         include: t.List[str] = []
         exclude: t.List[str] = []
 

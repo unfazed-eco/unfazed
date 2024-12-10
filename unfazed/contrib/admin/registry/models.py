@@ -3,13 +3,11 @@ import typing as t
 from enum import Enum
 from itertools import chain
 
-from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
-from unfazed.protocol import BaseAdmin as BaseAdminProtocol
 from unfazed.protocol import CacheBackend
 from unfazed.schema import AdminRoute, RouteMeta
 from unfazed.serializer import Serializer
@@ -31,10 +29,12 @@ from .schema import (
 )
 from .utils import convert_field_type
 
-PYDANTIC_MODEL = t.TypeVar("PYDANTIC_MODEL", bound=BaseModel)
+
+class HaveModelDump(t.Protocol):
+    def model_dump(self, *args: t.Any, **kw: t.Any) -> t.Dict[str, t.Any]: ...
 
 
-class BaseAdmin(BaseAdminProtocol):
+class BaseAdmin:
     help_text: t.List[str] = []
     route_label: str | None = None
 
@@ -58,29 +58,29 @@ class BaseAdmin(BaseAdminProtocol):
     async def has_view_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
-        return request.user.is_superuser
+        return request.user.is_superuser == 1
 
     async def has_change_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
-        return request.user.is_superuser
+        return request.user.is_superuser == 1
 
     async def has_delete_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
-        return request.user.is_superuser
+        return request.user.is_superuser == 1
 
     async def has_create_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
-        return request.user.is_superuser
+        return request.user.is_superuser == 1
 
     async def has_action_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
-        return request.user.is_superuser
+        return request.user.is_superuser == 1
 
-    def to_serialize(self) -> PYDANTIC_MODEL:
+    def to_serialize(self) -> HaveModelDump:
         raise NotImplementedError  # pragma: no cover
 
     def get_actions(self) -> t.Dict[str, AdminAction]:
@@ -96,7 +96,7 @@ class BaseAdmin(BaseAdminProtocol):
 
         return actions
 
-    def to_route(self) -> AdminRoute:
+    def to_route(self) -> AdminRoute | None:
         return AdminRoute(
             title=self.title,
             component=self.component,
@@ -105,7 +105,7 @@ class BaseAdmin(BaseAdminProtocol):
             meta=RouteMeta(
                 icon=self.icon,
                 hidden=self.hidden,
-                hiddenChildren=self.hidden_children,
+                hidden_children=self.hidden_children,
             ),
         )
 
@@ -172,10 +172,7 @@ site = SiteSettings()
 
 
 class BaseModelAdmin(BaseAdmin):
-    if t.TYPE_CHECKING:
-        serializer: t.Type[Serializer]
-    else:
-        serializer: t.Type[Serializer] | None = None
+    serializer: t.Type[Serializer]
 
     # fields description
     image_fields: t.List[str] = []
@@ -203,7 +200,7 @@ class BaseModelAdmin(BaseAdmin):
     search_fields: t.List[str] = []
 
     def get_fields(self) -> t.Dict[str, AdminField]:
-        if not self.serializer:
+        if not hasattr(self, "serializer"):
             raise ValueError(f"serializer is not set for {self.__class__.__name__}")
 
         fields_mapping: t.Dict[str, AdminField] = {}
@@ -234,8 +231,8 @@ class BaseModelAdmin(BaseAdmin):
             else:
                 choices = json_schema_extra.get("choices", None) or []
 
-            fields_mapping[name] = AdminField(
-                **{
+            fields_mapping[name] = AdminField.model_validate(
+                {
                     "type": field_type,
                     "readonly": False,
                     "show": False,
@@ -344,7 +341,7 @@ class ModelAdmin(BaseModelAdmin):
         return ret
 
     def get_attrs(self, field_list: t.List[str]) -> AdminAttrs:
-        model = t.cast(TModel, self.serializer.Meta.model)
+        model: t.Type[TModel] = self.serializer.Meta.model
         detail_display = self.detail_display or list(model._meta.db_fields)
         for item in chain(
             detail_display,
@@ -377,8 +374,7 @@ class ModelAdmin(BaseModelAdmin):
 
         return attrs
 
-    @t.override
-    def to_serialize(self) -> AdminSerializeModel:
+    def to_serialize(self) -> HaveModelDump:
         fields_map = self.get_fields()
         actions = self.get_actions()
         attrs = self.get_attrs(list(fields_map.keys()))
@@ -402,8 +398,9 @@ class ModelInlineAdmin(ModelAdmin):
     def to_route(self) -> None:
         return None
 
-    def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:
-        model = t.cast(TModel, self.serializer.Meta.model)
+    @t.override
+    def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:  # type: ignore
+        model: t.Type[TModel] = self.serializer.Meta.model
         list_display = self.list_display or list(model._meta.db_fields)
 
         for item in chain(
@@ -439,7 +436,7 @@ class ModelInlineAdmin(ModelAdmin):
         return attrs
 
     @t.override
-    def to_serialize(self) -> AdminInlineSerializeModel:
+    def to_serialize(self) -> HaveModelDump:
         fields_map = self.get_fields()
         attrs = self.get_attrs(list(fields_map.keys()))
 

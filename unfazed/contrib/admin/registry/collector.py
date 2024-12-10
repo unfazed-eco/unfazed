@@ -27,4 +27,4 @@ class AdminCollector(Storage[T]):
             yield key, value
 
 
-admin_collector = AdminCollector()
+admin_collector: AdminCollector = AdminCollector()

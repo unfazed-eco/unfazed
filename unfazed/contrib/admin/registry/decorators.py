@@ -23,7 +23,7 @@ def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
     def wrapper(admin_cls: t.Type["BaseAdmin"]) -> t.Type["BaseAdmin"]:
         admin_ins = admin_cls()
         if serializer_cls:
-            admin_ins.serializer = serializer_cls
+            admin_ins.serializer = serializer_cls  # type: ignore
         override = getattr(admin_cls, "override", False)
         admin_collector.set(admin_ins.name, admin_ins, override=override)
 

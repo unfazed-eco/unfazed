@@ -7,7 +7,6 @@ from tortoise import Model as TModel
 
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.protocol import BaseSerializer
 from unfazed.schema import AdminRoute, Condtion, RouteMeta
 from unfazed.serializer import Serializer
 from unfazed.type import Doc
@@ -49,7 +48,7 @@ class AdminModelService:
                 continue
 
             if isinstance(admin_ins, ModelAdmin):
-                m: TModel = t.cast(TModel, admin_ins.serializer.Meta.model)
+                m: t.Type[TModel] = admin_ins.serializer.Meta.model
                 route_label = admin_ins.route_label or m._meta.app or "Default"
             else:
                 route_label = admin_ins.route_label or "Default"
@@ -120,7 +119,7 @@ class AdminModelService:
             raise PermissionDenied(message="Permission Denied")
 
         cond = parse_cond(condtion=cond)
-        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
         queryset = serializer_cls.get_queryset(cond, fetch_related=False)
         result: BaseModel = await serializer_cls.list(queryset, page, size)
 

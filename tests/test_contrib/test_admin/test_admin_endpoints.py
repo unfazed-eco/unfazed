@@ -13,7 +13,7 @@ from unfazed.test import Requestfactory
 
 class User:
     is_superuser = True
-    username = "unfazed"
+    account = "unfazed"
     email = "user@unfazed.com"
 
 

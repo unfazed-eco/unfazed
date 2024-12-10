@@ -11,15 +11,27 @@ from .models import LogEntry
 
 def record(func: t.Callable) -> t.Callable:
     @wraps(func)
-    async def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    async def wrapper(
+        request: HttpRequest, *args: t.Any, **kwargs: t.Any
+    ) -> HttpResponse:
         request_json = await request.json()
         resp: HttpResponse = await func(request, *args, **kwargs)
 
+        if request.user:
+            account = request.user.account or request.user.email
+        else:
+            account = "anonymous"
+
+        if request.client:
+            ip = request.client.host
+        else:
+            ip = "unknown"
+
         await LogEntry.create(
             created_at=int(time.time()),
-            account=request.user.username or request.user.email,
+            account=account,
             path=request.url.path,
-            ip=request.client.host,
+            ip=ip,
             request=json.dumps(request_json).decode(),
             response=resp.body.decode(),
         )
