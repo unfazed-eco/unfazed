@@ -221,7 +221,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @t.final
     async def create(self, **kwargs: t.Any) -> Model:
         using_db = kwargs.pop("using_db", None)
-        model: Model = self.Meta.model
+        model: t.Type[Model] = self.Meta.model
         ins = await model.create(using_db=using_db, **self.valid_data)
 
         return ins
@@ -256,7 +256,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @classmethod
     async def get_object(cls, ctx: BaseModel) -> Model:
-        model: Model = cls.Meta.model
+        model: t.Type[Model] = cls.Meta.model
         if hasattr(ctx, "id"):
             return await model.get(id=ctx.id)
         else:
@@ -264,7 +264,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @classmethod
     def get_queryset(cls, cond: t.Dict[str, t.Any], **kwargs: t.Any) -> QuerySet:
-        model: Model = cls.Meta.model
+        model: t.Type[Model] = cls.Meta.model
         fetch_relations = kwargs.pop("fetch_relations", True)
         fetch_fields = cls.get_fetch_fields()
         if fetch_relations and fetch_fields:
@@ -293,8 +293,8 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @classmethod
     def find_relation(cls, other_cls: t.Type[t.Self]) -> Relation | None:
-        self_model: Model = cls.Meta.model
-        other_model: Model = other_cls.Meta.model
+        self_model: t.Type[Model] = cls.Meta.model
+        other_model: t.Type[Model] = other_cls.Meta.model
 
         # check if it is a m2m relation
         for m2m_field_name in self_model._meta.m2m_fields:

@@ -7,7 +7,6 @@ from .conf import Settings
 from .lifespan import BaseLifeSpan
 from .middleware import MiddleWare
 from .orm import DataBaseDriver, Model, QuerySet
-from .serializer import BaseSerializer
 
 __all__ = [
     "MiddleWare",
@@ -17,7 +16,6 @@ __all__ = [
     "Model",
     "CacheBackend",
     "BaseLifeSpan",
-    "BaseSerializer",
     "QuerySet",
     "ASGIType",
     "SerializerBase",
