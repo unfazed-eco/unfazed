@@ -100,3 +100,7 @@ warn_unused_configs = true
 allow_redefinition = true
 strict_equality = true
 show_error_context = true
+
+[[tool.mypy.overrides]]
+module = "tests.test_serializer.*"
+disable_error_code = "attr-defined"

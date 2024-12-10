@@ -1,5 +1,5 @@
 from datetime import timedelta
-from enum import Enum, StrEnum
+from enum import IntEnum, StrEnum
 
 import pytest
 from annotated_types import Ge, Le, MaxLen
@@ -16,7 +16,7 @@ class Sex(StrEnum):
     FEMALE = "female"
 
 
-class Country(Enum):
+class Country(IntEnum):
     CN = 1
     USA = 2
 
@@ -149,7 +149,7 @@ def test_create_common_fields() -> None:
     assert pk_field.is_required() is False
 
     # test default
-    def gen_default():
+    def gen_default() -> int:
         return 2
 
     f1 = fields.IntField(default=1)
@@ -188,13 +188,14 @@ def test_create_common_fields() -> None:
     assert f7_field.is_required() is True
 
     # test enum field
-    class Country(Enum):
+    class Country(IntEnum):
         CN = 1
         USA = 2
 
     f8 = fields.IntEnumField(enum_type=Country, default=Country.CN)
 
-    f8_type, f8_field = create_common_field(f8)
+    # tortoise bug
+    f8_type, f8_field = create_common_field(f8)  # type: ignore
     assert f8_type == Country
     assert f8_field.default == Country.CN
 

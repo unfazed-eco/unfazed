@@ -61,6 +61,7 @@ async def test_serializer_methods() -> None:
     car.version = 2
     car_ins = await Car.filter(id=new_ins.id).first()
 
+    assert car_ins is not None
     updated_ins = await car.update(car_ins)
 
     assert updated_ins.alias == "series 5"
@@ -92,22 +93,22 @@ async def test_serializer_methods() -> None:
         override="1",
     )
 
-    car = CarSerializer.from_instance(new_car)
+    car2 = CarSerializer.from_instance(new_car)
 
-    assert car.alias == "series 3"
-    assert car.version == 1
+    assert car2.alias == "series 3"
+    assert car2.version == 1
 
     # get object
     class Ctx(BaseModel):
         id: int = -1
         version: int
 
-    ctx = Ctx(id=new_car.id, version=1)
+    ctx1 = Ctx(id=new_car.id, version=1)
 
-    car = await CarSerializer.get_object(ctx)
+    car3 = await CarSerializer.get_object(ctx1)
 
-    assert car.id == new_car.id
-    assert car.version == new_car.version
+    assert car3.id == new_car.id
+    assert car3.version == new_car.version
 
     # failed get object
     with pytest.raises(ValueError):
@@ -153,15 +154,15 @@ async def test_serializer_methods() -> None:
     assert len(ret2.data) == 4
 
     # list from ctx
-    ret = await CarSerializer.list_from_ctx({"version__gt": 5}, page=1, size=2)
-    assert ret.count == 4
-    assert len(ret.data) == 2
+    ret3 = await CarSerializer.list_from_ctx({"version__gt": 5}, page=1, size=2)
+    assert ret3.count == 4
+    assert len(ret3.data) == 2
 
     # list from queryset
     queryset = Car.filter(version__gt=5)
-    ret = await CarSerializer.list_from_queryset(queryset, page=1, size=2)
-    assert ret.count == 4
-    assert len(ret.data) == 2
+    ret4 = await CarSerializer.list_from_queryset(queryset, page=1, size=2)
+    assert ret4.count == 4
+    assert len(ret4.data) == 2
 
     class CarSchema(BaseModel):
         bits: bytes
@@ -182,7 +183,7 @@ async def test_serializer_methods() -> None:
         uuid: str
         override: int
 
-    ctx = CarSchema(
+    ctx2 = CarSchema(
         bits=b"bits",
         limited=True,
         brand=Brand.BMW,
@@ -203,26 +204,26 @@ async def test_serializer_methods() -> None:
     )
 
     # create from ctx
-    ret = await CarSerializer.create_from_ctx(ctx)
-    assert ret.version == 100
+    ret5 = await CarSerializer.create_from_ctx(ctx2)
+    assert ret5.version == 100
 
     class UpdateCarSchema(BaseModel):
         id: int
         version: int
 
-    ctx = UpdateCarSchema(id=new_car.id, version=101)
+    ctx3 = UpdateCarSchema(id=new_car.id, version=101)
     # update from ctx
-    ret = await CarSerializer.update_from_ctx(ctx)
-    assert ret.version == 101
+    ret6 = await CarSerializer.update_from_ctx(ctx3)
+    assert ret6.version == 101
 
     # retrieve from ctx
-    ctx = UpdateCarSchema(id=new_car.id, version=101)
-    ret = await CarSerializer.retrieve_from_ctx(ctx)
-    assert ret.version == 101
+    ctx4 = UpdateCarSchema(id=new_car.id, version=101)
+    ret7 = await CarSerializer.retrieve_from_ctx(ctx4)
+    assert ret7.version == 101
 
     # destroy from ctx
-    ctx = UpdateCarSchema(id=new_car.id, version=101)
-    await CarSerializer.destroy_from_ctx(ctx)
+    ctx5 = UpdateCarSchema(id=new_car.id, version=101)
+    await CarSerializer.destroy_from_ctx(ctx5)
     assert await Car.filter(id=new_car.id).count() == 0
 
 
@@ -247,7 +248,7 @@ async def test_relations() -> None:
             model = Student
 
     student = await Student.filter(id=s1.id).first()
-
+    assert student is not None
     student_serializer = await StudenSerializer.retrieve(student)
 
     assert student_serializer.name == "student1"
@@ -261,7 +262,7 @@ async def test_relations() -> None:
             model = Course
 
     course = await Course.filter(id=c1.id).first()
-
+    assert course is not None
     course_serializer = await CourseSerializer.retrieve(course)
 
     assert course_serializer.name == "course1"
@@ -274,6 +275,7 @@ async def test_relations() -> None:
 
     bag = await Bag.filter(student=s1).first()
 
+    assert bag is not None
     bag_serializer = await BagSerializer.retrieve(bag)
 
     assert bag_serializer.name == "bag1"
@@ -285,6 +287,7 @@ async def test_relations() -> None:
 
     profile = await Profile.filter(student=s1).first()
 
+    assert profile is not None
     profile_serializer = await ProfileSerializer.retrieve(profile)
 
     assert profile_serializer.student.name == "student1"
