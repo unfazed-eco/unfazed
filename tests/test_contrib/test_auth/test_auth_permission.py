@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from tests.apps.auth.common.models import User
@@ -5,7 +7,7 @@ from unfazed.contrib.auth.models import Group, Permission, Role
 
 
 @pytest.fixture(autouse=True)
-async def setup_auth_permission_env():
+async def setup_auth_permission_env() -> t.AsyncGenerator:
     await User.all().delete()
     await Group.all().delete()
     await Role.all().delete()
@@ -19,7 +21,7 @@ async def setup_auth_permission_env():
     await Permission.all().delete()
 
 
-async def test_permission():
+async def test_permission() -> None:
     """
 
     # test user query_roles
@@ -62,7 +64,7 @@ async def test_permission():
 
     p1 = await Permission.create(access="p1")
     p2 = await Permission.create(access="p2")
-    p3 = await Permission.create(access="p3")
+    await Permission.create(access="p3")
 
     await u1.groups.add(g1, g2)
     await u1.roles.add(r1)

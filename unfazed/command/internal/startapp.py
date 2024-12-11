@@ -1,5 +1,5 @@
+import typing as t
 from pathlib import Path
-from typing import List
 
 from click import Choice, Option
 from jinja2 import Template
@@ -16,7 +16,7 @@ class TemplateType:
 class Command(BaseCommand):
     help_text = "create a new app under the project"
 
-    def add_arguments(self) -> List[Option | None]:
+    def add_arguments(self) -> t.List[Option]:
         cwd = Path.cwd()
         return [
             Option(
@@ -41,7 +41,10 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, app_name: str, location: str, template: str):
+    async def handle(self, **options: t.Any) -> None:
+        app_name = options["app_name"]
+        location = options["location"]
+        template = options["template"]
         if template == TemplateType.SIMPLE:
             template_path = Path(unfazed.__path__[0], "template/app/simple")
         elif template == TemplateType.COMPLEX:

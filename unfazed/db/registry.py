@@ -9,11 +9,11 @@ if t.TYPE_CHECKING:
 
 
 class ModelCenter:
-    def __init__(self, unfazed: "Unfazed", conf: Database) -> None:
+    def __init__(self, unfazed: "Unfazed", conf: Database | None) -> None:
         self.unfazed = unfazed
         self.conf = conf
 
-    async def setup(self):
+    async def setup(self) -> None:
         if not self.conf:
             return
         driver_cls = import_string(self.conf.driver)
@@ -22,5 +22,5 @@ class ModelCenter:
 
         self.driver = driver
 
-    async def migrate(self):
+    async def migrate(self) -> None:
         await self.driver.migrate()

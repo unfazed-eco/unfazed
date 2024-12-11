@@ -13,14 +13,14 @@ _Settings = {
 
 
 async def test_registry_lifespan() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_Settings))
     await unfazed.setup()
 
     admin_collector.clear()
 
     lifespan = AdminWakeup(unfazed)
 
-    await lifespan.startup()
+    await lifespan.on_startup()
 
     assert "ArticleAdmin" in admin_collector
     assert "UserAdmin" in admin_collector

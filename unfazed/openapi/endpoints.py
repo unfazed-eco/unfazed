@@ -1,7 +1,6 @@
 from unfazed.http import HtmlResponse, HttpRequest, JsonResponse
 
 from .service import OpenApiService
-from .spec import OpenAPI
 
 
 def redoc(request: HttpRequest) -> HtmlResponse:
@@ -14,5 +13,5 @@ def docs(request: HttpRequest) -> HtmlResponse:
     return HtmlResponse(content)
 
 
-def openapi_json(request: HttpRequest) -> JsonResponse[OpenAPI]:
+def openapi_json(request: HttpRequest) -> JsonResponse:
     return JsonResponse(OpenApiService.build_openapi_json())

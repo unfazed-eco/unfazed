@@ -6,11 +6,11 @@ from pydantic import BaseModel, Field
 
 
 class _DefaultFormatter(t.TypedDict):
-    format: str | None = None
-    datefmt: str | None = None
-    style: str | None = None
-    validate: bool | None = None
-    defaults: t.Dict[str, t.Any] | None = None
+    format: str | None
+    datefmt: str | None
+    style: str | None
+    validate: bool | None
+    defaults: t.Dict[str, t.Any] | None
 
 
 class _CustomFormatter(BaseModel):
@@ -27,9 +27,9 @@ class Filter(BaseModel):
 
 class _Handler(t.TypedDict):
     # class: str  # must have but editor will report error
-    level: t.Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None
-    formatter: str | None = None
-    filters: t.List[str] | None = None
+    level: t.Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None
+    formatter: str | None
+    filters: t.List[str] | None
     ...  # other handler-specific attributes
 
 

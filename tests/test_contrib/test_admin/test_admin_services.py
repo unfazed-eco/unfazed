@@ -20,25 +20,25 @@ from unfazed.contrib.admin.registry import (
 from unfazed.contrib.admin.services import AdminModelService
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup_collector():
+def setup_collector() -> t.Generator:
     # ===== relation test =======
-    class UserSerializer(TSerializer):
+    class UserSerializer(Serializer):
         class Meta:
             model = User
 
-    class GroupSerializer(TSerializer):
+    class GroupSerializer(Serializer):
         class Meta:
             model = Group
 
-    class BookSerializer(TSerializer):
+    class BookSerializer(Serializer):
         class Meta:
             model = Book
 
-    class ProfileSerializer(TSerializer):
+    class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
 
@@ -46,7 +46,7 @@ def setup_collector():
 
     # ===== common test =======
 
-    class ArticleSerializer(TSerializer):
+    class ArticleSerializer(Serializer):
         class Meta:
             model = Article
 
@@ -150,14 +150,16 @@ def setup_collector():
 
     @register()
     class WithoutPermissionAdmin(ModelAdmin):
-        async def has_view_perm(self, request: HttpRequest, *args, **kw) -> bool:
+        async def has_view_perm(
+            self, request: HttpRequest, *args: t.Any, **kw: t.Any
+        ) -> bool:
             return False
 
     yield admin_collector
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
-async def setup_article():
+async def setup_article() -> t.AsyncGenerator:
     await Article.all().delete()
 
     for i in range(20):
@@ -169,7 +171,7 @@ async def setup_article():
 
 
 @pytest_asyncio.fixture()
-async def setup_user():
+async def setup_user() -> t.AsyncGenerator:
     await User.all().delete()
     await Group.all().delete()
     await Profile.all().delete()
@@ -183,20 +185,22 @@ async def setup_user():
     await Book.all().delete()
 
 
-def build_request():
-    class User:
-        is_superuser = True
+class _SuperUser:
+    is_superuser = True
 
-    class Request:
-        user = User()
 
-    return Request()
+class _SuperRequest:
+    user = _SuperUser()
+
+
+def build_request() -> _SuperRequest:
+    return _SuperRequest()
 
 
 async def test_without_relation() -> None:
     # create article
     article = {"title": "test", "content": "test", "author": "test", "id": -1}
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
     ret = await AdminModelService.model_save("ArticleAdmin", article, {}, request)
 
     assert ret.title == "test"
@@ -242,7 +246,7 @@ async def test_model_data_with_relation(setup_user: t.Generator) -> None:
     model_data will not fetch relation data
 
     """
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     u1 = await User.create(name="test1", age=1)
 
@@ -269,7 +273,7 @@ async def test_m2m(setup_user: t.Generator) -> None:
         {"name": "test2", "id": -1, "__status": "create"},
     ]
 
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     ret = await AdminModelService.model_save(
         "M2MUserAdmin", user, {"InlineM2MGroupAdmin": group_list}, request
@@ -313,7 +317,7 @@ async def test_m2m(setup_user: t.Generator) -> None:
 
 async def test_bk_m2m(setup_user: t.Generator) -> None:
     # create
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     group = {"name": "test", "id": -1}
     user_list = [
@@ -364,7 +368,7 @@ async def test_bk_m2m(setup_user: t.Generator) -> None:
 
 async def test_fk(setup_user: t.Generator) -> None:
     # create
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     user = {"name": "test", "age": 10, "id": -1}
     book_list = [
@@ -453,7 +457,7 @@ async def test_fk(setup_user: t.Generator) -> None:
 
 async def test_o2o(setup_user: t.Generator) -> None:
     # create
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     user = {"name": "test", "age": 10, "id": -1}
     profile = {"avatar": "test", "id": -1, "__status": "create"}
@@ -528,18 +532,20 @@ async def test_o2o(setup_user: t.Generator) -> None:
         )
 
 
-def build_request_without_super():
-    class User:
-        is_superuser = False
+class _WithoutSuperUser:
+    is_superuser = False
 
-    class Request:
-        user = User()
 
-    return Request()
+class WithoutSuperRequest:
+    user = _WithoutSuperUser()
+
+
+def build_request_without_super() -> WithoutSuperRequest:
+    return WithoutSuperRequest()
 
 
 async def test_permission_denied() -> None:
-    request = build_request_without_super()
+    request = t.cast(HttpRequest, build_request_without_super())
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_desc("ArticleAdmin", request)
@@ -561,7 +567,7 @@ async def test_permission_denied() -> None:
 
 
 async def test_failed() -> None:
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     with pytest.raises(KeyError):
         await AdminModelService.model_action(
@@ -579,7 +585,7 @@ async def test_failed() -> None:
 
 
 async def test_routes() -> None:
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     ret = await AdminModelService.list_route(request)
 
@@ -606,7 +612,7 @@ def test_settings() -> None:
 
 
 async def test_model_desc() -> None:
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     ret = await AdminModelService.model_desc("ArticleAdmin", request)
 
@@ -621,7 +627,7 @@ async def test_model_desc() -> None:
 
 
 async def test_model_detail() -> None:
-    request = build_request()
+    request = t.cast(HttpRequest, build_request())
 
     ret = await AdminModelService.model_detail("M2MUserAdmin", {}, request)
 

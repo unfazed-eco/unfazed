@@ -1,7 +1,7 @@
 import sys
 import typing as t
 
-from click import Option, Parameter
+from click import Option
 from uvicorn import server, supervisors
 from uvicorn.config import Config
 
@@ -11,7 +11,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "Run unfazed server"
 
-    def add_arguments(self) -> t.Sequence[Parameter]:
+    def add_arguments(self) -> t.List[Option]:
         return [
             Option(
                 ["--host"],
@@ -50,19 +50,19 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(
-        self,
-        host: str,
-        port: str,
-        reload: bool,
-        workers: int,
-        log_level: str,
-    ) -> None:
+    @t.override
+    async def handle(self, **options: t.Any) -> None:
+        host = options["host"]
+        port = options["port"]
+        _reload = options["reload"]
+        workers = options["workers"]
+        log_level = options["log_level"]
+
         config = Config(
             self.unfazed,
             host=host,
-            port=port,
-            reload=reload,
+            port=int(port),
+            reload=_reload,
             workers=workers,
             log_level=log_level,
         )

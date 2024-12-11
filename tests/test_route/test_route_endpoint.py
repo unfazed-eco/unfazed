@@ -4,6 +4,7 @@ import typing as t
 import pytest
 from pydantic import BaseModel, Field
 from starlette.routing import Match
+from starlette.types import Receive
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
@@ -16,7 +17,7 @@ from unfazed.route.endpoint import EndPointDefinition
 from unfazed.test import Requestfactory
 
 
-async def reiceive(*args, **kw):
+async def _reiceive() -> t.AsyncGenerator[t.MutableMapping[str, t.Any], None]:
     # yield body
 
     yield {
@@ -31,7 +32,11 @@ async def reiceive(*args, **kw):
     }
 
 
-async def send(*args, **kw):
+# cope with mypy checking
+reiceive = t.cast(Receive, _reiceive)
+
+
+async def send(*args: t.Any, **kw: t.Any) -> None:
     pass
 
 
@@ -61,7 +66,7 @@ async def endpoint1(
     pth2: t.Annotated[Pth2, p.Path()],
     path5: t.Annotated[str, p.Path(default="foo")],
     path6: str,
-) -> t.Annotated[JsonResponse[RespE1], p.ResponseSpec(model=RespE1)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE1)]:
     r = RespE1(
         path1=pth1.path1,
         path2=pth1.path2,
@@ -73,7 +78,7 @@ async def endpoint1(
     return JsonResponse(r)
 
 
-async def test_path():
+async def test_path() -> None:
     route = Route(
         path="/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}",
         endpoint=endpoint1,
@@ -82,10 +87,13 @@ async def test_path():
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "pth1" in definition.params
     assert "pth2" in definition.params
     assert "path5" in definition.params
     assert "path6" in definition.params
+
+    assert definition.path_params is not None
     assert (
         "pth1" in definition.path_params
         and definition.path_params["pth1"][0] == Pth1
@@ -105,7 +113,8 @@ async def test_path():
         "path6" in definition.path_params and definition.path_params["path6"][0] is str
     )
 
-    pathmodel: BaseModel = definition.path_model
+    pathmodel = definition.path_model
+    assert pathmodel is not None
     for ele in ["path1", "path2", "path3", "path4", "path5", "path6"]:
         assert ele in pathmodel.model_fields
 
@@ -113,13 +122,11 @@ async def test_path():
         "type": "http",
         "method": "GET",
         "scheme": "https",
-        "server": ("www.example.org", 80),
+        "server": ("www.unfazed.org", 80),
         "path": "/foo/1/2/foo2/foo3/foo4",
         "headers": [],
         "query_string": b"",
     }
-
-    # wait endpoint1 to be called and validate
     await route(scope=scope, receive=reiceive, send=send)
 
 
@@ -151,7 +158,7 @@ async def endpoint2(
     qry2: t.Annotated[Qry2, p.Query()],
     query5: t.Annotated[str, p.Query(default="foo")],
     query6: str,
-) -> t.Annotated[JsonResponse[RespE2], p.ResponseSpec(model=RespE2)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
         query2=qry1.query2,
@@ -169,7 +176,7 @@ def syncendpoint2(
     qry2: t.Annotated[Qry2, p.Query()],
     query5: t.Annotated[str, p.Query(default="foo")],
     query6: str,
-) -> t.Annotated[JsonResponse[RespE2], p.ResponseSpec(model=RespE2)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
         query2=qry1.query2,
@@ -181,7 +188,7 @@ def syncendpoint2(
     return JsonResponse(r)
 
 
-async def test_query():
+async def test_query() -> None:
     route = Route(
         path="/",
         endpoint=endpoint2,
@@ -191,10 +198,13 @@ async def test_query():
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "qry1" in definition.params
     assert "qry2" in definition.params
     assert "query5" in definition.params
     assert "query6" in definition.params
+
+    assert definition.query_params is not None
     assert (
         "qry1" in definition.query_params
         and definition.query_params["qry1"][0] == Qry1
@@ -216,6 +226,7 @@ async def test_query():
     )
 
     querymodel = definition.query_model
+    assert querymodel is not None
     for ele in ["query1", "query2", "query3", "query4", "query5", "query6"]:
         assert ele in querymodel.model_fields
 
@@ -233,7 +244,7 @@ async def test_query():
     await route(scope=scope, receive=reiceive, send=send)
 
 
-async def test_query_sync():
+async def test_query_sync() -> None:
     route = Route(
         path="/",
         endpoint=syncendpoint2,
@@ -254,7 +265,7 @@ async def test_query_sync():
     await route(scope=scope, receive=reiceive, send=send)
 
 
-async def test_query_failed_slove():
+async def test_query_failed_slove() -> None:
     route = Route(
         path="/",
         endpoint=endpoint2,
@@ -302,7 +313,7 @@ async def endpoint3(
     hdr1: t.Annotated[Hdr1, p.Header()],
     hdr2: t.Annotated[Hdr2, p.Header()],
     header5: t.Annotated[str, p.Header(default="foo")],
-) -> t.Annotated[JsonResponse[RespE3], p.ResponseSpec(model=RespE3)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE3)]:
     r = RespE3(
         header1=hdr1.header1,
         header2=hdr1.header2,
@@ -313,7 +324,7 @@ async def endpoint3(
     return JsonResponse(r)
 
 
-async def test_header():
+async def test_header() -> None:
     route = Route(
         path="/",
         endpoint=endpoint3,
@@ -322,10 +333,12 @@ async def test_header():
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "hdr1" in definition.params
     assert "hdr2" in definition.params
     assert "header5" in definition.params
 
+    assert definition.header_params is not None
     assert (
         "hdr1" in definition.header_params
         and definition.header_params["hdr1"][0] == Hdr1
@@ -344,6 +357,7 @@ async def test_header():
         and definition.header_params["header5"][1].default == "foo"
     )
 
+    assert definition.header_model is not None
     for ele in ["header1", "header2", "header3", "header4", "header5"]:
         assert ele in definition.header_model.model_fields
 
@@ -393,7 +407,7 @@ async def endpoint4(
     ck1: t.Annotated[Ckie1, p.Cookie()],
     ck2: t.Annotated[Ckie2, p.Cookie()],
     cookie5: t.Annotated[str, p.Cookie(default="foo")],
-) -> t.Annotated[JsonResponse[RespE4], p.ResponseSpec(model=RespE4)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE4)]:
     r = RespE4(
         cookie1=ck1.cookie1,
         cookie2=ck1.cookie2,
@@ -404,7 +418,7 @@ async def endpoint4(
     return JsonResponse(r)
 
 
-async def test_cookie():
+async def test_cookie() -> None:
     route = Route(
         path="/",
         endpoint=endpoint4,
@@ -413,10 +427,12 @@ async def test_cookie():
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "ck1" in definition.params
     assert "ck2" in definition.params
     assert "cookie5" in definition.params
 
+    assert definition.cookie_params is not None
     assert (
         "ck1" in definition.cookie_params
         and definition.cookie_params["ck1"][0] == Ckie1
@@ -435,6 +451,7 @@ async def test_cookie():
         and definition.cookie_params["cookie5"][1].default == "foo"
     )
 
+    assert definition.cookie_model is not None
     for ele in ["cookie1", "cookie2", "cookie3", "cookie4", "cookie5"]:
         assert ele in definition.cookie_model.model_fields
 
@@ -492,19 +509,18 @@ async def endpoint5(
     bd2: t.Annotated[Body2, p.Json()],
     bd3: Body3,
     body6: t.Annotated[str, p.Json(default="foo")],
-) -> t.Annotated[JsonResponse[RespE5], p.ResponseSpec(model=RespE5)]:
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE5)]:
     r = RespE5(
         body1=bd1.body1,
         body2=bd1.body2,
         body3=bd2.body3,
         body4=bd2.body4,
         body5=bd3.body5,
-        body6=body6,
     )
     return JsonResponse(r)
 
 
-async def body_receive(*args, **kw):
+async def body_receive(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"body1": "foo", "body2": 1, "body3": 2, "body4": "foo2", "body5": "foo3"}',
@@ -512,16 +528,18 @@ async def body_receive(*args, **kw):
     }
 
 
-async def test_body():
+async def test_body() -> None:
     route = Route(path="/", endpoint=endpoint5, tags=["tag1"], methods=["POST"])
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "bd1" in definition.params
     assert "bd2" in definition.params
     assert "bd3" in definition.params
     assert "body6" in definition.params
 
+    assert definition.body_params is not None
     assert (
         "bd1" in definition.body_params
         and definition.body_params["bd1"][0] == Body1
@@ -541,13 +559,15 @@ async def test_body():
         and definition.body_params["body6"][1].default == "foo"
     )
 
+    assert definition.body_model is not None
     for ele in ["body1", "body2", "body3", "body4", "body5", "body6"]:
         assert ele in definition.body_model.model_fields
 
     fieldinfo6 = definition.body_model.model_fields["body6"]
     assert fieldinfo6.default == "foo"
 
-    assert "foo" in definition.body_model.model_config["json_schema_extra"]
+    ret = definition.body_model.model_config["json_schema_extra"]
+    assert "foo" in t.cast(t.Dict, ret)
 
     scope = {
         "type": "http",
@@ -591,9 +611,9 @@ async def endpoint6(
     form1: t.Annotated[Form1, p.Form()],
     form2: t.Annotated[Form2, p.Form()],
     form5: t.Annotated[str, p.Form(default="foo")],
-    *args,
-    **kw,
-) -> t.Annotated[JsonResponse[RespE6], p.ResponseSpec(model=RespE6)]:
+    *args: t.Any,
+    **kw: t.Any,
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE6)]:
     r = RespE6(
         form1=form1.form1,
         form2=form1.form2,
@@ -604,7 +624,7 @@ async def endpoint6(
     return JsonResponse(r)
 
 
-async def form_receive(*args, **kw):
+async def form_receive(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b"form1=foo&form2=1&form3=2&form4=foo2&form5=foo3",
@@ -612,17 +632,19 @@ async def form_receive(*args, **kw):
     }
 
 
-async def test_form():
+async def test_form() -> None:
     route = Route(path="/", endpoint=endpoint6, tags=["tag1"], methods=["POST"])
 
     definition = route.endpoint_definition
 
     assert definition.body_type == "form"
 
+    assert definition.params is not None
     assert "form1" in definition.params
     assert "form2" in definition.params
     assert "form5" in definition.params
 
+    assert definition.body_params is not None
     assert (
         "form1" in definition.body_params
         and definition.body_params["form1"][0] == Form1
@@ -641,6 +663,7 @@ async def test_form():
         and definition.body_params["form5"][1].default == "foo"
     )
 
+    assert definition.body_model is not None
     for ele in ["form1", "form2", "form3", "form4", "form5"]:
         assert ele in definition.body_model.model_fields
 
@@ -663,7 +686,7 @@ async def test_form():
 # === test failed slove =====
 
 
-async def body_receive2(*args, **kw):
+async def body_receive2(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"bd1": "error_body"}',
@@ -671,7 +694,7 @@ async def body_receive2(*args, **kw):
     }
 
 
-async def form_receive2(*args, **kw):
+async def form_receive2(*args: t.Any, **kw: t.Any) -> t.Dict:
     return {
         "type": "http.request",
         "body": b'{"form1": "error_form"}',
@@ -695,7 +718,7 @@ async def endpoint8(
     return JsonResponse({"form": form1})
 
 
-async def test_failed_slove():
+async def test_failed_slove() -> None:
     route = Route(
         path="/{pth1}",
         endpoint=endpoint7,
@@ -762,7 +785,7 @@ async def endpoint10(
     return JsonResponse({"method": "GET"})
 
 
-async def endpoint11(request: HttpRequest):
+async def endpoint11(request: HttpRequest):  # type: ignore
     return JsonResponse({"method": "GET"})
 
 
@@ -836,14 +859,14 @@ async def endpoint18(
     return JsonResponse({"method": "POST"})
 
 
-async def endpoint20(
+async def endpoint20(  # type: ignore
     request: HttpRequest,
     bd1,
 ) -> JsonResponse:
     return JsonResponse({"method": "POST"})
 
 
-async def test_definition():
+async def test_definition() -> None:
     # support class view
     # but not recommended
     endpointview = EndpointView()
@@ -855,6 +878,7 @@ async def test_definition():
         debug=True,
     )
 
+    assert ed.params is not None
     assert "self" not in ed.params
     assert "qry1" in ed.params
 
@@ -895,6 +919,7 @@ async def test_definition():
         response_models=[p.ResponseSpec(model=RespE122)],
     )
 
+    assert ed.response_models is not None
     assert ed.response_models[0].model == RespE122
 
     # body / form conflict
@@ -969,7 +994,7 @@ class CtxFile(BaseModel):
 class RespFile(BaseModel):
     name: str
     age: int
-    file_name: str
+    file_name: str | None
 
 
 async def endpoint19(
@@ -986,7 +1011,7 @@ async def endpoint19(
     )
 
 
-async def test_file():
+async def test_file() -> None:
     route = Route(
         path="/with-file",
         endpoint=endpoint19,
@@ -996,8 +1021,10 @@ async def test_file():
 
     definition = route.endpoint_definition
 
+    assert definition.params is not None
     assert "file1" in definition.params
     assert "file1" in definition.body_params
+    assert definition.body_model is not None
     assert "file1" in definition.body_model.model_fields
 
     unfazed = Unfazed(

@@ -7,22 +7,22 @@ from tests.apps.admin.article.models import Author
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 from unfazed.test import Requestfactory
 
 
 class User:
     is_superuser = True
-    username = "unfazed"
+    account = "unfazed"
     email = "user@unfazed.com"
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
-async def setup_endpoint_env():
+async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     admin_collector.clear()
     await Author.all().delete()
 
-    class AuthorSerializer(TSerializer):
+    class AuthorSerializer(Serializer):
         class Meta:
             model = Author
 
@@ -51,10 +51,6 @@ async def setup_endpoint_env():
             self, data: t.Dict, request: HttpRequest | None = None
         ) -> HttpResponse:
             return HttpResponse("hello, unfazed")
-
-        @property
-        def name(self):
-            return "AuthorAdmin"
 
     yield
 

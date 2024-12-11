@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from unfazed.conf import UnfazedSettings
@@ -9,7 +11,7 @@ from unfazed.test import Requestfactory
 
 
 @pytest.fixture(autouse=True)
-def setup_requestfactory_env():
+def setup_requestfactory_env() -> t.Generator:
     lifespan_handler.clear()
     yield
 
@@ -19,16 +21,16 @@ async def endpoint1(request: HttpRequest) -> HttpResponse:
 
 
 class LifeSpanStartFailed(BaseLifeSpan):
-    async def on_startup(self):
+    async def on_startup(self) -> t.NoReturn:
         raise RuntimeError("LifeSpanStartFailed")
 
 
 class LifeSpanShutdownFailed(BaseLifeSpan):
-    async def on_shutdown(self):
+    async def on_shutdown(self) -> t.NoReturn:
         raise RuntimeError("LifeSpanShutdownFailed")
 
 
-async def test_requestfactory():
+async def test_requestfactory() -> None:
     unfazed = Unfazed(
         routes=[Route("/", endpoint=endpoint1)],
         settings=UnfazedSettings(
@@ -42,7 +44,7 @@ async def test_requestfactory():
         assert resp.status_code == 200
 
 
-async def test_requestfactory_startup_failed():
+async def test_requestfactory_startup_failed() -> None:
     unfazed = Unfazed(
         routes=[Route("/", endpoint=endpoint1)],
         settings=UnfazedSettings(
@@ -58,7 +60,7 @@ async def test_requestfactory_startup_failed():
             await request.get("/")
 
 
-async def test_requestfactory_shutdown_failed():
+async def test_requestfactory_shutdown_failed() -> None:
     unfazed = Unfazed(
         routes=[Route("/", endpoint=endpoint1)],
         settings=UnfazedSettings(

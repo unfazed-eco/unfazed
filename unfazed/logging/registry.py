@@ -34,6 +34,7 @@ DEFAULT_LOGGING_CONFIG = {
             "handlers": ["_console"],
         },
     },
+    "filters": {},
     "root": {"level": "DEBUG", "handlers": ["_console"]},
     "version": 1,
 }
@@ -48,10 +49,7 @@ class LogCenter:
     def setup(self) -> None:
         dictConfig(self.config)
 
-        # logger = getLogger("unfazed.server")
-        # logger.debug("Logging system initialized")
-
-    def merge_default(self, dictconfig: t.Dict) -> None:
+    def merge_default(self, dictconfig: t.Dict) -> t.Dict:
         ret = copy.deepcopy(DEFAULT_LOGGING_CONFIG)
 
         if not dictconfig:
@@ -62,7 +60,9 @@ class LogCenter:
                 ret[key] = dictconfig[key]
 
             elif key in ["handlers", "formatters", "filters", "loggers"]:
-                ret[key].update(dictconfig[key])
+                # ret[key].update(dictconfig[key])
+                target = t.cast(t.Dict, ret[key])
+                target.update(dictconfig[key])
 
             else:
                 continue

@@ -1,5 +1,6 @@
 import os
 import time
+import typing as t
 from logging import LogRecord
 from logging.handlers import BaseRotatingHandler
 
@@ -10,32 +11,33 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         filename: str,
         mode: str = "a",
         maxBytes: int = 0,
-        encoding: str = None,
+        encoding: str | None = None,
         delay: bool = False,
-    ):
+    ) -> None:
         self.raw_filename = filename
         self.validate_filename(filename)
         filename = self.create_process_safe_name(filename)
         super().__init__(filename, mode, encoding, delay)
         self.maxBytes = maxBytes
 
-    def validate_filename(self, filename: str):
+    def validate_filename(self, filename: str) -> None:
         if not filename:
             raise ValueError("filename cannot be empty")
 
         if not filename.endswith(".log"):
             raise ValueError("filename must end with .log")
 
-    def create_process_safe_name(self, filename: str):
+    def create_process_safe_name(self, filename: str) -> str:
         # create a process safe name with pid
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
 
-    def namer(self, filename: str) -> str:
+    @t.override
+    def namer(self, filename: str) -> str:  # type: ignore
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_archived.{suffix}"
 
-    def shouldRollover(self, record: LogRecord):
+    def shouldRollover(self, record: LogRecord) -> bool:
         """
         Determine if rollover should occur.
 
@@ -53,13 +55,13 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
                 return True
         return False
 
-    def doRollover(self):
+    def doRollover(self) -> None:
         """
         Do a rollover, as described in __init__().
         """
         if self.stream:
             self.stream.close()
-            self.stream = None
+            self.stream = None  # type: ignore
 
         archived_filename = self.rotation_filename(self.baseFilename)
         if os.path.exists(archived_filename):

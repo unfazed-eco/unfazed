@@ -4,17 +4,16 @@ import typing as t
 from asyncio import Lock
 from collections import OrderedDict
 
-from unfazed.protocol import CacheBackend
 from unfazed.schema import LocOptions
 
 # Global in-memory store of cache data. Keyed by name, to provide
 # multiple named local memory caches.
-_caches = {}
-_expire_info = {}
-_locks = {}
+_caches: t.Dict[str, t.OrderedDict[str, t.Any]] = {}
+_expire_info: t.Dict[str, t.Dict[str, float | None]] = {}
+_locks: t.Dict[str, Lock] = {}
 
 
-class LocMemCache(CacheBackend):
+class LocMemCache:
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
     def __init__(
@@ -37,12 +36,17 @@ class LocMemCache(CacheBackend):
         version = version or self.version
         return f"{self.prefix}:{key}:{version}"
 
-    def get_timeout(self, timeout: float | None) -> int:
+    def get_timeout(self, timeout: float | None) -> float | None:
         if timeout is None:
             return None
         return time.time() + timeout
 
-    async def get(self, key: str, default=None, version=None) -> t.Any:
+    async def get(
+        self,
+        key: str,
+        default: t.Any | None = None,
+        version: int | None = None,
+    ) -> t.Any:
         if not await self.has_key(key):
             return default
         key = self.make_key(key, version=version)
@@ -56,7 +60,7 @@ class LocMemCache(CacheBackend):
         key: str,
         value: t.Any,
         timeout: float | None = None,
-        version=None,
+        version: int | None = None,
     ) -> None:
         key = self.make_key(key, version=version)
         pickled = pickle.dumps(value, self.pickle_protocol)
@@ -68,7 +72,7 @@ class LocMemCache(CacheBackend):
             self._cache.move_to_end(key, last=False)
             self._expire_info[key] = self.get_timeout(timeout)
 
-    async def incr(self, key: str, delta=1, version=None) -> int:
+    async def incr(self, key: str, delta: int = 1, version: int | None = None) -> int:
         if not await self.has_key(key):
             raise ValueError(f"Key {key} not found")
         key = self.make_key(key, version=version)
@@ -82,10 +86,10 @@ class LocMemCache(CacheBackend):
             self._cache.move_to_end(key, last=False)
         return new_value
 
-    async def decr(self, key: str, delta=-1, version=None) -> int:
+    async def decr(self, key: str, delta: int = -1, version: int | None = None) -> int:
         return await self.incr(key, delta, version=version)
 
-    async def has_key(self, key, version=None) -> bool:
+    async def has_key(self, key: str, version: int | None = None) -> bool:
         key = self.make_key(key, version=version)
         async with self._lock:
             if key not in self._cache:
@@ -118,7 +122,7 @@ class LocMemCache(CacheBackend):
             return False
         return True
 
-    async def delete(self, key: str, version=None) -> bool:
+    async def delete(self, key: str, version: int | None = None) -> bool:
         key = self.make_key(key, version=version)
         async with self._lock:
             return self._delete(key)

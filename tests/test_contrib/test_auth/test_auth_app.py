@@ -1,7 +1,7 @@
 from unfazed.contrib.admin.registry import admin_collector
 
 
-def test_admin_registry():
+def test_admin_registry() -> None:
     assert "UserAdmin" in admin_collector
     assert "InlineUserAdmin" in admin_collector
     assert "GroupAdmin" in admin_collector

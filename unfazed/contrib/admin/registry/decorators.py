@@ -2,7 +2,7 @@ import inspect
 import typing as t
 from functools import wraps
 
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .collector import admin_collector
 from .schema import AdminAction
@@ -19,11 +19,11 @@ class ActionOutput:
     Table = 5
 
 
-def register(serializer_cls: t.Type[TSerializer] | None = None):
-    def wrapper(admin_cls: t.Type["BaseAdmin"]):
+def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
+    def wrapper(admin_cls: t.Type["BaseAdmin"]) -> t.Type["BaseAdmin"]:
         admin_ins = admin_cls()
         if serializer_cls:
-            admin_ins.serializer = serializer_cls
+            admin_ins.serializer = serializer_cls  # type: ignore
         override = getattr(admin_cls, "override", False)
         admin_collector.set(admin_ins.name, admin_ins, override=override)
 
@@ -34,20 +34,20 @@ def register(serializer_cls: t.Type[TSerializer] | None = None):
 
 def action(
     name: str | None = None,
-    output: t.Literal[1, 2, 3, 4, 5] = ActionOutput.Toast,
+    output: int = ActionOutput.Toast,
     confirm: bool = False,
     description: str = "",
     batch: bool = False,
     *,
     extra: t.Dict[str, t.Any] = {},
-):
-    def wrapper(method: t.Callable):
+) -> t.Callable:
+    def wrapper(method: t.Callable) -> t.Callable:
         @wraps(method)
-        async def asyncinner(*args, **kwargs):
+        async def asyncinner(*args: t.Any, **kwargs: t.Any) -> t.Any:
             return await method(*args, **kwargs)
 
         @wraps(method)
-        def inner(*args, **kwargs):
+        def inner(*args: t.Any, **kwargs: t.Any) -> t.Any:
             return method(*args, **kwargs)
 
         attrs = AdminAction(

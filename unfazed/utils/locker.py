@@ -6,7 +6,12 @@ if t.TYPE_CHECKING:
 
 
 def unfazed_locker(async_method: t.Callable) -> t.Callable:
-    async def wrapper(self: "Unfazed", *args, **kwargs):
+    """
+    Docorator to help Unfazed to lock the method until it's ready.
+
+    """
+
+    async def wrapper(self: "Unfazed", *args: t.Any, **kwargs: t.Any) -> t.Any:
         if self._ready:
             return
         async with Lock():

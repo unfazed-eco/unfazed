@@ -1,10 +1,10 @@
 from unfazed.contrib.admin.registry import ModelAdmin, register
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 from .models import User
 
 
-class UserSerializer(TSerializer):
+class UserSerializer(Serializer):
     class Meta:
         model = User
 

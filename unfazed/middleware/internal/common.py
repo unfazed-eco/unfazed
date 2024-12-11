@@ -3,29 +3,30 @@ from traceback import format_exception
 
 import orjson as json
 from jinja2 import Template
+from starlette.types import Receive, Scope, Send
 
 from unfazed.core import Unfazed
-from unfazed.http import HtmlResponse, HttpRequest, HttpResponse
-from unfazed.middleware.base import BaseHttpMiddleware, RequestResponseEndpoint
+from unfazed.http import HtmlResponse, HttpResponse
+from unfazed.middleware import BaseMiddleware
 
 
-class CommonMiddleware(BaseHttpMiddleware):
-    async def dispatch(
-        self,
-        request: HttpRequest,
-        call_next: RequestResponseEndpoint,
-    ) -> HttpResponse:
+class CommonMiddleware(BaseMiddleware):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         try:
-            response = await call_next(request)
+            await self.app(scope, receive, send)
         except Exception as e:
-            unfazed: Unfazed = request.scope.get("app")
+            unfazed = t.cast(Unfazed, scope.get("app"))
             if unfazed.settings.DEBUG:
                 response = render_error_html(e, unfazed.settings.model_dump())
             else:
                 response = HttpResponse(
                     status_code=500, content="Internal Server Error"
                 )
-        return response
+            await response(scope, receive, send)
 
 
 TEMPLATE = """
@@ -82,7 +83,7 @@ TEMPLATE = """
 
 def render_error_html(
     error: Exception, unfazed_settings: t.Dict[str, t.Any]
-) -> HtmlResponse:
+) -> HttpResponse:
     error_content = format_exception(type(error), error, error.__traceback__)
     unfazed_settings_str = json.dumps(unfazed_settings).decode()
 

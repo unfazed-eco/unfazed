@@ -3,15 +3,18 @@ import typing as t
 
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
+from tortoise import Model as TModel
 
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.protocol import BaseSerializer
-from unfazed.schema import AdminRoute, Condtion
+from unfazed.schema import AdminRoute, Condtion, RouteMeta
+from unfazed.serializer import Serializer
+from unfazed.type import Doc
 
 from .registry import (
-    BaseAdmin,
     ModelAdmin,
+    ModelInlineAdmin,
+    ToolAdmin,
     admin_collector,
     parse_cond,
     site,
@@ -33,7 +36,8 @@ class AdminModelService:
     @classmethod
     async def list_route(cls, request: HttpRequest) -> t.List[t.Dict]:
         temp = {}
-        admin_ins: BaseAdmin
+
+        admin_ins: t.Union[ModelAdmin, ModelInlineAdmin, ToolAdmin]
         for _, admin_ins in admin_collector:
             if not await admin_ins.has_view_perm(request):
                 continue
@@ -44,11 +48,8 @@ class AdminModelService:
                 continue
 
             if isinstance(admin_ins, ModelAdmin):
-                route_label = (
-                    admin_ins.route_label
-                    or admin_ins.serializer.Meta.model._meta.app
-                    or "Default"
-                )
+                m: t.Type[TModel] = admin_ins.serializer.Meta.model
+                route_label = admin_ins.route_label or m._meta.app or "Default"
             else:
                 route_label = admin_ins.route_label or "Default"
 
@@ -60,11 +61,11 @@ class AdminModelService:
                     children=[],
                     name=route_label,
                     icon="el-icon-s-home",
-                    meta={
-                        "icon": "el-icon-s-home",
-                        "hidden": False,
-                        "hidden_children": False,
-                    },
+                    meta=RouteMeta(
+                        icon="el-icon-s-home",
+                        hidden=False,
+                        hidden_children=False,
+                    ),
                 )
                 temp[route_label] = temp_top_route
             else:
@@ -73,9 +74,9 @@ class AdminModelService:
 
         routes = []
 
-        route: BaseModel
-        for _, route in temp.items():
-            routes.append(route.model_dump(exclude_none=True))
+        sub_route: BaseModel
+        for _, sub_route in temp.items():
+            routes.append(sub_route.model_dump(exclude_none=True))
 
         return routes
 
@@ -118,7 +119,7 @@ class AdminModelService:
             raise PermissionDenied(message="Permission Denied")
 
         cond = parse_cond(condtion=cond)
-        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
         queryset = serializer_cls.get_queryset(cond, fetch_related=False)
         result: BaseModel = await serializer_cls.list(queryset, page, size)
 
@@ -130,7 +131,7 @@ class AdminModelService:
         admin_ins_name: str,
         action: str,
         data: t.Dict,
-        request: HttpRequest | None = None,
+        request: HttpRequest,
     ) -> t.Any:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
         if not hasattr(admin_ins, action):
@@ -148,7 +149,9 @@ class AdminModelService:
     @classmethod
     async def model_save(
         cls, admin_ins_name: str, data: t.Dict, inlines: t.Dict, request: HttpRequest
-    ) -> t.Dict:
+    ) -> t.Annotated[
+        t.Any, Doc(description="return the saved model inherited by BaseSerializer")
+    ]:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_change_perm(
@@ -156,7 +159,7 @@ class AdminModelService:
         ) and not await admin_ins.has_create_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
 
         # handle main model
         idschema = IdSchema(**data)
@@ -170,8 +173,8 @@ class AdminModelService:
 
         # handle inlines
         for name, inline_data_list in inlines.items():
-            ins = admin_collector[name]
-            inline_serializer_cls: t.Type[BaseSerializer] = ins.serializer
+            ins: ModelInlineAdmin = admin_collector[name]
+            inline_serializer_cls: t.Type[Serializer] = ins.serializer
             relation = inline_serializer_cls.find_relation(serializer_cls)
 
             if not relation:
@@ -265,7 +268,7 @@ class AdminModelService:
     @classmethod
     async def model_delete(
         cls, admin_ins_name: str, data: t.Dict, request: HttpRequest
-    ) -> t.Any:
+    ) -> None:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_delete_perm(request):
@@ -276,7 +279,7 @@ class AdminModelService:
         if idschema.id <= 0:
             raise ValueError("id must be greater than 0")
 
-        serializer_cls: t.Type[BaseSerializer] = admin_ins.serializer
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
         db_model = await serializer_cls.get_object(idschema)
 
         return await serializer_cls.destroy(db_model)

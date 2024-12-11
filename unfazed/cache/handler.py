@@ -3,9 +3,9 @@ from unfazed.utils import Storage
 
 
 class CacheHandler(Storage[CacheBackend]):
-    async def close(self):
+    async def close(self) -> None:
         for backend in self.storage.values():
             await backend.close()
 
 
-caches = CacheHandler()
+caches: CacheHandler = CacheHandler()

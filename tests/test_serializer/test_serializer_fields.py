@@ -1,5 +1,5 @@
 from datetime import timedelta
-from enum import Enum, StrEnum
+from enum import IntEnum, StrEnum
 
 import pytest
 from annotated_types import Ge, Le, MaxLen
@@ -8,7 +8,7 @@ from tortoise import Model, fields
 
 from tests.apps.serializer.models import Bag, Course, Student
 from tests.apps.serializer.models import StudentProfile as Profile
-from unfazed.serializer.tortoise import TSerializer, create_common_field
+from unfazed.serializer import Serializer, create_common_field
 
 
 class Sex(StrEnum):
@@ -16,7 +16,7 @@ class Sex(StrEnum):
     FEMALE = "female"
 
 
-class Country(Enum):
+class Country(IntEnum):
     CN = 1
     USA = 2
 
@@ -41,13 +41,13 @@ class User(Model):
     uuid = fields.UUIDField()
 
 
-class UserSerializer(TSerializer):
+class UserSerializer(Serializer):
     class Meta:
         model = User
         exclude = ["is_active"]
 
 
-class UserSerializer2(TSerializer):
+class UserSerializer2(Serializer):
     # override field
     height: int = Field(...)
 
@@ -58,7 +58,7 @@ class UserSerializer2(TSerializer):
         model = User
 
 
-class UserSerializer3(TSerializer):
+class UserSerializer3(Serializer):
     class Meta:
         model = User
         include = ["height"]
@@ -149,7 +149,7 @@ def test_create_common_fields() -> None:
     assert pk_field.is_required() is False
 
     # test default
-    def gen_default():
+    def gen_default() -> int:
         return 2
 
     f1 = fields.IntField(default=1)
@@ -188,13 +188,14 @@ def test_create_common_fields() -> None:
     assert f7_field.is_required() is True
 
     # test enum field
-    class Country(Enum):
+    class Country(IntEnum):
         CN = 1
         USA = 2
 
     f8 = fields.IntEnumField(enum_type=Country, default=Country.CN)
 
-    f8_type, f8_field = create_common_field(f8)
+    # tortoise bug
+    f8_type, f8_field = create_common_field(f8)  # type: ignore
     assert f8_type == Country
     assert f8_field.default == Country.CN
 
@@ -222,27 +223,26 @@ def test_create_common_fields() -> None:
 
 
 def test_create_relational_fields() -> None:
-    class StudentSerializer(TSerializer):
+    class StudenSerializer(Serializer):
         class Meta:
             model = Student
 
     # db fields
-    assert "id" in StudentSerializer.model_fields
-    assert "name" in StudentSerializer.model_fields
-    assert "age" in StudentSerializer.model_fields
+    assert "id" in StudenSerializer.model_fields
+    assert "name" in StudenSerializer.model_fields
+    assert "age" in StudenSerializer.model_fields
 
     # m2m fields
-    assert "courses" in StudentSerializer.model_fields
+    assert "courses" in StudenSerializer.model_fields
 
     # fk fields
-    assert "bags" in StudentSerializer.model_fields
-    print(StudentSerializer.model_fields)
-    # one to one fields
-    assert "profile" in StudentSerializer.model_fields
+    assert "bags" in StudenSerializer.model_fields
+    # one to one fieldss
+    assert "profile" in StudenSerializer.model_fields
 
     # init model
 
-    student = StudentSerializer(
+    student = StudenSerializer(
         name="student1",
         age=18,
         courses=[
@@ -262,7 +262,7 @@ def test_create_relational_fields() -> None:
     assert student.profile.nickname == "nick1"
 
     # relation fields default to None
-    student = StudentSerializer(name="student1", age=18)
+    student = StudenSerializer(name="student1", age=18)
 
     assert student.name == "student1"
     assert student.courses is None
@@ -270,7 +270,7 @@ def test_create_relational_fields() -> None:
     assert student.profile is None
 
     # test profile serializer
-    class ProfileSerializer(TSerializer):
+    class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
 
@@ -290,7 +290,7 @@ def test_create_relational_fields() -> None:
 
     # test bag serializer
 
-    class BagSerializer(TSerializer):
+    class BagSerializer(Serializer):
         class Meta:
             model = Bag
 
@@ -307,7 +307,7 @@ def test_create_relational_fields() -> None:
     assert bag.student_id == 1
 
     # test course serializer
-    class CourseSerializer(TSerializer):
+    class CourseSerializer(Serializer):
         class Meta:
             model = Course
 
@@ -332,20 +332,20 @@ def test_create_relational_fields() -> None:
 def test_meta() -> None:
     with pytest.raises(ValueError):
 
-        class NoModelSerializer(TSerializer):
+        class NoModelSerializer(Serializer):
             class Meta:
                 foo = "bar"
 
     # test include exclude conflict
     with pytest.raises(ValueError):
 
-        class IncludeExcludeConfict(TSerializer):
+        class IncludeExcludeConfict(Serializer):
             class Meta:
                 model = Student
                 include = ["name"]
                 exclude = ["name"]
 
-    class IncludeSerializer(TSerializer):
+    class IncludeSerializer(Serializer):
         class Meta:
             model = Student
             include = ["name"]
@@ -355,5 +355,5 @@ def test_meta() -> None:
 
     with pytest.raises(ValueError):
 
-        class NoMetaSerializer(TSerializer):
+        class NoMetaSerializer(Serializer):
             pass

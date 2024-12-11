@@ -3,12 +3,34 @@ import typing as t
 from importlib import import_module
 
 from unfazed.protocol import MiddleWare
+from unfazed.type import HttpMethod
 
 from .registry import _flatten_patterns
 from .routing import Route
 
 
-def include(route_path: str) -> t.Sequence[Route]:
+def include(route_path: str) -> t.List[Route]:
+    """
+    Convert a route module path to a list of Route.
+
+    Raises:
+        ValueError: If the route module does not have a 'patterns' list.
+        ValueError: If the route module does not have a list of Route.
+
+    Usage:
+
+    ```python
+
+    from unfazed.route import include, path
+
+    patterns = [
+        path("/foo", routes=include("module.routes")),
+    ]
+
+
+    ```
+
+    """
     route_module = import_module(route_path)
     app_label = route_path.rsplit(".", 1)[0]
 
@@ -27,24 +49,65 @@ def include(route_path: str) -> t.Sequence[Route]:
     return patterns
 
 
+@t.overload
+def path(
+    path: str,
+    *,
+    endpoint: t.Callable,
+    methods: t.List[HttpMethod] | None = None,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    include_in_schema: bool = True,
+    tags: t.List[str] | None = None,
+) -> Route: ...
+
+
+@t.overload
+def path(
+    path: str,
+    *,
+    routes: t.List[Route] | None = None,
+    methods: t.List[HttpMethod] | None = None,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    include_in_schema: bool = True,
+    tags: t.List[str] | None = None,
+) -> t.List[Route]: ...
+
+
 def path(
     path: str,
     *,
     endpoint: t.Callable | None = None,
-    routes: t.Sequence[Route] | None = None,
-    methods: t.Sequence[str] = None,
-    name: str = None,
-    app_label: str = None,
-    middlewares: t.Sequence[t.Type[MiddleWare]] = None,
+    routes: t.List[Route] | None = None,
+    methods: t.List[HttpMethod] | None = None,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[t.Type[MiddleWare]] | None = None,
     include_in_schema: bool = True,
-    tags: t.Union[str, t.List[str]] = None,
-) -> Route | t.Sequence[Route]:
+    tags: t.List[str] | None = None,
+) -> Route | t.List[Route]:
     """
+
+    Create a Route or a list of Route.
+
+    Raises:
+        ValueError: If exactly one of 'endpoint' or 'routes' is not provided.
+        ValueError: If 'endpoint' is not a function.
+
+    Usage:
+
+    ```python
+    from unfazed.route import path, include
+
     routes = [
         path("/foo", endpoint=home),
         path("/bar", routes=subpaths),
         path("/foobar", routes=include("module.routes.routes")),
     ]
+    ```
     """
     if not (bool(endpoint) ^ bool(routes)):
         raise ValueError(
@@ -58,22 +121,24 @@ def path(
                 endpoint,
                 methods=methods,
                 name=name,
-                middleware=middlewares,
+                middlewares=middlewares,
                 app_label=app_label,
                 include_in_schema=include_in_schema,
                 tags=tags,
             )
+
         else:
             raise ValueError(f"endpoint {endpoint} must be a function")
 
-    else:
+    elif routes:
         ret = []
         for route in routes:
             if not isinstance(route, Route):
                 raise ValueError(f"error for {path}: routes should be a list of Route")
 
             route.update_path(path + route.path)
-            route.load_middlewares(middlewares)
+            if middlewares:
+                route.load_middlewares(middlewares)
 
             if not route.app_label:
                 route.app_label = app_label
@@ -81,3 +146,6 @@ def path(
             ret.append(route)
 
         return ret
+
+    else:
+        return []

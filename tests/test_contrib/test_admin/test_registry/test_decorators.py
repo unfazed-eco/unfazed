@@ -2,23 +2,23 @@ from tortoise import Model, fields
 
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
 from unfazed.http import HttpRequest
-from unfazed.serializer.tortoise import TSerializer
+from unfazed.serializer import Serializer
 
 
 class Student(Model):
-    name: str = fields.CharField(max_length=255)
-    age: int = fields.IntField()
+    name = fields.CharField(max_length=255)
+    age = fields.IntField()
 
 
-class StudentSerializer(TSerializer):
+class StudenSerializer(Serializer):
     class Meta:
         model = Student
 
 
-async def test_decorator():
+async def test_decorator() -> None:
     admin_collector.clear()
 
-    @register(StudentSerializer)
+    @register(StudenSerializer)
     class StudentAdmin(ModelAdmin):
         @action(name="test_action", confirm=True)
         def test_action(self, request: HttpRequest | None = None) -> str:
@@ -28,14 +28,10 @@ async def test_decorator():
         async def test_action2(self, request: HttpRequest | None = None) -> str:
             return "test_action2"
 
-        @property
-        def name(self):
-            return "StudentAdmin"
-
     assert "StudentAdmin" in admin_collector
 
-    ins = admin_collector["StudentAdmin"]
-    assert ins.serializer == StudentSerializer
+    ins: ModelAdmin = admin_collector["StudentAdmin"]
+    assert ins.serializer == StudenSerializer
 
     actions = ins.get_actions()
 

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import typing as t
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +11,7 @@ from unfazed.core import Unfazed
 from unfazed.lifespan import lifespan_handler
 
 HOST = os.getenv("REDIS_HOST", "redis")
+
 _Setting = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_launch",
@@ -65,7 +67,7 @@ _Setting = {
     "VERSION": "0.1.0",
 }
 
-Setting = UnfazedSettings(**_Setting)
+Setting = UnfazedSettings.model_validate(_Setting)
 
 
 async def test_app_launch() -> None:
@@ -78,21 +80,12 @@ async def test_app_launch() -> None:
     await unfazed.setup()
     assert unfazed.ready is True
 
-    unfazed_dict = unfazed.to_dict()
-
-    assert "settings" in unfazed_dict
-    assert "routes" in unfazed_dict
-    assert "middlewares" in unfazed_dict
-    assert "apps" in unfazed_dict
-    assert "lifespan" in unfazed_dict
-    assert "commands" in unfazed_dict
-
 
 async def test_failed_unfazed() -> None:
     unfazed = Unfazed(settings=Setting)
 
     # test loading state
-    async def new_app_center_setup(self):
+    async def new_app_center_setup(self: t.Any) -> None:
         await asyncio.sleep(1)
 
     with patch.object(AppCenter, "setup", new=new_app_center_setup):

@@ -43,7 +43,7 @@ class AbstractUser(BaseModel):
     def UserCls(
         cls,
     ) -> t.Annotated[
-        t.Type["AbstractUser"],
+        t.Type[t.Self],
         Doc(description="A model cls inherited from AbstractUser"),
     ]:
         auth_setting: UnfazedContribAuthSettings = settings[
@@ -52,7 +52,7 @@ class AbstractUser(BaseModel):
         user_cls = import_string(auth_setting.USER_MODEL)
         return user_cls
 
-    async def query_roles(self):
+    async def query_roles(self) -> t.List["Role"]:
         await self.fetch_related("roles", "groups")
 
         ret = list(self.roles)
@@ -97,6 +97,8 @@ class Group(BaseModel):
         db_constraint=False,
     )
 
+    roles: ManyToManyRelation["Role"]
+
 
 class Role(BaseModel):
     class Meta:
@@ -134,7 +136,10 @@ class Role(BaseModel):
 
     async def has_permission(self, access: str) -> bool:
         await self.fetch_related("permissions")
-        return any([p.access == access for p in self.permissions])
+        for permission in self.permissions:
+            if permission.access == access:
+                return True
+        return False
 
 
 class Permission(BaseModel):
@@ -143,3 +148,5 @@ class Permission(BaseModel):
 
     access = fields.CharField(max_length=255)
     remark = fields.TextField(default="")
+
+    roles: ManyToManyRelation["Role"]

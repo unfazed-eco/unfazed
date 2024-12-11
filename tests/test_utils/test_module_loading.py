@@ -5,7 +5,7 @@ import pytest
 from unfazed.utils import import_setting, import_string
 
 
-def test_import_string():
+def test_import_string() -> None:
     with pytest.raises(ImportError):
         import_string("")
 
@@ -13,7 +13,7 @@ def test_import_string():
     assert module.__name__ == "Unfazed"
 
 
-def test_import_setting():
+def test_import_setting() -> None:
     with pytest.raises(ValueError):
         import_setting("abc")
 

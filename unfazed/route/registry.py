@@ -7,15 +7,18 @@ if t.TYPE_CHECKING:
     from unfazed.app import AppCenter  # pragma: no cover
 
 
-def _flatten_patterns(
-    patterns: t.Sequence[Route | t.Sequence[Route]],
-) -> t.Sequence[Route]:
-    flat_patterns = []
+T = t.Union[Route, t.List["T"]]
+
+
+def _flatten_patterns(patterns: t.List[T]) -> t.List[Route]:
+    flat_patterns: t.List[Route] = []
     for pattern in patterns:
-        if isinstance(pattern, list):
+        if isinstance(pattern, t.List):
             flat_patterns.extend(_flatten_patterns(pattern))
-        else:
+        elif isinstance(pattern, Route):
             flat_patterns.append(pattern)
+        else:
+            continue
     return flat_patterns
 
 
@@ -25,7 +28,8 @@ def parse_urlconf(root_urlconf: str, app_center: "AppCenter") -> t.List[Route]:
     if not hasattr(root_url_module, "patterns"):
         raise ValueError(f"ROOT_URLCONF {root_urlconf} should have patterns defined")
 
-    patterns = _flatten_patterns(root_url_module.patterns)
+    module_patterns = t.cast(t.List[T], root_url_module.patterns)
+    patterns = _flatten_patterns(module_patterns)
 
     for route in patterns:
         if route.app_label and route.app_label not in app_center:

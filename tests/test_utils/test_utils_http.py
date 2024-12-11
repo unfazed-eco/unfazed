@@ -9,7 +9,7 @@ class ResponseModel(BaseModel):
     message: str
 
 
-def test_generic_response():
+def test_generic_response() -> None:
     resp1 = HttpResponse(content="Hello, World!")
 
     assert generic_response(resp1) == resp1

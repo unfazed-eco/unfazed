@@ -1,3 +1,5 @@
+import typing as t
+
 import pytest
 
 from tests.apps.auth.common.models import User
@@ -7,7 +9,7 @@ from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
 
 
 @pytest.fixture(autouse=True)
-async def setup_auth_backend_env():
+async def setup_auth_backend_env() -> t.AsyncGenerator:
     await User.all().delete()
 
     yield
@@ -31,7 +33,6 @@ async def test_default_backend() -> None:
         "account": u1.account,
         "email": u1.email,
         "is_superuser": u1.is_superuser,
-
         "platform": ctx.platform,
     }
 

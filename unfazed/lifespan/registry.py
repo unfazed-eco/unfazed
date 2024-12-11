@@ -1,7 +1,7 @@
 import typing as t
 from contextlib import asynccontextmanager
 
-from asgiref.typing import ASGIApplication
+from starlette.types import ASGIApp
 
 from unfazed.protocol import BaseLifeSpan
 
@@ -14,7 +14,7 @@ class State(t.Dict):
 
 
 class LifeSpanHandler:
-    def __init__(self):
+    def __init__(self) -> None:
         self.lifespan: t.Dict[str, BaseLifeSpan] = {}
 
         self.unfazed: "Unfazed" | None = None
@@ -24,7 +24,7 @@ class LifeSpanHandler:
             raise ValueError(f"lifespan {name} already registered")
         self.lifespan[name] = lifespan
 
-    def get(self, name: str) -> BaseLifeSpan:
+    def get(self, name: str) -> BaseLifeSpan | None:
         return self.lifespan.get(name)
 
     async def on_startup(self) -> None:
@@ -43,19 +43,17 @@ class LifeSpanHandler:
 
         return ret
 
-    def clear(self):
-        self.lifespan = {}
+    def clear(self) -> None:
+        self.lifespan.clear()
 
 
 handler = LifeSpanHandler()
 
 
 @asynccontextmanager
-async def lifespan(app: "ASGIApplication") -> t.AsyncIterator[State] | None:
+async def lifespan(app: ASGIApp) -> t.AsyncIterator[State]:
     await handler.on_startup()
-    if handler.state:
-        yield handler.state
-    else:
-        yield
+
+    yield handler.state
 
     await handler.on_shutdown()

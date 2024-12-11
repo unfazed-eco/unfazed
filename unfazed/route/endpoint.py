@@ -1,10 +1,9 @@
 import inspect
 import typing as t
 
-from asgiref.typing import ASGIReceiveCallable, ASGISendCallable, HTTPScope
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
+from starlette.types import Receive, Scope, Send
 
 from unfazed.exception import ParameterError, TypeHintRequired
 from unfazed.file import UploadFile
@@ -13,17 +12,32 @@ from unfazed.http import HttpRequest
 from . import params as p
 from . import utils as u
 
-SUPPOTED_REQUEST_TYPE = t.Union[str, int, float, t.List, BaseModel, UploadFile]
+SUPPOTED_REQUEST_TYPE = (str, int, float, t.List, BaseModel, UploadFile)
 
 
 class EndpointHandler:
+    """
+    A wrapper for endpoint function, which is responsible for solving params
+
+    make `async def endpoint(request: HttpRequest) -> Response`
+
+    to
+
+    `async def endpoint(request: HttpRequest,
+                        ctx: t.Annotated[PathModel, p.Path()],
+                        q: t.Annotated[QueryModel, p.Query()],
+                        h: t.Annotated[HeaderModel, p.Header()],
+                        c: t.Annotated[CookieModel, p.Cookie()],
+                        b: t.Annotated[JsonModel, p.Json()]) -> Response`
+
+
+    """
+
     def __init__(self, endpoint_definition: "EndPointDefinition") -> None:
         self.endpoint = endpoint_definition.endpoint
         self.endpoint_definition = endpoint_definition
 
-    async def __call__(
-        self, scope: HTTPScope, receive: ASGIReceiveCallable, send: ASGISendCallable
-    ) -> t.Any:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         request = HttpRequest(scope, receive, send)
 
         kwargs, error_list = await self.solve_params(request)
@@ -47,39 +61,63 @@ class EndpointHandler:
         params: t.Dict[str, t.Any] = {}
         error_list: t.List[Exception] = []
         if self.endpoint_definition.path_model:
-            path_params, path_err = self._slove_path_params(request)
+            path_params, path_err = self._solve_params(
+                self.endpoint_definition.path_model,
+                self.endpoint_definition.path_params,
+                request.path_params,
+            )
             params.update(path_params)
             if path_err:
                 error_list.append(path_err)
 
         if self.endpoint_definition.query_model:
-            query_params, query_err = self._slove_query_params(request)
+            query_params, query_err = self._solve_params(
+                self.endpoint_definition.query_model,
+                self.endpoint_definition.query_params,
+                t.cast(t.Dict[str, t.Any], request.query_params),
+            )
             params.update(query_params)
             if query_err:
                 error_list.append(query_err)
 
         if self.endpoint_definition.header_model:
-            header_params, header_err = self._slove_header_params(request)
+            header_params, header_err = self._solve_params(
+                self.endpoint_definition.header_model,
+                self.endpoint_definition.header_params,
+                t.cast(t.Dict[str, t.Any], request.headers),
+            )
             params.update(header_params)
             if header_err:
                 error_list.append(header_err)
 
         if self.endpoint_definition.cookie_model:
-            cookie_params, cookie_err = self._slove_cookie_params(request)
+            cookie_params, cookie_err = self._solve_params(
+                self.endpoint_definition.cookie_model,
+                self.endpoint_definition.cookie_params,
+                t.cast(t.Dict[str, t.Any], request.cookies),
+            )
             params.update(cookie_params)
             if cookie_err:
                 error_list.append(cookie_err)
 
         if self.endpoint_definition.body_model:
             if self.endpoint_definition.body_type == "json":
-                body_params, body_err = await self._slove_json_params(request)
+                body_params, body_err = self._solve_params(
+                    self.endpoint_definition.body_model,
+                    self.endpoint_definition.body_params,
+                    t.cast(t.Dict[str, t.Any], await request.json()),
+                )
                 params.update(body_params)
                 if body_err:
                     error_list.append(body_err)
 
             # handle formdata
             else:
-                form_params, form_err = await self._slove_form_params(request)
+                form_params, form_err = self._solve_params(
+                    self.endpoint_definition.body_model,
+                    self.endpoint_definition.body_params,
+                    t.cast(t.Dict[str, t.Any], await request.form()),
+                )
                 params.update(form_params)
                 if form_err:
                     error_list.append(form_err)
@@ -88,10 +126,10 @@ class EndpointHandler:
 
     def _solve_params(
         self,
-        model_cls: BaseModel,
-        endpoint_params: t.Dict[str, t.Tuple[t.Type, BaseModel | FieldInfo]],
-        request_params: t.Dict[str, t.Any],
-    ) -> t.Tuple[t.Dict[str, t.Any], t.List[Exception]]:
+        model_cls: t.Type[BaseModel],
+        endpoint_params: t.Mapping[str, t.Tuple[t.Type, p.Param]],
+        request_params: t.Mapping[str, t.Any],
+    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
         ret: t.Dict[str, t.Any] = {}
         ret_err: Exception | None = None
 
@@ -121,68 +159,17 @@ class EndpointHandler:
 
         return ret, ret_err
 
-    def _slove_path_params(
-        self, request: HttpRequest
-    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        return self._solve_params(
-            self.endpoint_definition.path_model,
-            self.endpoint_definition.path_params,
-            request.path_params,
-        )
-
-    def _slove_query_params(
-        self, request: HttpRequest
-    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        return self._solve_params(
-            self.endpoint_definition.query_model,
-            self.endpoint_definition.query_params,
-            request.query_params,
-        )
-
-    def _slove_header_params(
-        self, request: HttpRequest
-    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        return self._solve_params(
-            self.endpoint_definition.header_model,
-            self.endpoint_definition.header_params,
-            request.headers,
-        )
-
-    def _slove_cookie_params(
-        self, request: HttpRequest
-    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        return self._solve_params(
-            self.endpoint_definition.cookie_model,
-            self.endpoint_definition.cookie_params,
-            request.cookies,
-        )
-
-    async def _slove_json_params(
-        self, request: HttpRequest
-    ) -> t.Tuple[t.Dict[str, t.Any], Exception | None]:
-        return self._solve_params(
-            self.endpoint_definition.body_model,
-            self.endpoint_definition.body_params,
-            await request.json(),
-        )
-
-    async def _slove_form_params(self, request: HttpRequest):
-        return self._solve_params(
-            self.endpoint_definition.body_model,
-            self.endpoint_definition.body_params,
-            await request._get_form(),
-        )
-
 
 class EndPointDefinition(BaseModel):
     endpoint: t.Callable
-    methods: t.List[str]
+    methods: t.Set[str]
     tags: t.List[str]
     path_parm_names: t.List[str]
 
     # stage 1: convert signature to params and response
-    params: t.Optional[t.Dict[str, inspect.Parameter]] = None
-    response_models: t.Optional[t.List[p.ResponseSpec]] = None
+    # move to type checking
+    # params: t.Dict[str, inspect.Parameter] | None = None
+    # response_models: t.List[p.ResponseSpec] | None = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
     path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
@@ -194,16 +181,20 @@ class EndPointDefinition(BaseModel):
     body_type: t.Optional[t.Literal["json", "form"]] = None
 
     # stage 3: create path, query, header, cookie, body models
+    # move to type checking
+
+    operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    params: t.Dict[str, inspect.Parameter] | None = None
+    response_models: t.List[p.ResponseSpec] | None = None
     path_model: t.Type[BaseModel] | None = None
     query_model: t.Type[BaseModel] | None = None
     header_model: t.Type[BaseModel] | None = None
     cookie_model: t.Type[BaseModel] | None = None
     body_model: t.Type[BaseModel] | None = None
 
-    operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def __init__(self, **data):
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
         # stage 1
         self.handle_methods()
@@ -213,7 +204,7 @@ class EndPointDefinition(BaseModel):
         # stage 3
         self.build_models()
 
-    def _convert_args_to_params(self) -> t.Dict[str, inspect.Parameter]:
+    def _convert_args_to_params(self) -> None:
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
 
@@ -263,7 +254,7 @@ class EndPointDefinition(BaseModel):
 
         self.params = ret
 
-    def _convert_return_to_response(self):
+    def _convert_return_to_response(self) -> None:
         if self.response_models is None:
             self.response_models = []
         else:
@@ -289,13 +280,15 @@ class EndPointDefinition(BaseModel):
 
             self.response_models = response_models
 
-    def handle_signature(self):
+    def handle_signature(self) -> None:
         self._convert_args_to_params()
         self._convert_return_to_response()
 
-    def dispatch_params(self):
+    def dispatch_params(self) -> None:
         has_body_field = False
         has_form_field = False
+
+        self.params = self.params or {}
         for _, param in self.params.items():
             annotation = param.annotation
 
@@ -349,9 +342,7 @@ class EndPointDefinition(BaseModel):
                     self.path_params[param.name] = (annotation, p.Path())
 
                 else:
-                    if isinstance(annotation, t.Type) and issubclass(
-                        annotation, BaseModel
-                    ):
+                    if issubclass(annotation, BaseModel):
                         if has_form_field:
                             raise ValueError(
                                 f"Error for {self.endpoint_name}: Cannot set Json field and form field at the same time"
@@ -366,7 +357,7 @@ class EndPointDefinition(BaseModel):
         if has_form_field:
             self.body_type = "form"
 
-    def handle_methods(self):
+    def handle_methods(self) -> None:
         # for openapi
         if "HEAD" in self.methods:
             self.methods.remove("HEAD")
@@ -375,7 +366,7 @@ class EndPointDefinition(BaseModel):
     def endpoint_name(self) -> str:
         return f"{self.endpoint.__module__}.{self.endpoint.__name__}"
 
-    def build_models(self):
+    def build_models(self) -> None:
         self.path_model = self.create_param_model(
             self.path_params,
             f"{self.endpoint.__name__.capitalize()}PathModel",
@@ -409,7 +400,7 @@ class EndPointDefinition(BaseModel):
         )
 
     @property
-    def param_models(self) -> t.List[BaseModel | None]:
+    def param_models(self) -> t.List[t.Type[BaseModel] | None]:
         return [
             self.path_model,
             self.query_model,
@@ -419,7 +410,7 @@ class EndPointDefinition(BaseModel):
 
     def create_param_model(
         self,
-        params: t.Dict[str, t.Tuple[t.Type, p.Param]],
+        params: t.Dict[str, t.Tuple[t.Type[BaseModel], t.Annotated[t.Any, "p.Param"]]],
         model_name: str,
         in_: str | None = None,
         style_: str | None = None,
@@ -427,15 +418,15 @@ class EndPointDefinition(BaseModel):
         if not params:
             return None
 
-        json_schema_extra = {}
+        json_schema_extra: t.Dict[str, t.Any] = {}
         if in_:
             json_schema_extra["in_"] = in_
         if style_:
             json_schema_extra["style_"] = style_
 
         fields: t.List[str] = []
-        bases: t.List[BaseModel] = []
-        field_difinitions: t.Dict[str, p.Param] = {}
+        bases: t.List[t.Type[BaseModel]] = []
+        field_difinitions: t.Dict[str, t.Annotated[t.Any, "p.Parms or ConfigDict"]] = {}
 
         for name, define in params.items():
             annotation: t.Type
@@ -482,12 +473,15 @@ class EndPointDefinition(BaseModel):
         for base in bases:
             config_dict.update(base.model_config)
 
-        if "json_schema_extra" in config_dict:
+        if "json_schema_extra" in config_dict and isinstance(
+            config_dict["json_schema_extra"], t.Dict
+        ):
             config_dict["json_schema_extra"].update(json_schema_extra)
         else:
             config_dict["json_schema_extra"] = json_schema_extra
 
         field_difinitions["model_config"] = config_dict
+
         return create_model(
             model_name,
             __base__=tuple(bases) or None,

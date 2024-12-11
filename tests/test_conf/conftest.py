@@ -1,5 +1,6 @@
 import os
 import sys
+import typing as t
 
 import pytest
 
@@ -8,7 +9,7 @@ from unfazed.core import Unfazed
 
 
 @pytest.fixture(autouse=True, scope="package")
-async def setup_conf_unfazed():
+async def setup_conf_unfazed() -> t.AsyncGenerator[Unfazed, None]:
     settings.clear()
 
     os.environ["UNFAZED_SETTINGS_MODULE"] = "tests.test_conf.entry.settings"

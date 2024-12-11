@@ -6,21 +6,23 @@ from unfazed import utils as u
 from unfazed.const import UNFAZED_SETTINGS_MODULE
 from unfazed.utils import Storage
 
+T = t.TypeVar("T", bound=BaseModel)
 
-class SettingsProxy(Storage[t.Type[BaseModel]]):
+
+class SettingsProxy(Storage[T]):
     unfazed_settings_module = UNFAZED_SETTINGS_MODULE
 
     def __init__(self) -> None:
         super().__init__()
-        self._settingskv = None
+        self._settingskv: t.Dict[str, t.Any] | None = None
 
     @property
-    def settingskv(self) -> None:
+    def settingskv(self) -> t.Dict[str, t.Any]:
         if self._settingskv is None:
             self._settingskv = u.import_setting(self.unfazed_settings_module)
         return self._settingskv
 
-    def guess_client_cls(self, alias: str) -> t.Type[BaseModel]:
+    def guess_client_cls(self, alias: str) -> t.Type[T]:
         if alias == "UNFAZED_SETTINGS":
             client_str = "unfazed.conf.UnfazedSettings"
 
@@ -36,7 +38,7 @@ class SettingsProxy(Storage[t.Type[BaseModel]]):
 
         return u.import_string(client_str)
 
-    def __getitem__(self, key: str) -> BaseModel:
+    def __getitem__(self, key: str) -> T:
         if key in self.storage:
             return self.storage[key]
 
@@ -46,7 +48,7 @@ class SettingsProxy(Storage[t.Type[BaseModel]]):
             )
 
         client_cls = self.guess_client_cls(key)
-        client = client_cls(**self.settingskv[key])
+        client = client_cls.model_validate(self.settingskv[key])
         self.storage[key] = client
 
         return client
@@ -56,4 +58,4 @@ class SettingsProxy(Storage[t.Type[BaseModel]]):
         return super().clear()
 
 
-settings = SettingsProxy()
+settings: SettingsProxy = SettingsProxy()

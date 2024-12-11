@@ -7,7 +7,7 @@ if t.TYPE_CHECKING:
 
 
 class AdminWakeup(BaseLifeSpan):
-    async def startup(self) -> None:
+    async def on_startup(self) -> None:
         # find all apps in unfazed.app_center
         # load all admin.py in each app
 

@@ -4,19 +4,18 @@ from functools import cached_property
 from tortoise import Model
 
 from unfazed.http import HttpRequest
-from unfazed.protocol import BaseAdmin
 
 from .models import AbstractUser
 
 
-class AuthMixin(BaseAdmin):
+class AuthMixin:
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:
-        model: Model = self.serializer.Meta.model
+        model: t.Type[Model] = self.serializer.Meta.model  # type: ignore
         return model.describe()
 
     @property
-    def permission_prefix(self):
+    def permission_prefix(self) -> str:
         return f"{self.model_description['app']}.{self.model_description['table']}"
 
     @property
@@ -44,26 +43,34 @@ class AuthMixin(BaseAdmin):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
-    async def has_view_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_view_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.view_permission)
 
-    async def has_change_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_change_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.change_permission)
 
-    async def has_delete_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_delete_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.delete_permission)
 
-    async def has_create_permission(self, request: HttpRequest, *args, **kw) -> bool:
+    async def has_create_permission(
+        self, request: HttpRequest, *args: t.Any, **kw: t.Any
+    ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.create_permission)
 
     async def has_action_permission(
-        self, request: HttpRequest, action: str, *args, **kw
+        self, request: HttpRequest, action: str, *args: t.Any, **kw: t.Any
     ) -> bool:
         user: AbstractUser = request.user
         return await user.has_permission(self.action_permission(action))

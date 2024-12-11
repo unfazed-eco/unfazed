@@ -17,7 +17,7 @@ def pytest_collection_modifyitems(items: t.List[Item]) -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def use_test_db() -> t.Any:
+def use_test_db() -> t.Generator:
     # refer: Unfazed/docker-compose.yml
 
     host = os.getenv("MYSQL_HOST", "mysql")

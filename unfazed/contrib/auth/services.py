@@ -45,16 +45,16 @@ class AuthService:
         session_info, resp = await backend.login(ctx)
         return session_info, resp
 
-    async def logout(self, session: t.Dict) -> t.Any:
-        if "platform" in session:
-            platform = session["platform"]
+    async def logout(self, session_info: t.Dict[str, t.Any]) -> t.Any:
+        if "platform" in session_info:
+            platform = session_info["platform"]
         else:
             platform = "default"
         backend = self.choose_backend(platform)
-        resp = await backend.logout(session)
+        resp = await backend.logout(session_info)
         return resp
 
     async def register(self, ctx: RegisterCtx) -> t.Any:
         backend = self.choose_backend(ctx.platform)
-        ret = await backend.register(ctx)
-        return ret
+        await backend.register(ctx)
+        return {}

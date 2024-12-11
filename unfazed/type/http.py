@@ -12,7 +12,7 @@ HttpMethod = t.Literal[
 ]
 
 GenericReponse = t.Annotated[
-    t.Union[str, t.Dict[str, t.Any], BaseModel, "HttpResponse"],
+    t.Union[str, t.Dict[str, t.Any], BaseModel, "HttpResponse", t.List],
     Doc(
         description="""
         For gereric response, it can be a string, a dict or a pydantic model.
@@ -25,3 +25,9 @@ GenericReponse = t.Annotated[
         """,
     ),
 ]
+
+
+Content = t.Union[str, bytes, memoryview]
+SyncContentStream = t.Iterable[Content]
+AsyncContentStream = t.AsyncIterable[Content]
+ContentStream = t.Union[AsyncContentStream, SyncContentStream]

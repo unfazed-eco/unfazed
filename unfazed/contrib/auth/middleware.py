@@ -1,11 +1,6 @@
 import typing as t
 
-from asgiref.typing import (
-    ASGIApplication,
-    ASGIReceiveCallable,
-    ASGISendCallable,
-    HTTPScope,
-)
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed.conf import settings
 from unfazed.contrib.auth.models import AbstractUser
@@ -16,16 +11,14 @@ if t.TYPE_CHECKING:
 
 
 class AuthenticationMiddleware:
-    def __init__(self, app: ASGIApplication):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
         self.setting: UnfazedContribAuthSettings = settings[
             "UNFAZED_CONTRIB_AUTH_SETTINGS"
         ]
 
-    async def __call__(
-        self, scope: HTTPScope, receive: ASGISendCallable, send: ASGIReceiveCallable
-    ):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return
@@ -34,7 +27,7 @@ class AuthenticationMiddleware:
             await self.app(scope, receive, send)
             return
 
-        session: "SessionBase" = scope.get("session")
+        session: "SessionBase" = t.cast("SessionBase", scope.get("session"))
         if session is None or (self.setting.SESSION_KEY not in session):
             user = None
 

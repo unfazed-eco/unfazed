@@ -1,4 +1,4 @@
-from typing import List
+import typing as t
 
 from aerich import Command as AerichCommand
 from aerich.enums import Color
@@ -10,7 +10,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "aerich: Show current available heads in migrate location."
 
-    def add_arguments(self) -> List[Option | None]:
+    def add_arguments(self) -> t.List[Option]:
         return [
             Option(
                 ["--location", "-l"],
@@ -21,8 +21,10 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option) -> None:
+    async def handle(self, **option: t.Any) -> None:
         location = option.get("location")
+        if not self.unfazed.settings.DATABASE:
+            return secho("No database found in settings", fg=Color.yellow)
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
         await aerich_cmd.init()

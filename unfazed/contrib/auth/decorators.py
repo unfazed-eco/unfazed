@@ -8,14 +8,16 @@ from unfazed.http import HttpRequest, HttpResponse
 
 def login_required(func: t.Callable) -> t.Callable:
     @wraps(func)
-    async def asyncwrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    async def asyncwrapper(
+        request: HttpRequest, *args: t.Any, **kwargs: t.Any
+    ) -> HttpResponse:
         if not request.user:
             raise LoginRequired()
 
         return await func(request, *args, **kwargs)
 
     @wraps(func)
-    def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def wrapper(request: HttpRequest, *args: t.Any, **kwargs: t.Any) -> HttpResponse:
         if not request.user:
             raise LoginRequired()
 
@@ -30,7 +32,9 @@ def login_required(func: t.Callable) -> t.Callable:
 def permission_required(perm: str) -> t.Callable:
     def decorator(func: t.Callable) -> t.Callable:
         @wraps(func)
-        async def asyncwrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        async def asyncwrapper(
+            request: HttpRequest, *args: t.Any, **kwargs: t.Any
+        ) -> HttpResponse:
             if not await request.user.has_permission(perm):
                 raise PermissionDenied(f"Permission {perm} is required")
 

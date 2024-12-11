@@ -1,14 +1,8 @@
 import typing as t
 
-from asgiref.typing import (
-    ASGIApplication,
-    ASGIReceiveCallable,
-    ASGISendCallable,
-    HTTPScope,
-)
 from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
-from starlette.types import Message
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from unfazed.conf import settings
 from unfazed.contrib.session.backends.base import SessionBase
@@ -19,15 +13,13 @@ from unfazed.utils import import_string
 
 
 class SessionMiddleware:
-    def __init__(self, app: ASGIApplication):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
         self.setting: SessionSettings = settings["SESSION_SETTINGS"]
         self.engine_cls: t.Type[SessionBase] = import_string(self.setting.engine)
 
-    async def __call__(
-        self, scope: HTTPScope, receive: ASGISendCallable, send: ASGIReceiveCallable
-    ):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return
@@ -43,7 +35,7 @@ class SessionMiddleware:
         await session_store.load()
         scope["session"] = session_store
 
-        async def wrapped_send(message: Message):
+        async def wrapped_send(message: Message) -> None:
             if message["type"] == ASGIType.HTTP_RESPONSE_START:
                 headers = MutableHeaders(scope=message)
 
@@ -56,7 +48,7 @@ class SessionMiddleware:
                     if session_store:
                         header_value = build_cookie(
                             self.setting.cookie_name,
-                            session_store.session_key,
+                            t.cast(str, session_store.session_key),
                             max_age=self.setting.cookie_max_age,
                             expires=session_store.get_expiry_age(),
                             path=self.setting.cookie_path,

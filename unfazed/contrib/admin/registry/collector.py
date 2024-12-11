@@ -1,38 +1,30 @@
 import typing as t
 
 if t.TYPE_CHECKING:
-    from .models import BaseAdmin  # pragma: no cover
+    from .models import (  # pragma: no cover
+        BaseAdmin,
+        ModelAdmin,
+        ModelInlineAdmin,
+        ToolAdmin,
+    )
+
+from unfazed.utils import Storage
+
+T = t.TypeVar(
+    "T", bound=t.Union["BaseAdmin", "ModelAdmin", "ModelInlineAdmin", "ToolAdmin"]
+)
 
 
-class AdminCollector:
-    def __init__(self) -> None:
-        self._store: t.Dict[str, "BaseAdmin"] = {}
-
-    def set(self, key: str, value: "BaseAdmin", override: bool = False) -> None:
-        if key in self._store:
+class AdminCollector(Storage[T]):
+    def set(self, key: str, value: T, override: bool = False) -> None:
+        if key in self.storage:
             if not override:
                 raise KeyError(f"Key {key} already exists in the store")
-        self._store[key] = value
+        self.storage[key] = value
 
-    def __getitem__(self, key: str) -> "BaseAdmin":
-        if key not in self._store:
-            raise KeyError(f"Key {key} not found in the store")
-
-        return self._store[key]
-
-    def __delitem__(self, key: str) -> None:
-        if key not in self._store:
-            raise KeyError(f"Key {key} not found in the store")
-        del self._store[key]
-
-    def __contains__(self, key: str) -> bool:
-        return key in self._store
-
-    def __iter__(self) -> t.Iterator[t.Tuple[str, "BaseAdmin"]]:
-        return iter(self._store.items())
-
-    def clear(self) -> None:
-        self._store = {}
+    def __iter__(self) -> t.Iterator[t.Tuple[str, T]]:
+        for key, value in self.storage.items():
+            yield key, value
 
 
-admin_collector = AdminCollector()
+admin_collector: AdminCollector = AdminCollector()

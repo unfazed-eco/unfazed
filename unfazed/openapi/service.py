@@ -14,12 +14,16 @@ class OpenApiService:
         return settings["UNFAZED_SETTINGS"]  # pragma: no cover
 
     @classmethod
-    def get_docs(cls):
+    def get_docs(cls) -> str:
         unfazed_setting: UnfazedSettings = cls.get_settings()
 
         openapi_setting = unfazed_setting.OPENAPI
+
+        if not openapi_setting:
+            raise ValueError("OpenAPI settings not found")
+
         return cls._get_docs(
-            unfazed_setting.PROJECT_NAME,
+            unfazed_setting.PROJECT_NAME or "Unfazed",
             openapi_setting.json_route,
             openapi_setting.swagger_ui.css,
             openapi_setting.swagger_ui.js,
@@ -50,15 +54,21 @@ class OpenApiService:
 
     @classmethod
     def build_openapi_json(cls) -> t.Dict[str, t.Any]:
+        if not OpenApi.schema:
+            raise ValueError("OpenAPI schema not found")
         return OpenApi.schema
 
     @classmethod
-    def get_redoc(cls):
+    def get_redoc(cls) -> str:
         unfazed_setting: UnfazedSettings = cls.get_settings()
 
         openapi_setting = unfazed_setting.OPENAPI
+
+        if not openapi_setting:
+            raise ValueError("OpenAPI settings not found")
+
         return cls._get_redoc(
-            unfazed_setting.PROJECT_NAME,
+            unfazed_setting.PROJECT_NAME or "Unfazed",
             openapi_setting.json_route,
             openapi_setting.redoc.js,
         )

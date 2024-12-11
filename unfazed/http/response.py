@@ -6,22 +6,17 @@ from urllib.parse import quote
 
 import anyio
 import orjson as json
-from asgiref.typing import ASGIReceiveCallable, ASGISendCallable, Scope
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.concurrency import iterate_in_threadpool
 from starlette.responses import Response
+from starlette.types import Receive, Scope, Send
 from zoneinfo import ZoneInfo
 
 from unfazed.protocol import ASGIType
+from unfazed.type import ContentStream
 
-Content = t.Union[str, bytes, memoryview]
-SyncContentStream = t.Iterable[Content]
-AsyncContentStream = t.AsyncIterable[Content]
-ContentStream = t.Union[AsyncContentStream, SyncContentStream]
-
-
-T = t.TypeVar("T", t.Dict, t.List, str, bytes, BaseModel, ContentStream)
+T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentStream])
 
 
 class HttpResponse[T](Response):
@@ -29,7 +24,7 @@ class HttpResponse[T](Response):
 
     def __init__(
         self,
-        content: T = None,
+        content: T | None = None,
         status_code: int = 200,
         headers: t.Mapping[str, str] | None = None,
         media_type: str | None = None,
@@ -38,7 +33,7 @@ class HttpResponse[T](Response):
         super().__init__(content, status_code, headers, media_type, background)
 
 
-class PlainTextResponse(HttpResponse[T]):
+class PlainTextResponse(HttpResponse[str]):
     pass
 
 
@@ -46,15 +41,17 @@ class HtmlResponse(HttpResponse[str]):
     media_type = "text/html"
 
 
-class JsonResponse(HttpResponse[T]):
+class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
     media_type = "application/json"
 
     def render(self, content: T) -> bytes:
-        if isinstance(content, (str, bytes)):
-            raise ValueError(f"content {content} must be dumpable in JsonResponse")
         if isinstance(content, BaseModel):
-            content = content.model_dump()
-        return json.dumps(content)
+            ret = json.dumps(content.model_dump())
+        elif isinstance(content, (dict, list)):
+            ret = json.dumps(content)
+        else:
+            raise ValueError(f"content {content!r} must be dumpable in JsonResponse")
+        return ret
 
 
 class RedirctResponse(HttpResponse):
@@ -75,6 +72,25 @@ class RedirctResponse(HttpResponse):
 
 
 class StreamingResponse(HttpResponse[ContentStream]):
+    """
+    StreamingResponse is a response class that can be used to stream large
+
+    ```python
+
+    from unfazed.http import StreamingResponse
+
+    async def stream_large_file(request) -> StreamingResponse:
+
+        def content():
+            for chunk in large_file:
+                yield chunk
+
+        return StreamingResponse(content())
+
+    ```
+
+    """
+
     def __init__(
         self,
         content: ContentStream,
@@ -92,13 +108,13 @@ class StreamingResponse(HttpResponse[ContentStream]):
         self.background = background
         self.init_headers(headers)
 
-    async def listen_for_disconnect(self, receive: ASGIReceiveCallable) -> None:
+    async def listen_for_disconnect(self, receive: Receive) -> None:
         while True:
             message = await receive()
             if message["type"] == ASGIType.HTTP_DISCONNECT:
                 break
 
-    async def stream_response(self, send: ASGISendCallable) -> None:
+    async def stream_response(self, send: Send) -> None:
         await send(
             {
                 "type": ASGIType.HTTP_RESPONSE_START,
@@ -117,9 +133,7 @@ class StreamingResponse(HttpResponse[ContentStream]):
             {"type": ASGIType.HTTP_RESPONSE_BODY, "body": b"", "more_body": False}
         )
 
-    async def __call__(
-        self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         async with anyio.create_task_group() as task_group:
 
             async def wrap(func: t.Callable[[], t.Awaitable[None]]) -> None:
@@ -135,7 +149,10 @@ class StreamingResponse(HttpResponse[ContentStream]):
 
 class RangeFileHandler:
     def __init__(
-        self, path: str, download_name: str = None, chunk_size: int = 65536
+        self,
+        path: str,
+        download_name: str | None = None,
+        chunk_size: int = 65536,
     ) -> None:
         if not os.path.exists(path):
             raise FileNotFoundError(f"File {path} not found")
@@ -207,11 +224,13 @@ class RangeFileHandler:
 
 
 def parse_request(
-    handler: RangeFileHandler, headers: t.Dict[str, t.Any]
+    handler: RangeFileHandler, headers: t.Dict[str, str]
 ) -> t.Tuple[int, int, int]:
     header_if_range = headers.get("If-Range", None)
     header_range = headers.get("Range", None)
 
+    range_start: int | str
+    range_end: int | str
     range_start, range_end = 0, handler.file_size
 
     # compare If-Range and etag if If-Range existed
@@ -227,6 +246,7 @@ def parse_request(
     if header_range and continue_download:
         # we only support "bytes =start-end"
         # if other range format, download the whole file
+
         try:
             range_start, range_end = header_range.split("=")[1].split("-")
         except Exception:
@@ -252,16 +272,34 @@ def parse_request(
 
 
 class FileResponse(StreamingResponse):
+    """
+    FileResponse is a response class that can be used to stream large file
+    also, it can handle range request
+
+    ```python
+
+    from unfazed.http import FileResponse
+
+    async def stream_large_file(request) -> FileResponse:
+
+        return FileResponse("path/to/file")
+
+    ```
+
+    """
+
     def __init__(
         self,
-        path: str | os.PathLike[str],
+        path: str,
         filename: str | None = None,
         *,
         chunk_size: int = 65536,
-        headers: t.Mapping[str, str] | None = None,
+        headers: t.Dict[str, str] | None = None,
         background: BackgroundTask | None = None,
     ) -> None:
         handler = RangeFileHandler(path, filename, chunk_size)
+
+        headers = headers or {}
         range_start, range_end, status_code = parse_request(handler, headers)
         self.status_code = status_code
         handler.set_range(range_start, range_end)
@@ -275,7 +313,7 @@ class FileResponse(StreamingResponse):
             media_type="application/octet-stream",
         )
 
-    def build_headers(self, handler: RangeFileHandler) -> dict:
+    def build_headers(self, handler: RangeFileHandler) -> t.Dict[str, str]:
         headers = {
             "ETag": handler.etag,
             "Accept-Ranges": "bytes",

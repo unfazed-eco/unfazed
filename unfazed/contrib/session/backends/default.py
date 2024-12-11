@@ -25,9 +25,9 @@ class SigningSession(SessionBase):
             self.setting.secret_key, salt=self.SALT
         )
 
-    def generate_session_key(self) -> str | None:
+    def generate_session_key(self) -> str:
         if not self._session:
-            return None
+            return ""
         data = json.dumps(self._session)
         data_signed = self.signer.sign(data)
         data_encoded = base64.b64encode(data_signed)

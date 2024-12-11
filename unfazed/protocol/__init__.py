@@ -1,4 +1,4 @@
-from .admin import BaseAdmin
+from .admin import BaseAdmin, SerializedAdmin
 from .asgi import ASGIType
 from .auth import BaseAuthBackend
 from .cache import CacheBackend, CompressorBase, SerializerBase
@@ -7,7 +7,6 @@ from .conf import Settings
 from .lifespan import BaseLifeSpan
 from .middleware import MiddleWare
 from .orm import DataBaseDriver, Model, QuerySet
-from .serializer import BaseSerializer
 
 __all__ = [
     "MiddleWare",
@@ -17,11 +16,11 @@ __all__ = [
     "Model",
     "CacheBackend",
     "BaseLifeSpan",
-    "BaseSerializer",
     "QuerySet",
     "ASGIType",
     "SerializerBase",
     "CompressorBase",
     "BaseAdmin",
     "BaseAuthBackend",
+    "SerializedAdmin",
 ]

@@ -1,8 +1,10 @@
 import asyncio
+import typing as t
 
 import pytest
 
 from unfazed.cache import caches
+from unfazed.cache.backends.locmem import LocMemCache
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 
@@ -26,11 +28,11 @@ _Settings = {
 }
 
 
-async def test_locmem():
-    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+async def test_locmem() -> None:
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_Settings))
     await unfazed.setup()
 
-    cache = caches["loc1"]
+    cache: LocMemCache = t.cast(LocMemCache, caches["loc1"])
 
     # test set and get
     await cache.set("foo", "bar")
@@ -41,7 +43,7 @@ async def test_locmem():
     # test timeout
     await cache.set("foo3", "bar", timeout=0.5)
     await asyncio.sleep(0.6)
-    await cache.get("foo3") is None
+    assert await cache.get("foo3") is None
 
     # test incr
     await cache.set("foo4", 1)
@@ -82,8 +84,8 @@ async def test_locmem():
     assert cache._cache == {}
 
 
-async def test_without_option():
-    unfazed = Unfazed(settings=UnfazedSettings(**_Settings))
+async def test_without_option() -> None:
+    unfazed = Unfazed(settings=UnfazedSettings.model_validate(_Settings))
     await unfazed.setup()
 
     cache = caches["loc2"]

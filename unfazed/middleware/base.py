@@ -1,24 +1,36 @@
-import typing as t
+from abc import ABC, abstractmethod
 
-from starlette.middleware.base import BaseHTTPMiddleware as StarletteBaseHTTPMiddleware
-
-from unfazed.http import HttpRequest, HttpResponse
-
-RequestResponseEndpoint = t.Callable[[HttpRequest], t.Awaitable[HttpResponse]]
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
-class BaseHttpMiddleware(StarletteBaseHTTPMiddleware):
-    async def dispatch(
-        self, request: HttpRequest, call_next: RequestResponseEndpoint
-    ) -> HttpResponse:
-        """
-        Usage:
-        async def dispatch(
-            self, request: HttpRequest, call_next: RequestResponseEndpoint
-        ) -> HttpResponse:
-            # do something before calling the next middleware
-            response = await call_next(request)
-            # do something after calling the next middleware
-            return response
-        """
-        raise NotImplementedError()  # pragma: no cover
+class BaseMiddleware(ABC):
+    """
+    Base Middleware Class
+
+
+    Usage:
+
+    ```python
+
+
+    class CommonMiddleware(BaseMiddleware):
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["type"] != "http":
+                await self.app(scope, receive, send)
+                return
+
+            await self.app(scope, receive, send)
+
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    @abstractmethod
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        # if scope["type"] != "http":
+        #     await self.app(scope, receive, send)
+        #     return
+
+        raise NotImplementedError

@@ -1,7 +1,7 @@
+import typing as t
 from pathlib import Path
-from typing import List
 
-from click import Option, Parameter
+from click import Option
 from jinja2 import Template
 
 import unfazed
@@ -11,7 +11,7 @@ from unfazed.command import BaseCommand
 class Command(BaseCommand):
     help_text = "create a new project"
 
-    def add_arguments(self) -> List[Parameter | None]:
+    def add_arguments(self) -> t.List[Option]:
         return [
             Option(
                 ["--project_name", "-n"],
@@ -27,7 +27,9 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, project_name: str, location: str):
+    async def handle(self, **options: t.Any) -> None:
+        project_name = options["project_name"]
+        location = options["location"]
         template_path = Path(unfazed.__path__[0], "template/project")
 
         location_path = Path(location)
