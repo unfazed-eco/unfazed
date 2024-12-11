@@ -23,9 +23,17 @@ async def login(
 
 async def logout(request: HttpRequest) -> HttpResponse:
     s = AuthService()
-    ret = await s.logout(request.session)
-    await request.session.flush()
-    return generic_response(ret)
+    auth_settings: UnfazedContribAuthSettings = settings[
+        "UNFAZED_CONTRIB_AUTH_SETTINGS"
+    ]
+
+    if auth_settings.SESSION_KEY not in request.session:
+        return generic_response({})
+    else:
+        ret = await s.logout(request.session[auth_settings.SESSION_KEY])
+        # only delete auth_settings.SESSION_KEY
+        del request.session[auth_settings.SESSION_KEY]
+        return generic_response(ret)
 
 
 async def register(request: HttpRequest, ctx: RegisterCtx) -> HttpResponse:

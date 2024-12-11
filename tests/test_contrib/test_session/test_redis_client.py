@@ -15,7 +15,7 @@ HOST = os.getenv("REDIS_HOST", "redis")
 
 
 async def test_redis_client() -> None:
-    caches["default"] = SerializerBackend(
+    caches["default"] = SerializerBackend(  # type: ignore
         location=f"redis://{HOST}:6379",
         options={"PREFIX": "test_redis_client"},
     )

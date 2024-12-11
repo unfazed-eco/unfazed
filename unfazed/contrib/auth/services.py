@@ -2,7 +2,6 @@ import typing as t
 
 from unfazed.conf import settings
 from unfazed.contrib.auth.backends.base import BaseAuthBackend
-from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.type import Doc
 from unfazed.utils import import_string
 
@@ -46,13 +45,13 @@ class AuthService:
         session_info, resp = await backend.login(ctx)
         return session_info, resp
 
-    async def logout(self, session: SessionBase) -> t.Any:
-        if "platform" in session:
-            platform = session["platform"]
+    async def logout(self, session_info: t.Dict[str, t.Any]) -> t.Any:
+        if "platform" in session_info:
+            platform = session_info["platform"]
         else:
             platform = "default"
         backend = self.choose_backend(platform)
-        resp = await backend.logout(session)
+        resp = await backend.logout(session_info)
         return resp
 
     async def register(self, ctx: RegisterCtx) -> t.Any:

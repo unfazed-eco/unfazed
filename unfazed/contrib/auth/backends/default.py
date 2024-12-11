@@ -2,7 +2,6 @@ import typing as t
 
 from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
-from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
 
 from .base import BaseAuthBackend
@@ -65,5 +64,5 @@ class DefaultAuthBackend(BaseAuthBackend):
 
         return session_info
 
-    async def logout(self, session: SessionBase) -> t.Any:
+    async def logout(self, session: t.Dict[str, t.Any]) -> t.Any:
         return {}

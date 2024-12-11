@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
-from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.type import Doc, GenericReponse
 
 
@@ -35,4 +34,4 @@ class BaseAuthBackend(ABC):
     async def register(self, ctx: RegisterCtx) -> None: ...
 
     @abstractmethod
-    async def logout(self, session: SessionBase) -> t.Any: ...
+    async def logout(self, session: t.Dict[str, t.Dict]) -> t.Any: ...
