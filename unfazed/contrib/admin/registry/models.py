@@ -8,7 +8,7 @@ from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
-from unfazed.protocol import CacheBackend
+from unfazed.protocol import CacheBackend, SerializedAdmin
 from unfazed.schema import AdminRoute, RouteMeta
 from unfazed.serializer import Serializer
 
@@ -28,10 +28,6 @@ from .schema import (
     AdminToolSerializeModel,
 )
 from .utils import convert_field_type
-
-
-class HaveModelDump(t.Protocol):
-    def model_dump(self, *args: t.Any, **kw: t.Any) -> t.Dict[str, t.Any]: ...
 
 
 class BaseAdmin:
@@ -80,7 +76,7 @@ class BaseAdmin:
     ) -> bool:
         return request.user.is_superuser == 1
 
-    def to_serialize(self) -> HaveModelDump:
+    def to_serialize(self) -> SerializedAdmin:
         raise NotImplementedError  # pragma: no cover
 
     def get_actions(self) -> t.Dict[str, AdminAction]:
@@ -374,7 +370,7 @@ class ModelAdmin(BaseModelAdmin):
 
         return attrs
 
-    def to_serialize(self) -> HaveModelDump:
+    def to_serialize(self) -> SerializedAdmin:
         fields_map = self.get_fields()
         actions = self.get_actions()
         attrs = self.get_attrs(list(fields_map.keys()))
@@ -436,7 +432,7 @@ class ModelInlineAdmin(ModelAdmin):
         return attrs
 
     @t.override
-    def to_serialize(self) -> HaveModelDump:
+    def to_serialize(self) -> SerializedAdmin:
         fields_map = self.get_fields()
         attrs = self.get_attrs(list(fields_map.keys()))
 

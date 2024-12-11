@@ -5,7 +5,7 @@ import pytest
 
 from unfazed.conf import settings
 from unfazed.contrib.auth.middleware import AuthenticationMiddleware
-from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
+from unfazed.contrib.auth.settings import AuthBackend, UnfazedContribAuthSettings
 from unfazed.contrib.session.backends.default import SigningSession
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.core import Unfazed
@@ -40,10 +40,10 @@ def setup_middle_env() -> t.Generator:
 
     settings["UNFAZED_CONTRIB_AUTH_SETTINGS"] = UnfazedContribAuthSettings(
         BACKENDS={
-            "default": {
-                "BACKEND_CLS": "unfazed.contrib.auth.backends.DefaultAuthBackend",
-                "OPTIONS": {},
-            }
+            "default": AuthBackend(
+                BACKEND_CLS="unfazed.contrib.auth.backends.DefaultAuthBackend",
+                OPTIONS={},
+            )
         },
         USER_MODEL="tests.apps.auth.common.models.User",
     )
@@ -70,7 +70,9 @@ async def test_auth_middleware() -> None:
 
     assert scope["user"] is None
 
-    session = SigningSession(SessionSettings(**DEFAULT_SESSION_SETTINGS), "session_key")
+    session = SigningSession(
+        SessionSettings.model_validate(DEFAULT_SESSION_SETTINGS), "session_key"
+    )
 
     await session.load()
     scope = {

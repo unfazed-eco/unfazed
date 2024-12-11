@@ -11,7 +11,10 @@ SESSION_KEY2 = "unfazed_session_key2"
 async def test_default() -> None:
     # set session
     secret_key = uuid.uuid4().hex
-    session_setting = SessionSettings(SECRET=secret_key, COOKIE_DOMAIN="garena.com")
+    session_setting = SessionSettings(
+        SECRET=secret_key,
+        COOKIE_DOMAIN="unfazed.com",
+    )
 
     session = SigningSession(session_setting=session_setting, session_key=None)
 

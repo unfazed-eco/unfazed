@@ -1,4 +1,4 @@
-from .admin import BaseAdmin
+from .admin import BaseAdmin, SerializedAdmin
 from .asgi import ASGIType
 from .auth import BaseAuthBackend
 from .cache import CacheBackend, CompressorBase, SerializerBase
@@ -22,4 +22,5 @@ __all__ = [
     "CompressorBase",
     "BaseAdmin",
     "BaseAuthBackend",
+    "SerializedAdmin",
 ]

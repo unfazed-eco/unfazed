@@ -20,7 +20,7 @@ async def test_redis_client() -> None:
         options={"PREFIX": "test_redis_client"},
     )
 
-    session_setting = SessionSettings(cache_alias="default", SECRET=uuid.uuid4().hex)
+    session_setting = SessionSettings(CACHE_ALIAS="default", SECRET=uuid.uuid4().hex)
     session = CacheSession(session_setting=session_setting, session_key=None)
 
     # set session
