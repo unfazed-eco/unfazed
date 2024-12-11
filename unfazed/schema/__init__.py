@@ -1,4 +1,4 @@
-from .admin import AdminRoute, Condtion, RouteMeta
+from .admin import AdminRoute, Condition, RouteMeta
 from .cache import Cache, LocOptions, RedisOptions
 from .command import Command
 from .logging import LogConfig
@@ -16,7 +16,7 @@ __all__ = [
     "OpenAPI",
     "LocOptions",
     "RedisOptions",
-    "Condtion",
+    "Condition",
     "Relation",
     "AdminRoute",
     "RouteMeta",

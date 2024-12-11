@@ -9,6 +9,11 @@ if t.TYPE_CHECKING:
 
 
 class ModelCenter:
+    """
+    ModelCenter is a registry for orm pkg.
+
+    """
+
     def __init__(self, unfazed: "Unfazed", conf: Database | None) -> None:
         self.unfazed = unfazed
         self.conf = conf

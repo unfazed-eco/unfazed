@@ -12,32 +12,26 @@ if t.TYPE_CHECKING:
 
 
 class BaseAppConfig:
-    def __init__(
-        self,
-        unfazed: "Unfazed",
-        app_module: ModuleType,
-    ) -> None:
-        """
-        Initialize the Config object.
+    """
+    Initialize the Config object.
 
-        Args:
-            unfazed (Unfazed): The Unfazed object.
-            app_module (ModuleType): The app module.
 
-        Usage:
+    Usage:
 
-        ```python
-        # app.py
+    ```python
+    # app.py
 
-        from unfazed.app import BaseAppConfig
-        class AppConfig(BaseAppConfig):
-            async def ready(self):
-                print("AppConfig is ready!")
-        ```
+    from unfazed.app import BaseAppConfig
 
-        Returns:
-            None
-        """
+
+    class AppConfig(BaseAppConfig):
+        async def ready(self):
+            print("App is ready!")
+    ```
+
+    """
+
+    def __init__(self, unfazed: "Unfazed", app_module: ModuleType) -> None:
         self.unfazed = unfazed
         self.app_module = app_module
 
@@ -110,11 +104,6 @@ class BaseAppConfig:
     def from_entry(cls, entry: str, unfazed: "Unfazed") -> t.Self:
         """
         Load the configuration from the given entry module.
-
-        Args:
-            cls (type): The class of the configuration.
-            entry (str): The entry module to import.
-            unfazed (Unfazed): The Unfazed instance.
 
         Returns:
             Self: An instance of the configuration class.

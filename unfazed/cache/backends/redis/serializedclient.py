@@ -11,7 +11,26 @@ from unfazed.utils import import_string
 
 class SerializerBackend:
     """
-    Redis backend with serializer and compressor
+    Limited Redis backend with serializer and compressor
+    SerializerBackend can store any type of data
+
+    only supports string commands, if you need more commands,
+    please use AsyncDefaultBackend
+
+    Usage:
+
+    ```python
+
+    from unfazed.cache import caches
+
+    default: SerializerBackend = caches["default"]
+
+    await default.set("key", {"foo": "bar"})
+    await default.set("key2", 1)
+    await default.set("key3", [1, 2, 3])
+
+    ```
+
 
     """
 

@@ -35,6 +35,8 @@ class BaseCommand(ClickCommand, ABC):
             host = option["host"]
             print(f"Host: {host}")
 
+    # >>> python manage.py {command} --host 0.0.0.0
+
     ```
 
     """

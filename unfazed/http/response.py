@@ -42,6 +42,29 @@ class HtmlResponse(HttpResponse[str]):
 
 
 class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
+    """
+    Json response
+
+    Usage:
+
+    ```python
+
+    from pydantic import BaseModel
+
+
+    resp = JsonResponse({"foo": "bar"})
+    resp2 = JsonResponse([1,2,3])
+
+    class Resp(BaseModel):
+        name: str
+
+    resp3 = JsonResponse(Resp(name="unfazed"))
+
+
+    ```
+
+    """
+
     media_type = "application/json"
 
     def render(self, content: T) -> bytes:
@@ -54,7 +77,24 @@ class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
         return ret
 
 
-class RedirctResponse(HttpResponse):
+class RedirectResponse(HttpResponse):
+    """
+
+    Redirect Response
+
+
+    Usage:
+
+    ```python
+
+    from unfazed.http import RedirectResponse
+
+    resp = RedirectResponse("https://www.google.com")
+
+    ```
+
+    """
+
     def __init__(
         self,
         url: str,

@@ -80,7 +80,7 @@ async def test_start_cmd(tmp_path: Path) -> None:
     )
 
     await start_app.handle(
-        app_name="complexapp", location=str(be_path), template="complex"
+        app_name="complexapp", location=str(be_path), template="standard"
     )
 
     assert (be_path / "complexapp").exists()

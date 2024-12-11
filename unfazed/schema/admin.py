@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Condtion(BaseModel):
+class Condition(BaseModel):
     field: str
     eq: float | int | str | None = None
     lt: float | int | None = None

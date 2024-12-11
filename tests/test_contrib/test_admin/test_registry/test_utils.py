@@ -1,13 +1,13 @@
 from unfazed.contrib.admin.registry import parse_cond
-from unfazed.schema import Condtion
+from unfazed.schema import Condition
 
 
 def test_parse_cond() -> None:
-    cond1 = Condtion(
+    cond1 = Condition(
         field="name", eq=1, lt=2, gt=3, lte=4, gte=5, icontains="test", contains="test"
     )
 
-    cond2 = Condtion(
+    cond2 = Condition(
         field="name2",
         eq=1,
     )

@@ -10,6 +10,46 @@ T = t.TypeVar("T", bound=BaseModel)
 
 
 class SettingsProxy(Storage[T]):
+    """
+    Settings Proxy class for unfazed
+
+    settings will load settings from UNFAZED_SETTINGS_MODULE and cache it.
+
+    Usage:
+
+    ```python
+
+    # your_settings.py
+
+    from pydantic import BaseModel
+
+    class YourSettings(BaseModel):
+
+        YOUR_KEY: str
+        YOUR_KEY2: int
+
+
+    # settings.py
+
+    YOUR_SETTINGS = {
+        "CLIENT_CLASS": "your_settings.YourSettings",
+        "YOUR_KEY": "value",
+        "YOUR_KEY2": 1,
+
+    }
+
+    # your_services.py
+    from unfazed.conf import settings
+
+    your_settings: YourSettings = settings["YOUR_SETTINGS"]
+
+    your_settings.YOUR_KEY
+    your_settings.YOUR_KEY2
+
+    ```
+
+    """
+
     unfazed_settings_module = UNFAZED_SETTINGS_MODULE
 
     def __init__(self) -> None:

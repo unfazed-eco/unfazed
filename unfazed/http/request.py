@@ -6,9 +6,46 @@ from starlette.requests import Request
 if t.TYPE_CHECKING:
     from unfazed.contrib.auth.models import AbstractUser  # pragma: no cover
     from unfazed.contrib.session.backends.base import SessionBase  # pragma: no cover
+    from unfazed.core import Unfazed  # pragma: no cover
 
 
 class HttpRequest(Request):
+    """
+
+    HttpRequest for unfazed
+
+    Usage:
+
+    ```python
+
+    from unfazed.http import HttpRequest, HttpResponse
+
+    async def my_view(request: HttpRequest):
+
+        # get the request body as json
+        body = await request.json()
+
+        # get the request meta info
+        path = request.path
+        scheme = request.scheme
+
+        # get the session and user from the request
+        # you must have the session and user middleware installed
+        session = request.session
+
+        # you can also access the user
+        # you must have the authentication middleware installed
+        user = request.user
+
+        # you can also access the app
+        unfazed = request.unfazed
+        return HttpResponse(content="Hello, world")
+
+
+    ```
+
+    """
+
     @t.override
     async def json(self) -> t.Dict:
         """
@@ -45,3 +82,7 @@ class HttpRequest(Request):
                 "AuthenticationMiddleware must be installed to access request.user"
             )
         return self.scope.get("user", None)
+
+    @property
+    def unfazed(self) -> "Unfazed":
+        return self.scope["app"]

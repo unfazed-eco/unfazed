@@ -9,7 +9,24 @@ from unfazed.schema import RedisOptions
 
 class AsyncDefaultBackend:
     """
-    Redis cache backend
+    Full featured Redis cache backend
+
+    due to redis not support prefix, so we need to handle it manually
+    call `make_key` to add prefix to key
+
+    Usage:
+
+    ```python
+
+    from unfazed.cache import caches
+
+    default: AsyncDefaultBackend = caches["default"]
+
+    await default.set(default.make_key("key"), "value")
+
+    ret = await default.get(default.make_key("key"))
+
+    ```
 
     """
 

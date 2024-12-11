@@ -12,7 +12,7 @@ from unfazed.http import (
     HttpResponse,
     JsonResponse,
     PlainTextResponse,
-    RedirctResponse,
+    RedirectResponse,
     StreamingResponse,
 )
 from unfazed.http.response import RangeFileHandler, parse_request
@@ -51,8 +51,8 @@ def test_jsonresponse() -> None:
         resp = JsonResponse(content="hello, world")  # type: ignore
 
 
-def test_redirctresponse() -> None:
-    resp = RedirctResponse(url="/api")
+def test_RedirectResponse() -> None:
+    resp = RedirectResponse(url="/api")
     assert resp.headers["location"] == "/api"
     assert resp.status_code == 302
 
