@@ -31,11 +31,10 @@ def setup_aerich_env() -> t.Generator:
 _Settings = {
     "DEBUG": True,
     "PROJECT_NAME": "test_app_db",
-    "ROOT_URLCONF": "tests.apps.orm.routes",
     "DATABASE": {
         "CONNECTIONS": {
             "default": {
-                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "ENGINE": "tortoise.backends.mysql",
                 "CREDENTIALS": {
                     "HOST": os.environ.get("MYSQL_HOST", "mysql"),
                     "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
@@ -126,7 +125,7 @@ async def test_cmd(tmp_path: Path) -> None:
     inspectdb_cmd = inspectdb.Command(
         unfazed=unfazed2, name="orm_test_migrate", app_label="orm_test_cmd"
     )
-    await inspectdb_cmd.handle(**{"location": migrations_path})
+    await inspectdb_cmd.handle(**{"location": migrations_path, "tables": "db_student2"})
 
 
 async def test_full_coverage() -> None:
