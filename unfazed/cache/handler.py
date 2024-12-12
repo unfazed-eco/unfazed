@@ -1,4 +1,4 @@
-from unfazed.protocol import CacheBackend
+from unfazed.type import CacheBackend
 from unfazed.utils import Storage
 
 

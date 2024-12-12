@@ -2,4 +2,5 @@ from unfazed.app import BaseAppConfig
 
 
 class AppConfig(BaseAppConfig):
-    pass
+    async def ready(self) -> None:
+        print("hello, unfazed")

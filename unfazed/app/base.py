@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import typing as t
 import warnings
+from abc import ABC, abstractmethod
 from pathlib import Path
 from types import ModuleType
 
@@ -11,7 +12,7 @@ if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
-class BaseAppConfig:
+class BaseAppConfig(ABC):
     """
     Initialize the Config object.
 
@@ -22,7 +23,6 @@ class BaseAppConfig:
     # app.py
 
     from unfazed.app import BaseAppConfig
-
 
     class AppConfig(BaseAppConfig):
         async def ready(self):
@@ -141,8 +141,8 @@ class BaseAppConfig:
 
         return app_cls(unfazed, module)
 
-    async def ready(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
+    @abstractmethod
+    async def ready(self) -> None: ...
 
     def __str__(self) -> str:
         return self.name

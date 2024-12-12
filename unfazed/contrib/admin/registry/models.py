@@ -6,9 +6,9 @@ from itertools import chain
 from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
 
+from unfazed.cache import caches
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
-from unfazed.protocol import CacheBackend
 from unfazed.schema import AdminRoute, RouteMeta
 from unfazed.serializer import Serializer
 
@@ -479,7 +479,7 @@ class CacheAdmin(BaseAdmin):
 
     output_field: str = "value"
 
-    cache_client: CacheBackend
+    cache_client = caches["default"]
 
     @action(name="search")
     async def search(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:

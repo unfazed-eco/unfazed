@@ -110,6 +110,10 @@ async def test_str_cmd(client: SerializerBackend) -> None:
     assert await client.getset("foo10", "baz") == "bar"
     assert await client.get("foo10") == "baz"
 
+    # delete
+    await client.delete("foo10")
+    assert await client.get("foo10") is None
+
 
 async def test_int_float_cmd(client: SerializerBackend) -> None:
     await client.flushdb()

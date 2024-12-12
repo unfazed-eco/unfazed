@@ -158,7 +158,10 @@ class LocMemCache:
         async with self._lock:
             self._cache.clear()
             self._expire_info.clear()
-            del _caches[self.prefix]
-            del _expire_info[self.prefix]
-            del _locks[self.prefix]
+            if self.prefix in _caches:
+                del _caches[self.prefix]
+            if self.prefix in _expire_info:
+                del _expire_info[self.prefix]
+            if self.prefix in _locks:
+                del _locks[self.prefix]
         self.closed = True

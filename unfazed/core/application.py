@@ -16,7 +16,6 @@ from unfazed.lifespan import BaseLifeSpan, lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.protocol import CacheBackend
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
@@ -192,7 +191,7 @@ class Unfazed:
             backend_cls = import_string(conf.BACKEND)
             location = conf.LOCATION
             options = conf.OPTIONS
-            cache_backend: CacheBackend = backend_cls(location, options)
+            cache_backend = backend_cls(location, options)
             caches[alias] = cache_backend
 
     def setup_logging(self) -> None:
