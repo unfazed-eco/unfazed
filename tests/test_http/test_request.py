@@ -67,7 +67,7 @@ async def test_http_failed() -> None:
     request = HttpRequest(http_scope)
 
     with pytest.raises(ValueError):
-        session = request.session
+        _ = request.session
 
     with pytest.raises(ValueError):
-        user = request.user
+        _ = request.user
