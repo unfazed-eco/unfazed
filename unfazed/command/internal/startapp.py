@@ -28,6 +28,7 @@ class Command(BaseCommand):
 
     """
 
+    @t.override
     def add_arguments(self) -> t.List[Option]:
         cwd = Path.cwd()
         return [

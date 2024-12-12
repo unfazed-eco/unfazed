@@ -18,6 +18,7 @@ class Command(BaseCommand):
 
     """
 
+    @t.override
     def add_arguments(self) -> t.List[Option]:
         return [
             Option(

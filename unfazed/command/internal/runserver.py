@@ -20,6 +20,7 @@ class Command(BaseCommand):
     >>> python manage.py runserver --port 8000
     """
 
+    @t.override
     def add_arguments(self) -> t.List[Option]:
         return [
             Option(
@@ -59,7 +60,6 @@ class Command(BaseCommand):
             ),
         ]
 
-    @t.override
     async def handle(self, **options: t.Any) -> None:
         host = options["host"]
         port = options["port"]
