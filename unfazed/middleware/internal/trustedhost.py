@@ -1,0 +1,24 @@
+from starlette.middleware.trustedhost import (
+    TrustedHostMiddleware as StarletteTrustedHostMiddleware,
+)
+from starlette.types import ASGIApp
+
+from unfazed.conf import UnfazedSettings, settings
+
+
+class TrustedHostMiddleware(StarletteTrustedHostMiddleware):
+    """
+    TrustedHost Middleware inherit from Starlette TrustedHostMiddleware
+
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+
+        trusted_host = unfazed_settings.TRUSTED_HOST
+
+        super().__init__(
+            app=app,
+            allowed_hosts=trusted_host.allowed_hosts,
+            www_redirect=trusted_host.www_redirect,
+        )

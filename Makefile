@@ -2,7 +2,7 @@ all: test
 
 test:
 	@echo "Running tests..."
-	pytest -v -s --cov ./unfazed/logging/ --cov-report term-missing
+	pytest -v -s --cov ./unfazed/middleware/ --cov-report term-missing
 
 format:
 	@echo "Formatting code..."
