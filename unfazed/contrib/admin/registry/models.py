@@ -6,7 +6,6 @@ from itertools import chain
 from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
 
-from unfazed.cache import caches
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
 from unfazed.schema import AdminRoute, RouteMeta
@@ -28,6 +27,12 @@ from .schema import (
     AdminToolSerializeModel,
 )
 from .utils import convert_field_type
+
+if t.TYPE_CHECKING:
+    from unfazed.cache.backends.locmem import LocMemCache  # pragma: no cover
+    from unfazed.cache.backends.redis.serializedclient import (
+        SerializerBackend,  # pragma: no cover
+    )
 
 
 class BaseAdmin:
@@ -144,7 +149,7 @@ class SiteSettings(BaseAdmin):
     extra: t.Dict[str, t.Any] = {}
 
     def to_route(self) -> None:
-        return None
+        return
 
     def to_serialize(self) -> AdminSite:
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
@@ -479,7 +484,7 @@ class CacheAdmin(BaseAdmin):
 
     output_field: str = "value"
 
-    cache_client = caches["default"]
+    cache_client: t.Union["LocMemCache", "SerializerBackend"]
 
     @action(name="search")
     async def search(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:

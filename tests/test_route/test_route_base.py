@@ -66,7 +66,9 @@ def test_path_with_endpoints() -> None:
 
 def test_path_with_routes() -> None:
     routes = path(
-        "/foo", routes=[path("/bar", endpoint=view)], middlewares=[Middleware1]
+        "/foo",
+        routes=[path("/bar", endpoint=view)],
+        middlewares=["tests.test_route.test_route_base.Middleware1"],
     )
 
     assert len(routes) == 1
@@ -118,7 +120,7 @@ def test_route() -> None:
     route = Route(
         "/foo",
         view,
-        middlewares=[Middleware1],
+        middlewares=["tests.test_route.test_route_base.Middleware1"],
         methods=["GET", "POST"],
         tags=["foo", "bar"],
         name="foo",

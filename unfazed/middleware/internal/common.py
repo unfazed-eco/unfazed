@@ -3,14 +3,21 @@ from traceback import format_exception
 
 import orjson as json
 from jinja2 import Template
-from starlette.types import Receive, Scope, Send
+from starlette.types import ASGIApp, Receive, Scope, Send
 
+from unfazed.conf import UnfazedSettings, settings
 from unfazed.core import Unfazed
 from unfazed.http import HtmlResponse, HttpResponse
 from unfazed.middleware import BaseMiddleware
 
 
 class CommonMiddleware(BaseMiddleware):
+    def __init__(self, app: ASGIApp) -> None:
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        self.debug = unfazed_settings.DEBUG
+
+        super().__init__(app)
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
@@ -20,7 +27,7 @@ class CommonMiddleware(BaseMiddleware):
             await self.app(scope, receive, send)
         except Exception as e:
             unfazed = t.cast(Unfazed, scope.get("app"))
-            if unfazed.settings.DEBUG:
+            if self.debug:
                 response = render_error_html(e, unfazed.settings.model_dump())
             else:
                 response = HttpResponse(

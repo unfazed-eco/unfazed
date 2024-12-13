@@ -2,8 +2,7 @@ import inspect
 import typing as t
 from importlib import import_module
 
-from unfazed.protocol import MiddleWare
-from unfazed.type import HttpMethod
+from unfazed.type import CanBeImported, HttpMethod
 
 from .registry import _flatten_patterns
 from .routing import Route
@@ -52,7 +51,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> Route: ...
@@ -66,7 +65,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> t.List[Route]: ...
@@ -80,7 +79,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> Route | t.List[Route]:

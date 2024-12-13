@@ -5,7 +5,8 @@ from starlette.routing import Route as StartletteRoute
 from starlette.routing import compile_path
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
-from unfazed.type import HttpMethod
+from unfazed.type import CanBeImported, HttpMethod
+from unfazed.utils import import_string
 
 from . import params as p
 from . import utils as u
@@ -22,7 +23,7 @@ class Route(StartletteRoute):
         methods: t.List[HttpMethod] | None = None,
         name: str | None = None,
         include_in_schema: bool = True,
-        middlewares: t.List[t.Type[MiddleWareProtocol]] | None = None,
+        middlewares: t.List[CanBeImported] | None = None,
         app_label: str | None = None,
         tags: t.List[str] | None = None,
         response_models: t.List[p.ResponseSpec] | None = None,
@@ -68,10 +69,10 @@ class Route(StartletteRoute):
 
         self.load_middlewares(middlewares or [])
 
-    def load_middlewares(self, middlewares: t.List[t.Type[MiddleWareProtocol]]) -> None:
-        if middlewares is not None:
-            for cls in reversed(middlewares):
-                self.app = cls(app=self.app)
+    def load_middlewares(self, middlewares: t.List[CanBeImported]) -> None:
+        for cls_string in reversed(middlewares):
+            cls: t.Type[MiddleWareProtocol] = import_string(cls_string)
+            self.app = cls(app=self.app)
 
     def update_path(self, new_path: str) -> None:
         self.path = new_path
