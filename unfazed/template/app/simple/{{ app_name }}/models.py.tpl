@@ -1,2 +1,2 @@
-# from tortoise.models import Model
+# from tortoise.models import Model, fields
 
