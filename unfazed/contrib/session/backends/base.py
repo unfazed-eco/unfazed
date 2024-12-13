@@ -70,7 +70,7 @@ class SessionBase(ABC):
             make sure the session key is unique
 
         """
-        ...
+        ...  # pragma: no cover
 
     @abstractmethod
     async def save(self) -> None:
@@ -85,7 +85,7 @@ class SessionBase(ABC):
                 and use the session key as the key to store the session data
 
         """
-        ...
+        ...  # pragma: no cover
 
     @abstractmethod
     async def load(self) -> None:
@@ -104,4 +104,4 @@ class SessionBase(ABC):
             ```
 
         """
-        ...
+        ...  # pragma: no cover
