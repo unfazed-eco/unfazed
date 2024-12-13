@@ -1,5 +1,8 @@
 from unittest.mock import patch
 
+import pytest
+
+from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.openapi.service import OpenApiService
 from unfazed.schema import OpenAPI
@@ -27,6 +30,13 @@ def test_service() -> None:
     )
 
     assert isinstance(redoc, str)
+
+    with patch.object(OpenApiService, "get_settings", return_value=UnfazedSettings()):
+        with pytest.raises(ValueError):
+            OpenApiService.get_docs()
+
+        with pytest.raises(ValueError):
+            OpenApiService.get_redoc()
 
 
 async def test_api(setup_openapi_unfazed: Unfazed) -> None:
