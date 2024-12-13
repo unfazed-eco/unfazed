@@ -12,7 +12,6 @@ class DefaultAuthBackend(BaseAuthBackend):
     def alias(self) -> str:
         return "default"
 
-    # login
     async def login(self, ctx: LoginCtx) -> t.Tuple[t.Dict, t.Any]:
         # get user
         account, password = ctx.account, ctx.password
