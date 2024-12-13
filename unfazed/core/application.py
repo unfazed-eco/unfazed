@@ -1,7 +1,7 @@
 import typing as t
 
 from starlette.concurrency import run_in_threadpool
-from starlette.datastructures import State, URLPath
+from starlette.datastructures import State
 from starlette.routing import Router
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -156,8 +156,9 @@ class Unfazed:
     def routes(self) -> t.List[Route]:
         return self.router.routes  # type: ignore
 
-    def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
-        return self.router.url_path_for(name, **path_params)
+    # def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
+    #     return self.router.url_path_for(name, **path_params)
+
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         scope["app"] = self

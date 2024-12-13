@@ -80,6 +80,8 @@ async def test_app_launch() -> None:
     await unfazed.setup()
     assert unfazed.ready is True
 
+    assert unfazed.debug is True
+
 
 async def test_failed_unfazed() -> None:
     unfazed = Unfazed(settings=Setting)

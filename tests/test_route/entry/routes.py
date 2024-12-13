@@ -7,6 +7,6 @@ async def foo(request: HttpRequest) -> HttpResponse:
 
 
 patterns = [
-    path("/api/success", routes=include("common.routes")),
+    path("/api/success", routes=include("route_common.routes")),
     path("/api/mainapp/foo", endpoint=foo),
 ]

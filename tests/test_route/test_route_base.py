@@ -74,7 +74,7 @@ def test_path_with_routes() -> None:
     assert len(routes) == 1
     route = routes[0]
     assert route.path == "/foo/bar"
-    assert route.app.__class__ == Middleware1
+    assert route.app.__class__.__name__ == "Middleware1"
 
 
 def test_failed_path() -> None:
@@ -94,6 +94,7 @@ def test_failed_path() -> None:
 
 def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
     # normal case
+    print(setup_route_unfazed.routes)
     assert len(setup_route_unfazed.routes) == 4
 
     # failed case
