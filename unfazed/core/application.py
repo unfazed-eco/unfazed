@@ -199,7 +199,7 @@ class Unfazed:
             config = {}
 
         else:
-            config = LogConfig(**self.settings.LOGGING).model_dump(
+            config = LogConfig.model_validate(self.settings.LOGGING).model_dump(
                 exclude_none=True, by_alias=True
             )
         log_center = LogCenter(self, config)
