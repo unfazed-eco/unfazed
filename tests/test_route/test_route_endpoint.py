@@ -118,6 +118,9 @@ async def test_path() -> None:
     for ele in ["path1", "path2", "path3", "path4", "path5", "path6"]:
         assert ele in pathmodel.model_fields
 
+    # params_model
+    assert len([i for i in definition.param_models if i]) == 1
+
     scope = {
         "type": "http",
         "method": "GET",

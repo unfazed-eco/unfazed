@@ -37,6 +37,13 @@ class Base(Group):
 
 
 class CommandCenter(Base):
+    """
+    Command Manage Center
+
+    CommandCenter will load all the commands from the unfazed internal and the app center
+
+    """
+
     @t.override
     def __init__(self, unfazed: "Unfazed", app_center: "AppCenter", name: str) -> None:
         super().__init__(unfazed=unfazed, name=name)
@@ -74,6 +81,14 @@ class CommandCenter(Base):
 
 
 class CliCommandCenter(Base):
+    """
+
+    Command Manage Center for CLI
+
+    CLiCommandCenter only load the startproject command
+
+    """
+
     def __init__(self, unfazed: "Unfazed") -> None:
         super().__init__(unfazed=unfazed, name="unfazed-cli")
         self.cli_command = ["startproject"]

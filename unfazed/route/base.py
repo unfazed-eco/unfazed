@@ -2,8 +2,7 @@ import inspect
 import typing as t
 from importlib import import_module
 
-from unfazed.protocol import MiddleWare
-from unfazed.type import HttpMethod
+from unfazed.type import CanBeImported, HttpMethod
 
 from .registry import _flatten_patterns
 from .routing import Route
@@ -39,11 +38,6 @@ def include(route_path: str) -> t.List[Route]:
 
     patterns = _flatten_patterns(route_module.patterns)
     for route in patterns:
-        if not isinstance(route, Route):
-            raise ValueError(
-                f"Error for {route_path}: routes should be a list of Route"
-            )
-
         route.update_label(app_label)
 
     return patterns
@@ -57,7 +51,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> Route: ...
@@ -71,7 +65,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> t.List[Route]: ...
@@ -85,7 +79,7 @@ def path(
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
-    middlewares: t.List[t.Type[MiddleWare]] | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
 ) -> Route | t.List[Route]:
@@ -147,5 +141,7 @@ def path(
 
         return ret
 
+    # comply with mypy check
+    # never reach here
     else:
-        return []
+        return []  # pragma: no cover

@@ -6,4 +6,3 @@ class User(Model):
     username = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255)
     uid = fields.IntField()
-    # sex = tt.IntField(default=0)

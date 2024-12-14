@@ -27,12 +27,12 @@ class Command(BaseCommand):
             ),
         ]
 
-    async def handle(self, **option: t.Any) -> None:
-        location = option.get("location")
-        tables = option.get("tables")
-        if not self.unfazed.settings.DATABASE:
-            return secho("No database found in settings", fg="yellow")
-
+    async def handle(self, **options: t.Any) -> None:
+        location = options["location"]
+        tables = options["tables"]
+        assert (
+            self.unfazed.settings.DATABASE is not None
+        ), "No database found in settings"
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
         aerich_cmd = AerichCommand(db_conf, location=location)
         await aerich_cmd.init()

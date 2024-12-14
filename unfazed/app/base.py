@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import typing as t
 import warnings
+from abc import ABC, abstractmethod
 from pathlib import Path
 from types import ModuleType
 
@@ -11,33 +12,26 @@ if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
-class BaseAppConfig:
-    def __init__(
-        self,
-        unfazed: "Unfazed",
-        app_module: ModuleType,
-    ) -> None:
-        """
-        Initialize the Config object.
+class BaseAppConfig(ABC):
+    """
+    Initialize the Config object.
 
-        Args:
-            unfazed (Unfazed): The Unfazed object.
-            app_module (ModuleType): The app module.
 
-        Usage:
+    Usage:
 
-        ```python
-        # app.py
+    ```python
+    # app.py
 
-        from unfazed.app import BaseAppConfig
-        class AppConfig(BaseAppConfig):
-            async def ready(self):
-                print("AppConfig is ready!")
-        ```
+    from unfazed.app import BaseAppConfig
 
-        Returns:
-            None
-        """
+    class AppConfig(BaseAppConfig):
+        async def ready(self):
+            print("App is ready!")
+    ```
+
+    """
+
+    def __init__(self, unfazed: "Unfazed", app_module: ModuleType) -> None:
         self.unfazed = unfazed
         self.app_module = app_module
 
@@ -111,11 +105,6 @@ class BaseAppConfig:
         """
         Load the configuration from the given entry module.
 
-        Args:
-            cls (type): The class of the configuration.
-            entry (str): The entry module to import.
-            unfazed (Unfazed): The Unfazed instance.
-
         Returns:
             Self: An instance of the configuration class.
 
@@ -152,8 +141,8 @@ class BaseAppConfig:
 
         return app_cls(unfazed, module)
 
-    async def ready(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
+    @abstractmethod
+    async def ready(self) -> None: ...
 
     def __str__(self) -> str:
         return self.name

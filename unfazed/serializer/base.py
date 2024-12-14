@@ -63,7 +63,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     """
     Serializer provides three functionalities:
 
-    1. Generate a Serializer instance from a Tortoise Model instance
+    1. Generate a Serializer instance from a Tortoise Model
     2. Provide CRUD operations for Model instances
     3. Link with contrib.admin's ModelAdmin to support admin page functionality
 
@@ -292,7 +292,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
         return cls.model_validate(instance, from_attributes=True)
 
     @classmethod
-    def find_relation(cls, other_cls: t.Type[t.Self]) -> Relation | None:
+    def find_relation(cls, other_cls: t.Type["Serializer"]) -> Relation | None:
         self_model: t.Type[Model] = cls.Meta.model
         other_model: t.Type[Model] = other_cls.Meta.model
 

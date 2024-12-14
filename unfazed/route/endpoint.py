@@ -135,7 +135,7 @@ class EndpointHandler:
 
         # validate
         try:
-            model_cls(**request_params)
+            model_cls.model_validate(request_params)
         except Exception as err:
             ret_err = ParameterError(str(err))
 
@@ -161,15 +161,25 @@ class EndpointHandler:
 
 
 class EndPointDefinition(BaseModel):
+    """
+    Parse endpoint signature and create models for path, query, header, cookie, body
+
+    Stages:
+        1. init endpointDefinition with endpoint/method/tags/path_parm_names
+        2. convert signature to *_params and response
+        3. dispatch params to path, query, header, cookie, body params
+        4. create path, query, header, cookie, body models from each type of params
+
+    """
+
     endpoint: t.Callable
     methods: t.Set[str]
     tags: t.List[str]
     path_parm_names: t.List[str]
 
     # stage 1: convert signature to params and response
-    # move to type checking
-    # params: t.Dict[str, inspect.Parameter] | None = None
-    # response_models: t.List[p.ResponseSpec] | None = None
+    params: t.Dict[str, inspect.Parameter] | None = None
+    response_models: t.List[p.ResponseSpec] | None = None
 
     # stage 2: dispatch params to path, query, header, cookie, body params
     path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
@@ -181,18 +191,14 @@ class EndPointDefinition(BaseModel):
     body_type: t.Optional[t.Literal["json", "form"]] = None
 
     # stage 3: create path, query, header, cookie, body models
-    # move to type checking
-
-    operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    params: t.Dict[str, inspect.Parameter] | None = None
-    response_models: t.List[p.ResponseSpec] | None = None
     path_model: t.Type[BaseModel] | None = None
     query_model: t.Type[BaseModel] | None = None
     header_model: t.Type[BaseModel] | None = None
     cookie_model: t.Type[BaseModel] | None = None
     body_model: t.Type[BaseModel] | None = None
+
+    operation_id: t.Optional[str] = Field(default_factory=u.generate_random_string)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)

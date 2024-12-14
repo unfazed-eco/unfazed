@@ -35,6 +35,8 @@ class BaseCommand(ClickCommand, ABC):
             host = option["host"]
             print(f"Host: {host}")
 
+    # >>> python manage.py {command} --host 0.0.0.0
+
     ```
 
     """
@@ -87,7 +89,12 @@ class BaseCommand(ClickCommand, ABC):
         if asyncio.iscoroutinefunction(self.handle):
             asyncio.run(self.handle(**option))
         else:
-            raise NotImplementedError("handle method must be a coroutine")
+            # due to handle must be implemented as a coroutine
+            # so this branch will never be reached
+            # just for type checking
+            raise NotImplementedError(
+                "handle method must be a coroutine"
+            )  # pragma: no cover
 
     def add_arguments(self) -> t.List[Option]:
         return []

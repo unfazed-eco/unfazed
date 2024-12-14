@@ -9,6 +9,13 @@ if t.TYPE_CHECKING:
 
 
 class AppCenter:
+    """
+    APP Manager
+
+    app will be loaded and stored in the AppCenter
+
+    """
+
     def __init__(
         self, unfazed: "Unfazed", installed_apps: t.List[CanBeImported]
     ) -> None:

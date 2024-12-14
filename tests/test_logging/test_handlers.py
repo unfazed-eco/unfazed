@@ -1,3 +1,4 @@
+import logging
 import os
 from logging import LogRecord, getLogger
 from pathlib import Path
@@ -15,7 +16,8 @@ def test_rotating_file_handler(tmp_path: Path) -> None:
     max_bytes = len(text) - 1
     handler = UnfazedRotatingFileHandler(filename=filename, maxBytes=max_bytes)
 
-    logger = getLogger("test")
+    logger = getLogger("foo")
+    logger.setLevel(logging.DEBUG)
 
     logger.addHandler(handler)
 

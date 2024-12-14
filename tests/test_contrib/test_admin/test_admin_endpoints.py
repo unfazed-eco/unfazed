@@ -17,6 +17,12 @@ class User:
     email = "user@unfazed.com"
 
 
+class UnkownUser:
+    is_superuser = True
+    account = ""
+    email = ""
+
+
 @pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     admin_collector.clear()
@@ -62,24 +68,24 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
     with patch.object(HttpRequest, "user", User()):
         request = Requestfactory(setup_admin_unfazed)
 
-        resp = await request.get("/api/contrib/admin/route-list")
-        assert resp.status_code == 200
+        resp1 = await request.get("/api/contrib/admin/route-list")
+        assert resp1.status_code == 200
 
-        resp = await request.get("/api/contrib/admin/settings")
-        assert resp.status_code == 200
+        resp2 = await request.get("/api/contrib/admin/settings")
+        assert resp2.status_code == 200
 
-        resp = await request.post(
+        resp3 = await request.post(
             "/api/contrib/admin/model-desc", json={"name": "AuthorAdmin"}
         )
-        assert resp.status_code == 200
+        assert resp3.status_code == 200
 
-        resp = await request.post(
+        resp4 = await request.post(
             "/api/contrib/admin/model-detail",
             json={"name": "AuthorAdmin", "data": {}},
         )
-        assert resp.status_code == 200
+        assert resp4.status_code == 200
 
-        resp = await request.post(
+        resp5 = await request.post(
             "/api/contrib/admin/model-action",
             json={
                 "name": "AuthorAdmin",
@@ -88,9 +94,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
+        assert resp5.status_code == 200
 
-        resp = await request.post(
+        resp6 = await request.post(
             "/api/contrib/admin/model-action",
             json={
                 "name": "AuthorAdmin",
@@ -99,9 +105,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
+        assert resp6.status_code == 200
 
-        resp = await request.post(
+        resp7 = await request.post(
             "/api/contrib/admin/model-action",
             json={
                 "name": "AuthorAdmin",
@@ -110,9 +116,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
+        assert resp7.status_code == 200
 
-        resp = await request.post(
+        resp8 = await request.post(
             "/api/contrib/admin/model-action",
             json={
                 "name": "AuthorAdmin",
@@ -121,9 +127,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
+        assert resp8.status_code == 200
 
-        resp = await request.post(
+        resp9 = await request.post(
             "/api/contrib/admin/model-save",
             json={
                 "name": "AuthorAdmin",
@@ -136,17 +142,17 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
-        ret = resp.json()
+        assert resp9.status_code == 200
+        ret = resp9.json()["data"]
 
-        resp = await request.post(
+        resp10 = await request.post(
             "/api/contrib/admin/model-data",
             json={"name": "AuthorAdmin", "cond": [], "page": 1, "size": 10},
         )
 
-        assert resp.status_code == 200
+        assert resp10.status_code == 200
 
-        resp = await request.post(
+        resp11 = await request.post(
             "/api/contrib/admin/model-delete",
             json={
                 "name": "AuthorAdmin",
@@ -154,4 +160,21 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             },
         )
 
-        assert resp.status_code == 200
+        assert resp11.status_code == 200
+
+
+async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None:
+    with patch.object(HttpRequest, "user", UnkownUser()):
+        with patch.object(HttpRequest, "client", None):
+            request = Requestfactory(setup_admin_unfazed)
+
+            resp5 = await request.post(
+                "/api/contrib/admin/model-action",
+                json={
+                    "name": "AuthorAdmin",
+                    "action": "test_action1",
+                    "data": {},
+                },
+            )
+
+            assert resp5.status_code == 200

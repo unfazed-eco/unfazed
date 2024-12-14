@@ -1,6 +1,7 @@
 import typing as t
 
 from unfazed.contrib.auth.decorators import login_required
+from unfazed.contrib.common.utils import response_success
 from unfazed.http import HttpRequest, HttpResponse, JsonResponse
 from unfazed.route import params as p
 from unfazed.type import Doc
@@ -19,13 +20,13 @@ async def list_route(request: HttpRequest) -> JsonResponse:
     await LogEntry.create(
         created_at=1, account="1", path="/", ip="1", request="1", response="1"
     )
-    return JsonResponse(ret)
+    return response_success(data=ret)
 
 
 @login_required
 def settings(request: HttpRequest) -> JsonResponse:
     ret = AdminModelService.site_settings()
-    return JsonResponse(ret)
+    return response_success(data=ret)
 
 
 @login_required
@@ -33,7 +34,7 @@ async def model_desc(
     request: HttpRequest, name: t.Annotated[str, p.Json()]
 ) -> t.Annotated[JsonResponse, *s.DESC_RESP]:
     ret = await AdminModelService.model_desc(name, request=request)
-    return JsonResponse(ret)
+    return response_success(data=ret)
 
 
 @login_required
@@ -41,7 +42,7 @@ async def model_detail(
     request: HttpRequest, ctx: t.Annotated[s.Detail, p.Json()]
 ) -> t.Annotated[JsonResponse, *s.DETAIL_RESP]:
     ret = await AdminModelService.model_detail(ctx.name, ctx.data, request=request)
-    return JsonResponse(ret)
+    return response_success(data=ret)
 
 
 @login_required
@@ -51,7 +52,7 @@ async def model_data(
     ret = await AdminModelService.model_data(
         ctx.name, ctx.cond, ctx.page, ctx.size, request=request
     )
-    return JsonResponse(ret)
+    return response_success(data=ret)
 
 
 @login_required
@@ -74,7 +75,8 @@ async def model_save(
     ret = await AdminModelService.model_save(
         ctx.name, ctx.data, ctx.inlines, request=request
     )
-    return JsonResponse(ret)
+
+    return response_success(data=ret)
 
 
 @login_required
@@ -83,4 +85,4 @@ async def model_delete(
     request: HttpRequest, ctx: t.Annotated[s.Delete, p.Json()]
 ) -> t.Annotated[JsonResponse, *s.DELETE_RESP]:
     await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
-    return JsonResponse({})
+    return response_success()

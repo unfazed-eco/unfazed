@@ -10,12 +10,25 @@ from unfazed.command import BaseCommand
 
 class TemplateType:
     SIMPLE = "simple"
-    COMPLEX = "complex"
+    STANDARD = "standard"
 
 
 class Command(BaseCommand):
-    help_text = "create a new app under the project"
+    help_text = """
 
+    Create a new app under the project
+
+    Usage:
+
+    # Create a simple app
+    >>> python manage.py startapp -n myapp
+
+    # Create a complex app
+    >>> python manage.py startapp -n myapp -t complex
+
+    """
+
+    @t.override
     def add_arguments(self) -> t.List[Option]:
         cwd = Path.cwd()
         return [
@@ -34,7 +47,7 @@ class Command(BaseCommand):
             Option(
                 ["--template", "-t"],
                 help="template path of the app",
-                type=Choice([TemplateType.SIMPLE, TemplateType.COMPLEX]),
+                type=Choice([TemplateType.SIMPLE, TemplateType.STANDARD]),
                 default=TemplateType.SIMPLE,
                 show_default=True,
                 show_choices=True,
@@ -47,8 +60,8 @@ class Command(BaseCommand):
         template = options["template"]
         if template == TemplateType.SIMPLE:
             template_path = Path(unfazed.__path__[0], "template/app/simple")
-        elif template == TemplateType.COMPLEX:
-            template_path = Path(unfazed.__path__[0], "template/app/complex")
+        elif template == TemplateType.STANDARD:
+            template_path = Path(unfazed.__path__[0], "template/app/standard")
         else:
             raise ValueError(f"Unknown template type: {template}")
 

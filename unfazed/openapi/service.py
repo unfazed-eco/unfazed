@@ -55,7 +55,7 @@ class OpenApiService:
     @classmethod
     def build_openapi_json(cls) -> t.Dict[str, t.Any]:
         if not OpenApi.schema:
-            raise ValueError("OpenAPI schema not found")
+            raise ValueError("OpenAPI schema not found")  # pragma: no cover
         return OpenApi.schema
 
     @classmethod

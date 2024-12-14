@@ -12,7 +12,7 @@ UNFAZED_SETTINGS = {
     "DATABASE": {
         "CONNECTIONS": {
             "default": {
-                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "ENGINE": "tortoise.backends.mysql",
                 "CREDENTIALS": {
                     "HOST": "mysql",
                     "PORT": 3306,

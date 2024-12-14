@@ -2,7 +2,7 @@ import typing as t
 
 from pydantic import BaseModel
 
-from unfazed.schema import Condtion
+from unfazed.schema import Condition
 from unfazed.type import Doc
 
 
@@ -12,7 +12,7 @@ class Detail(BaseModel):
 
 
 class Data(BaseModel):
-    cond: t.List[Condtion] = []
+    cond: t.List[Condition] = []
     name: str
     page: int
     size: int

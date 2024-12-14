@@ -3,7 +3,6 @@ import uuid
 
 from unfazed.cache import caches
 from unfazed.contrib.session.settings import SessionSettings
-from unfazed.protocol import CacheBackend as CacheBackendProtocol
 
 from .base import SessionBase
 
@@ -26,7 +25,7 @@ class CacheSession(SessionBase):
                 "Plz check your unfazedsettings `CACHES`"
             )
 
-        self.client: CacheBackendProtocol = caches[_cache_alias]
+        self.client = caches[_cache_alias]
 
     def generate_session_key(self) -> str:
         """

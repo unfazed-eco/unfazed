@@ -1,7 +1,7 @@
 import typing as t
 
 from .base import Doc
-from .cache import CacheOptions
+from .cache import CacheBackend, CacheOptions
 from .http import (
     ContentStream,
     GenericReponse,
@@ -31,4 +31,5 @@ __all__ = [
     "HttpMethod",
     "GenericReponse",
     "ContentStream",
+    "CacheBackend",
 ]

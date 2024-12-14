@@ -11,7 +11,26 @@ from unfazed.utils import import_string
 
 class SerializerBackend:
     """
-    Redis backend with serializer and compressor
+    Limited Redis backend with serializer and compressor
+    SerializerBackend can store any type of data
+
+    only supports string commands, if you need more commands,
+    please use DefaultBackend
+
+    Usage:
+
+    ```python
+
+    from unfazed.cache import caches
+
+    default: SerializerBackend = caches["default"]
+
+    await default.set("key", {"foo": "bar"})
+    await default.set("key2", 1)
+    await default.set("key3", [1, 2, 3])
+
+    ```
+
 
     """
 
@@ -104,15 +123,12 @@ class SerializerBackend:
 
         return value
 
-    def decode(self, value: bytes | str) -> bytes | str | int | float | None:
+    def decode(self, value: bytes | None) -> bytes | str | int | float | None:
         if value is None:
             return value
 
         try:
-            if isinstance(value, bytes):
-                value_str = value.decode("utf-8")
-            else:
-                value_str = value
+            value_str = value.decode("utf-8")
 
             if value_str.isdigit():
                 return int(value_str)
@@ -163,7 +179,6 @@ class SerializerBackend:
     # int and float are not influenced
 
     # ========  string commands using serializer and compressor  ========
-
     async def get(self, name: str) -> t.Any:
         key = self.make_key(name)
         value = await self.client.get(key)
@@ -243,8 +258,7 @@ class SerializerBackend:
         value = self.encode(value)
         return await self.client.psetex(key, time, value)
 
-    # ==== int and float are
-    # not influenced ====
+    # ==== int and float are not influenced ====
     async def decr(self, name: str, amount: int = 1) -> int:
         key = self.make_key(name)
         return await self.client.decr(key, amount)

@@ -7,9 +7,26 @@ from redis.backoff import ConstantBackoff
 from unfazed.schema import RedisOptions
 
 
-class AsyncDefaultBackend:
+class DefaultBackend:
     """
-    Redis cache backend
+    Full featured Redis cache backend
+
+    due to redis not support prefix, so we need to handle it manually
+    call `make_key` to add prefix to key
+
+    Usage:
+
+    ```python
+
+    from unfazed.cache import caches
+
+    default: DefaultBackend = caches["default"]
+
+    await default.set(default.make_key("key"), "value")
+
+    ret = await default.get(default.make_key("key"))
+
+    ```
 
     """
 
@@ -58,7 +75,7 @@ class AsyncDefaultBackend:
         return self
 
     async def __aexit__(self, *args: t.Any, **kw: t.Any) -> None:
-        await self.client.close()
+        await self.client.aclose()
 
     async def close(self) -> None:
         # for compatibility with cache backend protocol
@@ -70,6 +87,23 @@ class AsyncDefaultBackend:
         return f"{self.prefix}:{key}"
 
     def __getattr__(self, name: str) -> t.Any:
+        """
+        DefaultBackend will call any method of Redis client though this method
+
+        Get all methods of Redis client, refer:
+        https://redis-py.readthedocs.io/en/stable/commands.html
+
+        Usage:
+
+        ```python
+
+        default: DefaultBackend = caches["default"]
+
+        await default.set("key", "value")
+        await default.get("key")
+
+        ```
+        """
         if not hasattr(self.client, name):
             raise AttributeError(f"Attribute {name} not found in Redis client")
         return getattr(self.client, name)

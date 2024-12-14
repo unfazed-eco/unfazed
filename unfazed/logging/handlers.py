@@ -6,6 +6,14 @@ from logging.handlers import BaseRotatingHandler
 
 
 class UnfazedRotatingFileHandler(BaseRotatingHandler):
+    """
+    Process safe logging handler
+
+    this handler will create unique name for each process log file
+
+
+    """
+
     def __init__(
         self,
         filename: str,

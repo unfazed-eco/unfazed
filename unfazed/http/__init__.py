@@ -5,7 +5,7 @@ from .response import (
     HttpResponse,
     JsonResponse,
     PlainTextResponse,
-    RedirctResponse,
+    RedirectResponse,
     StreamingResponse,
 )
 
@@ -14,7 +14,7 @@ __all__ = [
     "HttpResponse",
     "JsonResponse",
     "PlainTextResponse",
-    "RedirctResponse",
+    "RedirectResponse",
     "HtmlResponse",
     "StreamingResponse",
     "FileResponse",

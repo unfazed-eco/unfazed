@@ -9,8 +9,16 @@ from unfazed.command import BaseCommand
 
 
 class Command(BaseCommand):
-    help_text = "create a new project"
+    help_text = """
 
+    Create a new project from cli
+
+    Usage:
+    >>> unfazed-cli startproject -n myproject
+
+    """
+
+    @t.override
     def add_arguments(self) -> t.List[Option]:
         return [
             Option(

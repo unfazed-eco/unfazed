@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from starlette.types import ASGIApp
 
-from unfazed.protocol import BaseLifeSpan
+from .base import BaseLifeSpan
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover

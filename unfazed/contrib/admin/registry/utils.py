@@ -1,6 +1,6 @@
 import typing as t
 
-from unfazed.schema import Condtion
+from unfazed.schema import Condition
 
 TYPE_MAPPING = {
     # python type to field_type
@@ -37,7 +37,7 @@ SUPPORTED_FIELD_TYPES = [
 ]
 
 
-def parse_cond(condtion: t.List[Condtion]) -> t.Dict[str, t.Any]:
+def parse_cond(condtion: t.List[Condition]) -> t.Dict[str, t.Any]:
     ret = {}
     for cond in condtion:
         field = cond.field

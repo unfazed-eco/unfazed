@@ -52,10 +52,12 @@ class OpenApi:
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra_dict = model.model_config.get("json_schema_extra")
+
+                # comply with mypy check
                 if not json_schema_extra_dict or not isinstance(
                     json_schema_extra_dict, dict
                 ):
-                    json_schema_extra_dict = {}
+                    json_schema_extra_dict = {}  # pragma: no cover
                 example = json_schema_extra_dict.get("example")
                 examples = json_schema_extra_dict.get("examples")
                 item = s.Parameter.model_validate(
@@ -81,11 +83,12 @@ class OpenApi:
             required = True
             bd_json_schema = bd_model.model_config.get("json_schema_extra", {})
 
+            # comply with mypy check
             if not bd_json_schema or not isinstance(bd_json_schema, dict):
-                bd_json_schema = {}
+                bd_json_schema = {}  # pragma: no cover
             content_type = bd_json_schema.get("media_type")
             if not content_type or not isinstance(content_type, str):
-                content_type = "application/json"
+                content_type = "application/json"  # pragma: no cover
             example = bd_json_schema.get("example")
             examples = bd_json_schema.get("examples")
             body_schema = bd_model.model_json_schema(ref_template=DEFAULT_REF_TPL)

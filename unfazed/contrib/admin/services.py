@@ -7,7 +7,7 @@ from tortoise import Model as TModel
 
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.schema import AdminRoute, Condtion, RouteMeta
+from unfazed.schema import AdminRoute, Condition, RouteMeta
 from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
@@ -108,7 +108,7 @@ class AdminModelService:
     async def model_data(
         cls,
         admin_ins_name: str,
-        cond: t.List[Condtion],
+        cond: t.List[Condition],
         page: int,
         size: int,
         request: HttpRequest,

@@ -20,7 +20,9 @@ def record(func: t.Callable) -> t.Callable:
         if request.user:
             account = request.user.account or request.user.email
         else:
-            account = "anonymous"
+            # for mypy check
+            # this line will never be executed
+            account = "anonymous"  # pragma: no cover
 
         if request.client:
             ip = request.client.host

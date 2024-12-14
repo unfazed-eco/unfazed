@@ -23,6 +23,11 @@ def _flatten_patterns(patterns: t.List[T]) -> t.List[Route]:
 
 
 def parse_urlconf(root_urlconf: str, app_center: "AppCenter") -> t.List[Route]:
+    """
+    Unfazed parse routes from ROOT_URLCONF
+    and will flatten the patterns and return a list of Route, dont support Mount
+
+    """
     ret = []
     root_url_module = import_module(root_urlconf)
     if not hasattr(root_url_module, "patterns"):

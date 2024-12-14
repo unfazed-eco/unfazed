@@ -43,7 +43,7 @@ _Setting = {
     "DATABASE": {
         "CONNECTIONS": {
             "default": {
-                "ENGINE": "unfazed.db.tortoise.backends.mysql",
+                "ENGINE": "tortoise.backends.mysql",
                 "CREDENTIALS": {
                     "HOST": os.environ.get("MYSQL_HOST", "mysql"),
                     "PORT": int(os.environ.get("MYSQL_PORT", 3306)),
@@ -79,6 +79,8 @@ async def test_app_launch() -> None:
     # test repeated setup
     await unfazed.setup()
     assert unfazed.ready is True
+
+    assert unfazed.debug is True
 
 
 async def test_failed_unfazed() -> None:

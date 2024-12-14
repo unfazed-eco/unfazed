@@ -2,7 +2,7 @@ import typing as t
 
 from pydantic import BaseModel, Field
 
-from unfazed.schema import Cache, Database, OpenAPI
+from unfazed.schema import Cache, Cors, Database, GZip, OpenAPI, TrustedHost
 from unfazed.type import CanBeImported
 
 from .base import settings
@@ -20,6 +20,9 @@ class UnfazedSettings(BaseModel):
     LIFESPAN: t.Sequence[str] | None = None
     OPENAPI: OpenAPI | None = None
     VERSION: str = Field(default="0.0.1")
+    CORS: Cors = Cors()
+    TRUSTED_HOST: TrustedHost = TrustedHost()
+    GZIP: GZip = GZip()
 
 
 __all__ = ["UnfazedSettings", "settings"]

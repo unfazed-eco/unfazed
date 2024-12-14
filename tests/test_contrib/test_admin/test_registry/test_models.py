@@ -34,6 +34,9 @@ def test_site() -> None:
     ret = site.to_serialize()
     assert ret.extra == {"foo": "bar"}
 
+    route = site.to_route()  # type: ignore
+    assert route is None
+
 
 class Brand(enum.StrEnum):
     BMW = "BMW"

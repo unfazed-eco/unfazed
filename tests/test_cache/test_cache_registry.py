@@ -65,8 +65,9 @@ async def test_handler() -> None:
     with pytest.raises(KeyError):
         caches["bar"]
 
+    await caches.close()
+    assert caches["foo"].closed is True
+
     del caches["foo"]
 
     assert "foo" not in caches
-
-    await caches.close()

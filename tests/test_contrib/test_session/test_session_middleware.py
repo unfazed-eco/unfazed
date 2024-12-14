@@ -76,9 +76,7 @@ ROUTES = [
 async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> None:
     settings["SESSION_SETTINGS"] = session_setting
 
-    async with Requestfactory(
-        unfazed, base_url="https://garena.com", lifespan_on=False
-    ) as request:
+    async with Requestfactory(unfazed, base_url="https://garena.com") as request:
         # login
         resp = await request.get("/login")
         assert resp.status_code == 200

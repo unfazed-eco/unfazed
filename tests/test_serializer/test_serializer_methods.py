@@ -304,3 +304,34 @@ async def test_relations() -> None:
     assert ret.data[0].age == 18
     assert ret.data[0].bags[0].name == "bag1"
     assert ret.data[0].bags[1].name == "bag2"
+
+    # find_relations
+
+    # one to one
+    profile_student_o2o = ProfileSerializer.find_relation(StudenSerializer)
+    assert profile_student_o2o is not None
+    assert profile_student_o2o.relation == "o2o"
+
+    # bk one to one
+    student_profile_bk_o2o = StudenSerializer.find_relation(ProfileSerializer)
+    assert student_profile_bk_o2o is not None
+    assert student_profile_bk_o2o.relation == "bk_o2o"
+
+    # bk fk
+    student_bag_bk_fk = StudenSerializer.find_relation(BagSerializer)
+    assert student_bag_bk_fk is not None
+    assert student_bag_bk_fk.relation == "bk_fk"
+
+    # fk
+    bag_student_fk = BagSerializer.find_relation(StudenSerializer)
+    assert bag_student_fk is not None
+    assert bag_student_fk.relation == "fk"
+
+    # m2m
+    course_student_m2m = CourseSerializer.find_relation(StudenSerializer)
+    assert course_student_m2m is not None
+    assert course_student_m2m.relation == "m2m"
+
+    # None
+    course_bag_none = CourseSerializer.find_relation(BagSerializer)
+    assert course_bag_none is None

@@ -1,11 +1,8 @@
+import logging
 import typing as t
 
 from unfazed.core import Unfazed
 from unfazed.logging import LogCenter
-
-if t.TYPE_CHECKING:
-    pass
-
 
 LOGGING = {
     "version": 1,
@@ -31,13 +28,18 @@ LOGGING = {
 }
 
 
-def test_registry() -> None:
+EMPTY_LOGGING: t.Dict[str, t.Any] = {}
+
+
+async def test_registry() -> None:
     unfazed = Unfazed()
 
+    # await unfazed.setup()
+
     log_center = LogCenter(unfazed, LOGGING)
+    log_center.setup()
 
     # check merged config
-
     assert log_center.config is not None
     assert log_center.config["version"] == 1
     assert log_center.config["disable_existing_loggers"] is False
@@ -51,3 +53,13 @@ def test_registry() -> None:
     assert "unfazed.server" in log_center.config["loggers"]
     assert "unfazed.middleware" in log_center.config["loggers"]
     assert "common" in log_center.config["loggers"]
+
+    logger = logging.getLogger("common")
+    assert logger.level == logging.WARNING
+
+    # init with empty logging
+
+    log_center2 = LogCenter(unfazed, EMPTY_LOGGING)
+    log_center2.setup()
+
+    assert "unfazed.request" in log_center.config["loggers"]

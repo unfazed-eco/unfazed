@@ -10,7 +10,7 @@ from unfazed.test import Requestfactory
 
 class HelloLifeSpan(BaseLifeSpan):
     def __init__(self, unfazed: Unfazed) -> None:
-        self.unfazed = unfazed
+        super().__init__(unfazed)
         self.count = 1
 
     async def on_startup(self) -> None:
@@ -23,15 +23,11 @@ class HelloLifeSpan(BaseLifeSpan):
 
 class HelloLifeSpan2(BaseLifeSpan):
     def __init__(self, unfazed: Unfazed) -> None:
-        self.unfazed = unfazed
+        super().__init__(unfazed)
         self.count = 1
 
     async def on_shutdown(self) -> None:
         self.count += 1
-
-    @property
-    def state(self) -> t.Dict:
-        return {}
 
 
 SETTINGS = {

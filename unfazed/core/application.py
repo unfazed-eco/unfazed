@@ -1,7 +1,7 @@
 import typing as t
 
 from starlette.concurrency import run_in_threadpool
-from starlette.datastructures import State, URLPath
+from starlette.datastructures import State
 from starlette.routing import Router
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -16,7 +16,6 @@ from unfazed.lifespan import BaseLifeSpan, lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.protocol import CacheBackend
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.utils import import_string, unfazed_locker
@@ -157,8 +156,8 @@ class Unfazed:
     def routes(self) -> t.List[Route]:
         return self.router.routes  # type: ignore
 
-    def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
-        return self.router.url_path_for(name, **path_params)
+    # def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
+    #     return self.router.url_path_for(name, **path_params)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         scope["app"] = self
@@ -192,7 +191,7 @@ class Unfazed:
             backend_cls = import_string(conf.BACKEND)
             location = conf.LOCATION
             options = conf.OPTIONS
-            cache_backend: CacheBackend = backend_cls(location, options)
+            cache_backend = backend_cls(location, options)
             caches[alias] = cache_backend
 
     def setup_logging(self) -> None:
@@ -200,7 +199,7 @@ class Unfazed:
             config = {}
 
         else:
-            config = LogConfig(**self.settings.LOGGING).model_dump(
+            config = LogConfig.model_validate(self.settings.LOGGING).model_dump(
                 exclude_none=True, by_alias=True
             )
         log_center = LogCenter(self, config)
