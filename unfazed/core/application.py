@@ -159,7 +159,6 @@ class Unfazed:
     # def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
     #     return self.router.url_path_for(name, **path_params)
 
-
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         scope["app"] = self
         if self.middleware_stack is None:

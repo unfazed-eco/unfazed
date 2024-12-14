@@ -7,7 +7,7 @@ class Store(Storage[str]):
     pass
 
 
-def test_store():
+def test_store() -> None:
     store = Store()
 
     store["foo"] = "bar"
