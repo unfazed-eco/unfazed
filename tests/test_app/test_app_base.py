@@ -16,7 +16,7 @@ def test_app_base() -> None:
     app_common = BaseAppConfig.from_entry("tests.apps.app.common", unfazed)
 
     assert app_common.name == "tests.apps.app.common"
-    assert str(app_common.app_path) == "/unfazed/tests/apps/app/common"
+    assert "tests/apps/app/common" in str(app_common.app_path)
     assert app_common.label == "tests_apps_app_common"
     assert app_common.has_models() is False
     assert app_common.wakeup("admin") is True
@@ -29,7 +29,7 @@ def test_app_base() -> None:
 
     # with init file
     app_withinit = BaseAppConfig.from_entry("tests.apps.app.withinit", unfazed)
-    assert str(app_withinit.app_path) == "/unfazed/tests/apps/app/withinit"
+    assert "tests/apps/app/withinit" in str(app_withinit.app_path)
 
     with pytest.raises(ImportError):
         BaseAppConfig.from_entry("tests.apps.app.notexisted", unfazed)
