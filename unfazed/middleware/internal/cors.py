@@ -14,6 +14,9 @@ class CORSMiddleware(StarletteCORSMiddleware):
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
         cors = unfazed_settings.CORS
 
+        if not cors:
+            raise ValueError("CORS settings not found")
+
         super().__init__(
             app=app,
             allow_origins=cors.allow_origins,

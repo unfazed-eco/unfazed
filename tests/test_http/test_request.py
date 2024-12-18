@@ -1,16 +1,17 @@
 from uuid import uuid4
 
 import pytest
+from pydantic import BaseModel
 
-from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.session.backends.default import SigningSession
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest
 
 
-class User(AbstractUser):
-    pass
+class User(BaseModel):
+    id: int
+    account: str
 
 
 session_settings = SessionSettings(SECRET=uuid4().hex)

@@ -7,16 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-unfazed="^0.0.2b1"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.8.0"
 ruff = "^0.3.1"
 pytest = "^8.1.1"
 pytest-cov = "^4.1.0"
-pytest-asyncio = "^0.23.6"
 pytest-mock = "^3.14.0"
 asyncmy = "^0.2.9"
+pymysql = "^1.1.1"
+pytest-asyncio = "^0.24.0"
+types-pymysql = "^1.1.0.20241103"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"
@@ -57,15 +58,24 @@ line-ending = "auto"
 docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
-
 [tool.mypy]
 python_version = "3.12"
-exclude = ["migrations"]
-
-[[tool.mypy.overrides]]
-module = "migrations.*"
-ignore_errors = true
-
+pretty = true
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_return_any = false
+warn_no_return = false
+warn_unreachable = false
+warn_unused_configs = true
+allow_redefinition = true
+strict_equality = true
+show_error_context = true
 
 [build-system]
 requires = ["poetry-core"]

@@ -15,9 +15,9 @@ class Command(BaseCommand):
 
     Usage:
 
-    >>> python manage.py runserver
-    >>> python manage.py runserver --host 0.0.0.0
-    >>> python manage.py runserver --port 8000
+    >>> python manage.py runserver \n
+    >>> python manage.py runserver --host 0.0.0.0 \n
+    >>> python manage.py runserver --port 8000 \n
     """
 
     @t.override

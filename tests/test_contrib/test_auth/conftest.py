@@ -24,6 +24,8 @@ async def setup_auth_unfazed() -> t.AsyncGenerator[Unfazed, None]:
     unfazed = Unfazed()
 
     await unfazed.setup()
+    print(f"admin settings: {os.environ['UNFAZED_SETTINGS_MODULE']}")
+    print(f"admin settings: {settings['UNFAZED_SETTINGS']}")
     await unfazed.migrate()
 
     auth_app = unfazed.app_center["unfazed.contrib.auth"]

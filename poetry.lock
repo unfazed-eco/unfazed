@@ -2,24 +2,24 @@
 
 [[package]]
 name = "aerich"
-version = "0.7.2"
+version = "0.8.0"
 description = "A database migrations tool for Tortoise ORM."
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "aerich-0.7.2-py3-none-any.whl", hash = "sha256:84c78c07d45436b89ca4db5411eca4e9292a591fb7d6fd4282fa4a7d0c6d2af1"},
-    {file = "aerich-0.7.2.tar.gz", hash = "sha256:31d67de7b96184636b89de99062e059e5e6204b6251d24c33eb21fc9cf982e09"},
+    {file = "aerich-0.8.0-py3-none-any.whl", hash = "sha256:a0afb70027e539cf37d27fb06bb2cbb0dfe01ef2170dae0adc816fe4da0e502d"},
+    {file = "aerich-0.8.0.tar.gz", hash = "sha256:13786a91469626c025a2e2c5e524cac2b82b900de063b317f402710ee4c11ccb"},
 ]
 
 [package.dependencies]
-click = "*"
+asyncclick = ">=8.1.7.2,<9.0.0.0"
 dictdiffer = "*"
-pydantic = "*"
+pydantic = ">=2.0,<3.0"
 tomlkit = "*"
 tortoise-orm = "*"
 
 [package.extras]
-asyncmy = ["asyncmy (>=0.2.8rc1,<0.3.0)"]
+asyncmy = ["asyncmy (>=0.2.9,<0.3.0)"]
 asyncpg = ["asyncpg"]
 
 [[package]]
@@ -53,23 +53,24 @@ files = [
 
 [[package]]
 name = "anyio"
-version = "4.3.0"
+version = "4.7.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "anyio-4.3.0-py3-none-any.whl", hash = "sha256:048e05d0f6caeed70d731f3db756d35dcc1f35747c8c403364a8332c630441b8"},
-    {file = "anyio-4.3.0.tar.gz", hash = "sha256:f75253795a87df48568485fd18cdd2a3fa5c4f7c5be8e5e36637733fce06fed6"},
+    {file = "anyio-4.7.0-py3-none-any.whl", hash = "sha256:ea60c3723ab42ba6fff7e8ccb0488c898ec538ff4df1f1d5e642c3601d07e352"},
+    {file = "anyio-4.7.0.tar.gz", hash = "sha256:2f834749c602966b7d456a7567cafcb309f96482b5081d14ac93ccd457f9dd48"},
 ]
 
 [package.dependencies]
 idna = ">=2.8"
 sniffio = ">=1.1"
+typing_extensions = {version = ">=4.5", markers = "python_version < \"3.13\""}
 
 [package.extras]
-doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
-test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypothesis (>=4.0)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
-trio = ["trio (>=0.23)"]
+doc = ["Sphinx (>=7.4,<8.0)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx_rtd_theme"]
+test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypothesis (>=4.0)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "truststore (>=0.9.1)", "uvloop (>=0.21)"]
+trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "asgiref"
@@ -84,6 +85,21 @@ files = [
 
 [package.extras]
 tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
+
+[[package]]
+name = "asyncclick"
+version = "8.1.7.2"
+description = "Composable command line interface toolkit, async version"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "asyncclick-8.1.7.2-py3-none-any.whl", hash = "sha256:1ab940b04b22cb89b5b400725132b069d01b0c3472a9702c7a2c9d5d007ded02"},
+    {file = "asyncclick-8.1.7.2.tar.gz", hash = "sha256:219ea0f29ccdc1bb4ff43bcab7ce0769ac6d48a04f997b43ec6bee99a222daa0"},
+]
+
+[package.dependencies]
+anyio = "*"
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "asyncmy"
@@ -907,13 +923,13 @@ rsa = ["cryptography"]
 
 [[package]]
 name = "pypika-tortoise"
-version = "0.2.2"
+version = "0.3.2"
 description = "Forked from pypika and streamline just for tortoise-orm"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pypika_tortoise-0.2.2-py3-none-any.whl", hash = "sha256:e93190aedd95acb08b69636bc2328cc053b2c9971307b6d44405bc6d9f9b71a5"},
-    {file = "pypika_tortoise-0.2.2.tar.gz", hash = "sha256:f0fbc9e0c3ddc33118a5be69907428863849df60788e125edef1f46a6261d63b"},
+    {file = "pypika_tortoise-0.3.2-py3-none-any.whl", hash = "sha256:c5c52bc4473fe6f3db36cf659340750246ec5dd0f980d04ae7811430e299c3a2"},
+    {file = "pypika_tortoise-0.3.2.tar.gz", hash = "sha256:f5d508e2ef00255e52ec6ac79ef889e10dbab328f218c55cd134c4d02ff9f6f4"},
 ]
 
 [[package]]
@@ -1194,20 +1210,20 @@ files = [
 
 [[package]]
 name = "tortoise-orm"
-version = "0.21.7"
+version = "0.22.2"
 description = "Easy async ORM for python, built with relations in mind"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "tortoise_orm-0.21.7-py3-none-any.whl", hash = "sha256:2229925885461f424673223ea1875bd5e6961384c766833af55a1ea11a9b25eb"},
-    {file = "tortoise_orm-0.21.7.tar.gz", hash = "sha256:8a790a931828aa37ac364b344c561e603422aced2af5e403f6790575da0f19c5"},
+    {file = "tortoise_orm-0.22.2-py3-none-any.whl", hash = "sha256:1369f3286b33b509e36953c4147a6f5e6c9cd40b95c58dc7054ef463ab69971a"},
+    {file = "tortoise_orm-0.22.2.tar.gz", hash = "sha256:f1e808bc27265b3e4682dae89b725a66d8311cc20c206d512c57dd8a1c78096b"},
 ]
 
 [package.dependencies]
 aiosqlite = ">=0.16.0,<0.21.0"
 iso8601 = ">=2.1.0,<3.0.0"
 pydantic = ">=2.0,<2.7.0 || >2.7.0,<3.0"
-pypika-tortoise = ">=0.2.1,<0.3.0"
+pypika-tortoise = ">=0.3.2,<0.4.0"
 pytz = "*"
 
 [package.extras]
@@ -1303,4 +1319,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "4e6315b810948446cfa6fde56fc25face4c55afa33eb94bf0274093b857f529c"
+content-hash = "6c7f49182d59fa114a0fc5100354d3e21e78853f94a36f8ed8391cbcde08983f"

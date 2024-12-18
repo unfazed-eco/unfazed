@@ -61,7 +61,7 @@ class Car(Model):
     length = f.FloatField()
     color = f.IntEnumField(enum_type=Color)
     height = f.IntField()
-    extra_info = f.JSONField(default={})
+    extra_info: t.Dict = f.JSONField(default={})
     version = f.SmallIntField()
     description = f.TextField()
     usage = f.TimeDeltaField()

@@ -4,7 +4,8 @@ from unfazed.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    pass
+    class Meta:
+        table = "unfazed_auth_user"
 
 
 class Phone(Model):

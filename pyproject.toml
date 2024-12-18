@@ -16,11 +16,12 @@ uvicorn = "^0.28.0"
 orjson = "^3.10.3"
 asgiref = "^3.8.1"
 redis = "^5.0.8"
-tortoise-orm = {version = "^0.21.6", extras = ["tortoise"]}
-aerich = {version = "^0.7.2", extras = ["tortoise"]}
 python-multipart = "^0.0.16"
 httpx = "^0.27.2"
 itsdangerous = "^2.2.0"
+anyio = "^4.7.0"
+tortoise-orm = "^0.22.2"
+aerich = "^0.8.0"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.8.0"
@@ -31,7 +32,6 @@ pytest-mock = "^3.14.0"
 asyncmy = "^0.2.9"
 pymysql = "^1.1.1"
 pytest-asyncio = "^0.24.0"
-anyio = "4.3.0"
 types-pymysql = "^1.1.0.20241103"
 
 
@@ -49,7 +49,7 @@ unfazed-cli = "unfazed.cli:main"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 testpaths = [
-    "tests/",
+    "tests",
 ]
 
 [tool.coverage.report]

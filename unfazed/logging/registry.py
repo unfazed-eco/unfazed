@@ -21,21 +21,21 @@ DEFAULT_LOGGING_CONFIG = {
         }
     },
     "loggers": {
-        "unfazed.request": {
+        "unfazed": {
             "level": "DEBUG",
             "handlers": ["_console"],
         },
-        "unfazed.server": {
-            "level": "DEBUG",
+        "unvicorn": {
+            "level": "INFO",
             "handlers": ["_console"],
         },
-        "unfazed.middleware": {
-            "level": "DEBUG",
+        "tortoise": {
+            "level": "INFO",
             "handlers": ["_console"],
         },
     },
     "filters": {},
-    "root": {"level": "DEBUG", "handlers": ["_console"]},
+    # "root": {"level": "DEBUG", "handlers": ["_console"]},
     "version": 1,
 }
 
