@@ -58,19 +58,19 @@ class Unfazed:
         unfazed setup app center from settings.INSTALLED_APPS
         unfazed loop through all apps and call app.setup()
 
-    5. setup routes
+    5. setup model center
+        unfazed setup model center from settings.DATABASE
+        now unfazed only support tortoise orm
+
+    6. setup routes
         unfazed use settings.ROOT_URLCONF to setup routes as the entry point
         then loop through all apps and extract routes from app.routes
 
-    6. setup middleware
+    7. setup middleware
         unfazed setup middleware from settings.MIDDLEWARE
 
-    7. setup command center
+    8. setup command center
         unfazed loop through all apps and extract commands from app.commands
-
-    8. setup model center
-        unfazed setup model center from settings.DATABASE
-        now unfazed only support tortoise orm
 
     9. setup lifespan
         unfazed setup lifespan from settings.LIFESPAN
@@ -243,13 +243,17 @@ class Unfazed:
 
     @unfazed_locker
     async def setup(self) -> None:
+        """
+        Setup Order is very important, refer above docstring for more info
+
+        """
         self.setup_logging()
         self.setup_cache()
         await self.app_center.setup()
+        await self.model_center.setup()
         self.setup_routes()
         self.setup_middleware()
         await self.command_center.setup()
-        await self.model_center.setup()
         self.setup_lifespan()
         self.setup_openapi()
 

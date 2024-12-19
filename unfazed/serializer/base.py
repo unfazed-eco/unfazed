@@ -65,7 +65,43 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     1. Generate a Serializer instance from a Tortoise Model
     2. Provide CRUD operations for Model instances
-    3. Link with contrib.admin's ModelAdmin to support admin page functionality
+    3. Link with contrib.admin's ModelAdmin to support admin page
+
+
+    Attention:
+
+    the Serializer will automatically not only generate fields but also generate relation fields
+    but due to the implementation of tortoise-orm, the relations between models are not directly accessible
+    it must be accessed after `Tortoise.init` is called.
+
+    refer: https://github.com/tortoise/tortoise-orm/blob/develop/examples/pydantic/early_init.py
+
+    to avoid error when init Serializer, unfazed setup models immediately after collecting all apps.
+    and devs need to know:
+
+        1. avoid access Serializer in the app.ready() method.
+        2. if you must access Serializer in the app.ready() method, override the realtions fields in the Serializer class.
+            ```python
+
+            class StudentSerializer(Serializer):
+                class Meta:
+                    model = Student
+
+                courses: t.List[CourseSerializer] = []
+
+            ```
+
+        3. exclude the relation fields in the Meta.exclude
+
+            ```python
+
+            class StudentSerializer(Serializer):
+                class Meta:
+                    model = Student
+                    exclude = ["courses"]
+
+
+            ```
 
 
     Usage:

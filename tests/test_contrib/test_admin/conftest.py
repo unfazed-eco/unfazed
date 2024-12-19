@@ -23,8 +23,6 @@ async def setup_admin_unfazed() -> t.AsyncGenerator[Unfazed, None]:
 
     await unfazed.setup()
 
-    print(f"admin settings: {os.environ['UNFAZED_SETTINGS_MODULE']}")
-    print(f"admin settings: {settings['UNFAZED_SETTINGS']}")
     await unfazed.migrate()
 
     yield unfazed
