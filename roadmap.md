@@ -14,7 +14,7 @@ Unfazed development plan
 - [x] template
 - [x] route
 - [x] utils
-- [ ] contrib
+- [x] contrib
 - [x] db
 - [x] cache
 - [x] log
@@ -76,21 +76,21 @@ app 包含以下功能
 - [x] PlainTextResponse
 - [x] HtmlResponse
 - [x] RedirectResponse
-- [ ] FileResponse
-- [ ] StreamingResponse
+- [x] FileResponse
+- [x] StreamingResponse
 
 
 ### middleware
 
 
 - [x] basemiddleware 基础中间件 
-- [ ] 默认中间件设计
+- [x] 默认中间件设计
 - [ ] clickjacking
 - [ ] csrf
-- [ ] cors
+- [x] cors
 - [x] common exception
-- [ ] gzip
-- [ ] trusted host
+- [x] gzip
+- [x] trusted host
 
 
 ### template
@@ -115,16 +115,15 @@ app 包含以下功能
 
 contrib 包含以下的 app
 
-- [ ] admin
-- [ ] auth
+- [x] admin
+- [x] auth
 - [ ] extauth
-- [ ] session
+- [x] session
 - [ ] generator
 
 
 ### db
 
-- [ ] orm 协议实现
 - [x] tortoise orm 实现
 
 
