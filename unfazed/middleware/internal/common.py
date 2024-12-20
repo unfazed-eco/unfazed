@@ -7,34 +7,8 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.core import Unfazed
-from unfazed.http import HtmlResponse, HttpResponse
+from unfazed.http import HttpResponse
 from unfazed.middleware import BaseMiddleware
-
-
-class CommonMiddleware(BaseMiddleware):
-    def __init__(self, app: ASGIApp) -> None:
-        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
-        self.debug = unfazed_settings.DEBUG
-
-        super().__init__(app)
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-
-        try:
-            await self.app(scope, receive, send)
-        except Exception as e:
-            unfazed = t.cast(Unfazed, scope.get("app"))
-            if self.debug:
-                response = render_error_html(e, unfazed.settings.model_dump())
-            else:
-                response = HttpResponse(
-                    status_code=500, content="Internal Server Error"
-                )
-            await response(scope, receive, send)
-
 
 TEMPLATE = """
 
@@ -43,7 +17,7 @@ TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNFAZED ERROR PAGE</title>
+    <title>UNFAZED DEBUG PAGE</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,14 +45,15 @@ TEMPLATE = """
     </style>
 </head>
 <body>
+    <h1>Unfazed Error Info</h1>
+    <p> you can see this page because DEBUG = True in the settings file. </p>
     <div class="container">
-        <h1>ERROR</h1>
         <h2>TRACEBACK</h2>
         <pre>{{ error_message }}</pre>
     </div>
-
+    <br>
     <div class="container">
-        <h1>UNFAZED DETAIL</h1>
+        <h2>SETTINGS</h2>
         <pre>{{ unfazed_settings }}</pre>
     </div>
 </body>
@@ -88,14 +63,41 @@ TEMPLATE = """
 """
 
 
-def render_error_html(
-    error: Exception, unfazed_settings: t.Dict[str, t.Any]
-) -> HttpResponse:
-    error_content = format_exception(type(error), error, error.__traceback__)
-    unfazed_settings_str = json.dumps(unfazed_settings).decode()
+def render_error_html(error: Exception, unfazed_settings: t.Dict[str, t.Any]) -> str:
+    error_content_list = format_exception(type(error), error, error.__traceback__)
+    error_content = "".join(error_content_list)
+    unfazed_settings_str = json.dumps(
+        unfazed_settings, option=json.OPT_INDENT_2
+    ).decode()
 
     content = Template(TEMPLATE).render(
         {"error_message": error_content, "unfazed_settings": unfazed_settings_str}
     )
 
-    return HtmlResponse(content=content, status_code=500)
+    return content
+
+
+class CommonMiddleware(BaseMiddleware):
+    def __init__(self, app: ASGIApp) -> None:
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        self.debug = unfazed_settings.DEBUG
+
+        super().__init__(app)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        try:
+            await self.app(scope, receive, send)
+        except Exception as e:
+            unfazed = t.cast(Unfazed, scope.get("app"))
+            if self.debug:
+                content = render_error_html(e, unfazed.settings.model_dump())
+                response = HttpResponse(content=content, status_code=500)
+            else:
+                response = HttpResponse(
+                    status_code=500, content="Internal Server Error"
+                )
+            await response(scope, receive, send)

@@ -17,6 +17,9 @@ class TrustedHostMiddleware(StarletteTrustedHostMiddleware):
 
         trusted_host = unfazed_settings.TRUSTED_HOST
 
+        if not trusted_host:
+            raise ValueError("TRUSTED_HOST settings not found")
+
         super().__init__(
             app=app,
             allowed_hosts=trusted_host.allowed_hosts,

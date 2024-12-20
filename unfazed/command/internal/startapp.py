@@ -23,8 +23,8 @@ class Command(BaseCommand):
     # Create a simple app
     >>> python manage.py startapp -n myapp
 
-    # Create a complex app
-    >>> python manage.py startapp -n myapp -t complex
+    # Create a standard app
+    >>> python manage.py startapp -n myapp -t standard
 
     """
 

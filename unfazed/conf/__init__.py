@@ -20,9 +20,9 @@ class UnfazedSettings(BaseModel):
     LIFESPAN: t.Sequence[str] | None = None
     OPENAPI: OpenAPI | None = None
     VERSION: str = Field(default="0.0.1")
-    CORS: Cors = Cors()
-    TRUSTED_HOST: TrustedHost = TrustedHost()
-    GZIP: GZip = GZip()
+    CORS: Cors | None = None
+    TRUSTED_HOST: TrustedHost | None = None
+    GZIP: GZip | None = None
 
 
 __all__ = ["UnfazedSettings", "settings"]

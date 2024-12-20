@@ -9,6 +9,9 @@ class GZipMiddleware(StarletteGZipMiddleware):
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
         gzip = unfazed_settings.GZIP
 
+        if not gzip:
+            raise ValueError("GZIP settings not found")
+
         super().__init__(
             app=app,
             minimum_size=gzip.minimum_size,

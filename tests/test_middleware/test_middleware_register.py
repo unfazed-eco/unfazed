@@ -12,6 +12,9 @@ _Settings = {
         "unfazed.middleware.internal.cors.CORSMiddleware",
         "unfazed.middleware.internal.trustedhost.TrustedHostMiddleware",
     ],
+    "CORS": {},
+    "GZIP": {},
+    "TRUSTED_HOST": {},
 }
 
 

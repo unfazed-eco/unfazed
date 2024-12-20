@@ -22,6 +22,7 @@ async def setup_admin_unfazed() -> t.AsyncGenerator[Unfazed, None]:
     unfazed = Unfazed()
 
     await unfazed.setup()
+
     await unfazed.migrate()
 
     yield unfazed

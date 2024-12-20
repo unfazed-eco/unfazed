@@ -49,9 +49,7 @@ async def test_registry() -> None:
     assert "default" in log_center.config["handlers"]
     assert "_console" in log_center.config["handlers"]
 
-    assert "unfazed.request" in log_center.config["loggers"]
-    assert "unfazed.server" in log_center.config["loggers"]
-    assert "unfazed.middleware" in log_center.config["loggers"]
+    assert "unfazed" in log_center.config["loggers"]
     assert "common" in log_center.config["loggers"]
 
     logger = logging.getLogger("common")
@@ -62,4 +60,4 @@ async def test_registry() -> None:
     log_center2 = LogCenter(unfazed, EMPTY_LOGGING)
     log_center2.setup()
 
-    assert "unfazed.request" in log_center.config["loggers"]
+    assert "unfazed" in log_center.config["loggers"]
