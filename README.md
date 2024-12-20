@@ -44,6 +44,10 @@ and with unfazed ecosystem
 - unfazed-prometheus
 - unfazed-celery
 - unfazed-sentry
+- unfazed-redis
+- unfazed-locust
+- unfazed-pyroscope
+- unfazed-scalene ?
 
 with these tools, you can build a production-ready web application quickly.
 
