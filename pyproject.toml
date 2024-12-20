@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unfazed"
-version = "0.0.3"
+version = "0.0.4"
 description = "a django-like async python web framework"
 authors = ["xin.zhou <zhouxin576@gmail.com>"]
 license = "BSD 3-Clause \"New\" or \"Revised\""
