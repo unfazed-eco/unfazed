@@ -6,12 +6,19 @@ PROJECT_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 
-LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+DEFAULT_LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+LOG_DIR = os.getenv("LOG_DIR", DEFAULT_LOG_DIR)
 
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
 LOG_FILE = os.path.join(LOG_DIR, "unfazed.log")
+
+
+# SECRET
+# This is a secret key that will be used to sign cookies and other sensitive data.
+DEFAULT_SECRET = "{{secret}}"
+SECRET = os.getenv("SECRET", DEFAULT_SECRET)
 
 UNFAZED_SETTINGS = {
     "DEBUG": True if DEPLOY != "prod" else False,

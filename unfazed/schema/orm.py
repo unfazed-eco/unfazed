@@ -42,7 +42,7 @@ class MysqlCredential(BaseCredential):
 
 class Connection(BaseModel):
     engine: str = Field(..., alias="ENGINE")
-    credentials: t.Union[SqliteCredential, PgsqlCredential, MysqlCredential] = Field(
+    credentials: t.Union[SqliteCredential, MysqlCredential, PgsqlCredential] = Field(
         ..., alias="CREDENTIALS"
     )
 

@@ -95,7 +95,6 @@ other:
 - middleware
 - command
 - settings
-- exception
 - logging
 - lifespan
 - test
