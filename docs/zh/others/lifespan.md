@@ -78,9 +78,13 @@ class YourLifespan(BaseLifespan):
 
 ```python
 
-from unfazed.http import HttpRequest
+from unfazed.http import HttpRequest, HttpResponse
 
-async def your_view(request: HttpRequest):
-    print(request.state["db_conn"])
+async def your_view(request: HttpRequest) -> HttpResponse:
+    
+    db_conn = request.state.db_conn
+
+    # do something with db_conn
+    return HttpResponse("ok")
 
 ```
