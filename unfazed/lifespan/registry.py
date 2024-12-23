@@ -47,6 +47,8 @@ class LifeSpanHandler:
         self.lifespan.clear()
 
     def set_state(self) -> None:
+        if not self.unfazed:
+            raise ValueError("unfazed is not set")
         for key, value in self.state.items():
             setattr(self.unfazed.state, key, value)
 

@@ -41,7 +41,7 @@ SETTINGS = {
 }
 
 
-async def test_lifespan(request: HttpRequest) -> HttpResponse:
+async def endpoint1(request: HttpRequest) -> HttpResponse:
     assert request.state.foo == "bar"
 
     return HttpResponse(content="Hello, unfazed")
@@ -50,8 +50,9 @@ async def test_lifespan(request: HttpRequest) -> HttpResponse:
 async def test_registry() -> None:
     unfazed = Unfazed(
         settings=UnfazedSettings.model_validate(SETTINGS),
-        routes=[Route("/", test_lifespan)],
+        routes=[Route("/", endpoint1)],
     )
+
     lifespan_handler.clear()
     await unfazed.setup()
 
@@ -64,6 +65,7 @@ async def test_registry() -> None:
 
     async with Requestfactory(unfazed) as request:
         assert hello_lifespan.count == 2
+        # let endpoint1 to test the state
         await request.get("/")
 
 
