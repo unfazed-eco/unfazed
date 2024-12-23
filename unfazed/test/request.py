@@ -32,12 +32,16 @@ class Requestfactory(httpx.AsyncClient):
     def __init__(
         self,
         app: "Unfazed",
-        app_state: t.Dict[str, t.Any] = {},
+        app_state: t.Dict[str, t.Any] | None = None,
         lifespan_on: bool = True,
         base_url: str = "http://testserver",
     ) -> None:
         transport = httpx.ASGITransport(app)
         self.app = app
+
+        if not app_state:
+            app_state = {}
+        app_state.update(self.app.state._state)
         scope: Scope = {
             "type": "lifespan",
             "asgi": {"version": "3.0", "spec_version": "2.1"},

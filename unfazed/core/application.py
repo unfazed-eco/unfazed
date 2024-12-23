@@ -217,6 +217,8 @@ class Unfazed:
                 raise ValueError(f"{name} is not a valid lifespan")
             lifespan_handler.register(name, instance)
 
+        print(f"lifespan_handler.state: {lifespan_handler.state}")
+        lifespan_handler.set_state()
         self.router.lifespan_context = lifespan_context
 
     def setup_openapi(self) -> None:

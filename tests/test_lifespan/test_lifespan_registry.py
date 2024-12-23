@@ -4,7 +4,9 @@ import pytest
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core.application import Unfazed
+from unfazed.http import HttpRequest, HttpResponse
 from unfazed.lifespan import BaseLifeSpan, lifespan_handler
+from unfazed.route import Route
 from unfazed.test import Requestfactory
 
 
@@ -39,8 +41,17 @@ SETTINGS = {
 }
 
 
+async def test_lifespan(request: HttpRequest) -> HttpResponse:
+    assert request.state.foo == "bar"
+
+    return HttpResponse(content="Hello, unfazed")
+
+
 async def test_registry() -> None:
-    unfazed = Unfazed(settings=UnfazedSettings.model_validate(SETTINGS))
+    unfazed = Unfazed(
+        settings=UnfazedSettings.model_validate(SETTINGS),
+        routes=[Route("/", test_lifespan)],
+    )
     lifespan_handler.clear()
     await unfazed.setup()
 
@@ -51,8 +62,9 @@ async def test_registry() -> None:
         ),
     )
 
-    async with Requestfactory(unfazed):
+    async with Requestfactory(unfazed) as request:
         assert hello_lifespan.count == 2
+        await request.get("/")
 
 
 SETTINGS2 = {

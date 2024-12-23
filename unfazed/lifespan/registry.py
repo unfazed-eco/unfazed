@@ -46,6 +46,10 @@ class LifeSpanHandler:
     def clear(self) -> None:
         self.lifespan.clear()
 
+    def set_state(self) -> None:
+        for key, value in self.state.items():
+            setattr(self.unfazed.state, key, value)
+
 
 handler = LifeSpanHandler()
 
