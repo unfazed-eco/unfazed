@@ -6,7 +6,7 @@ Endpoint 是 unfazed 中上承路由分发，下接 service 逻辑处理的中�
 1. 定义路由请求参数和响应
 2. 连接 route 路由分发
 3. 连接 service 逻辑处理
-4. 生成 openapi 文档
+4. 供 openapi 文档生成
 
 
 ## 快速开始
@@ -316,7 +316,7 @@ patterns = [
 ```
 
 
-### Body
+### Json
 
 ```python
 
@@ -364,11 +364,95 @@ async def endpoint5(
     return JsonResponse(r)
 
 
+# scope
+
+{
+    "type": "http.request",
+    "body": b'{"body1": "foo", "body2": 1, "body3": 2, "body4": "foo2", "body5": "foo3"}',
+    "more_body": False,
+}
+
 ```
 
 解释：
 
-1. Body 参数使用 p.Json() 标记
-2. 在没有 t.Annotated 的情况下，如果参数类型为 BaseModel，则会被自动识别为 Body 参数    
+1. Body 中 media 类型为 application/json 参数使用 p.Json() 标记
+2. 在没有 t.Annotated 的情况下，如果参数类型为 BaseModel，则会被自动识别为 Json 参数    
 
 
+### Form
+
+```python
+
+
+class Form1(BaseModel):
+    form1: str
+    form2: int = Field(default=1)
+
+
+class Form2(BaseModel):
+    form3: int
+    form4: str = Field(default="123")
+
+
+class RespE6(BaseModel):
+    form1: str
+    form2: int
+    form3: int
+    form4: str
+    form5: str
+
+
+async def endpoint6(
+    request: HttpRequest,
+    form1: t.Annotated[Form1, p.Form()],
+    form2: t.Annotated[Form2, p.Form()],
+    form5: t.Annotated[str, p.Form(default="foo")],
+    *args: t.Any,
+    **kw: t.Any,
+) -> JsonResponse:
+    r = RespE6(
+        form1=form1.form1,
+        form2=form1.form2,
+        form3=form2.form3,
+        form4=form2.form4,
+        form5=form5,
+    )
+    return JsonResponse(r)
+
+# scope
+
+{
+    "type": "http.request",
+    "body": b"form1=foo&form2=1&form3=2&form4=foo2&form5=foo3",
+    "more_body": False,
+}
+
+```
+
+
+### File
+
+```python
+
+
+from unfazed.file import UploadFile
+
+class RespFile(BaseModel):
+    file_name: str | None
+
+
+async def endpoint19(
+    request: HttpRequest,
+    file1: t.Annotated[UploadFile, p.File()],
+) -> JsonResponse:
+    return JsonResponse(
+        RespFile(
+            file_name=file1.filename,
+        )
+    )
+
+```
+
+1. UploadFile 直接继承自 starlette.datastructures.UploadFile
+2. 参数类型为 UploadFile 时，使用 p.File() 标记
