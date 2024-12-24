@@ -8,55 +8,66 @@ Unfazed 提供一个简单的基于 tortoise-orm model 的序列化器，并提�
 
 ```python
 
-# models.py
+```python
 
-from tortoise import Model
+from tortoise import Model, fields
+from unfazed.serializer import Serializer
 
-class User(Model):
-    id = fields.IntField(pk=True)
+class Student(Model):
     name = fields.CharField(max_length=255)
     age = fields.IntField()
 
 
-
-# serializers.py
-
-from unfazed.serializer import Serializer
-from .models import User
-
-
-class UserSerializer(Serializer):
-    
+class StudentSerializer(Serializer):
     class Meta:
-        model = User
+        model = Student
 
+# create a student
+
+class StudentCreate(BaseModel):
+    name: str
+    age: int
+
+StudentSerializer.create_from_ctx(StudentCreate(name="student1", age=18))
+
+# update a student
+
+class StudentUpdate(BaseModel):
+    id: int
+    name: str
+    age: int
+
+StudentSerializer.update_from_ctx(StudentUpdate(id=1, name="student1", age=19))
+
+
+# delete a student
+
+class StudentDelete(BaseModel):
+    id: int
+
+StudentSerializer.destroy_from_ctx(StudentDelete(id=1))
+
+# retrieve a student
+class StudentRetrieve(BaseModel):
+    id: int
+
+StudentSerializer.retrieve_from_ctx(StudentRetrieve(id=1))
+
+
+# find relation
+
+class Course(Model):
+    name = fields.CharField(max_length=255)
+    students = fields.ManyToManyField("models.Student", related_name="courses")
+
+class CourseSerializer(Serializer):
+    class Meta:
+        model = Course
+
+StudentSerializer.find_relation(CourseSerializer)
+    
 ```
 
-定义完成之后，可以通过以下方式进行增删改查操作。
-
-```python
-
-
-# services.py
-
-
-from .serializers import UserSerializer
-
-
-async def serializer_method():
-    # 创建
-    user = await UserSerializer.create(name="unfazed", age=18)
-    
-    # 查询
-    user = await UserSerializer.get(id=1)
-    
-    # 更新
-    user = await UserSerializer.update(id=1, name="unfazed2")
-    
-    # 删除
-    user = await UserSerializer.delete(id=1)
-
-```
 
 
 ## 高级
@@ -70,16 +81,12 @@ Serializer 支持参数覆盖与新增。
 from unfazed.serializer import Serializer
 from .models import User
 
-class UserSerializer(Serializer):
-    
+class StudentSerializer(Serializer):
     class Meta:
-        model = User
+        model = Student
 
-    # 覆盖 user 中的 age 字段
     age: str
-
-    # 新增 sex 字段
-    sex: int 
+    sex: int
 
 
 ```
@@ -94,10 +101,9 @@ Serializer 支持 Meta 选项，用于配置 model 与 fields。
 from unfazed.serializer import Serializer
 from .models import User
 
-class UserSerializer(Serializer):
-    
+class StudentSerializer(Serializer):
     class Meta:
-        model = User
+        model = Student
         include = ["name", "age"]
 
         # 或者 exclude

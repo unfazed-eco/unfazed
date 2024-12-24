@@ -7,3 +7,4 @@ __pycache__
 migrations
 .VSCodeCounter
 dist
+.mypy_cache
