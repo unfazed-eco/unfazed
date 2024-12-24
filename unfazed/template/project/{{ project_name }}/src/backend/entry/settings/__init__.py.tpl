@@ -66,4 +66,7 @@ UNFAZED_SETTINGS = {
             },
         },
     },
+    "OPENAPI": {
+        "servers": [{"url": "http://127.0.0.1:9527", "description": "Local dev"}],
+    },
 }
