@@ -1,6 +1,7 @@
 import typing as t
 
 import pytest
+from starlette.routing import Match
 from starlette.types import Receive, Scope, Send
 
 from unfazed.core import Unfazed
@@ -144,3 +145,53 @@ def test_route() -> None:
 
     route.update_label("test_route2")
     assert route.app_label == "test_route2"
+
+    # test route match
+
+    route2 = Route("/foo/{id}", view)
+
+    scope1 = {
+        "type": "http",
+        "path": "/foo/1",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    scope2 = {
+        "type": "http",
+        "path": "/foo/abc",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    match, _ = route2.matches(scope1)
+    assert match == Match.FULL
+
+    match, _ = route2.matches(scope2)
+    assert match == Match.FULL
+
+    route3 = Route("/foo/{id:int}", view)
+    match, _ = route3.matches(scope1)
+    assert match == Match.FULL
+
+    match, _ = route3.matches(scope2)
+    assert match == Match.NONE
+
+    # test regex path
+    route4 = Route(r"/foo/(?P<lang>[-_a-zA-Z]+)", view)
+    print(route4.path_regex)
+    import re
+
+    regex = re.compile(r"^/foo/(?P<lang>[-_a-zA-Z]+)$")
+    print(regex)
+    print(regex.match("/foo/en"))
+
+    scope3 = {
+        "type": "http",
+        "path": "/foo/en",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    match, _ = route4.matches(scope3)
+    assert match == Match.FULL
