@@ -11,7 +11,10 @@ from unfazed.test import Requestfactory
 
 def test_service() -> None:
     openapi_setting = OpenAPI.model_validate(
-        {"servers": [{"url": "http://localhost:8000", "description": "dev"}]}
+        {
+            "servers": [{"url": "http://localhost:8000", "description": "dev"}],
+            "info": {"title": "myproject"},
+        }
     )
     docs = OpenApiService._get_docs(
         title="project",

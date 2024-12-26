@@ -63,6 +63,7 @@ _Setting = {
     "LIFESPAN": ["tests.apps.core.lifespan.set_count.SetCount"],
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local"}],
+        "info": {"title": "Test App"},
     },
     "VERSION": "0.1.0",
 }

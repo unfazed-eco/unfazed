@@ -1,20 +1,20 @@
 import typing as t
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import BaseModel
 
 from unfazed.type import Domain
 
 
 class Contact(BaseModel):
     name: t.Optional[str] = None
-    url: t.Optional[AnyUrl] = None
+    url: t.Optional[str] = None
     email: t.Optional[str] = None
 
 
 class License(BaseModel):
     name: str
     identifier: t.Optional[str] = None
-    url: t.Optional[AnyUrl] = None
+    url: t.Optional[str] = None
 
 
 class Info(BaseModel):
@@ -47,7 +47,7 @@ class Redoc(BaseModel):
 class OpenAPI(BaseModel):
     # openapi schema config
     servers: t.List[Server]
-    info: t.Optional[Info] = None
+    info: Info
     jsonSchemaDialect: str | None = None
 
     # openapi ui config

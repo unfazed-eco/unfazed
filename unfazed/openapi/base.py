@@ -9,7 +9,6 @@ from unfazed.schema import OpenAPI as OpenAPISettingModel
 from . import spec as s
 
 REF = "#/components/schemas/"
-DEFAULT_REF_TPL = REF + "{model}"
 
 
 class OpenApi:
@@ -93,12 +92,14 @@ class OpenApi:
             bd_model: t.Type[BaseModel] = definition.body_model
             required = True
             bd_json_schema = bd_model.model_config.get("json_schema_extra", {})
-            request_body_desc = bd_json_schema.get("description")
 
             # comply with mypy check
             if not bd_json_schema or not isinstance(bd_json_schema, dict):
                 bd_json_schema = {}  # pragma: no cover
             content_type = bd_json_schema.get("media_type")
+            request_body_desc = t.cast(
+                t.Union[str, None], bd_json_schema.get("description")
+            )
             if not content_type or not isinstance(content_type, str):
                 content_type = "application/json"  # pragma: no cover
             example = bd_json_schema.get("example")
@@ -135,21 +136,22 @@ class OpenApi:
                 example=example,
                 examples=examples,  # type: ignore
             )
-            responses[response.code] = s.Response(
-                description=response.description,
-                headers=response.headers,
-                content={response.content_type: media_type},
+            responses[response.code] = s.Response.model_validate(
+                {
+                    "description": response.description,
+                    "headers": response.headers,
+                    "content": {response.content_type: media_type},
+                }
             )
 
-        # description = (
-        #     definition.endpoint.__doc__ or f"endpoint for {definition.endpoint_name}"
-        # )
-
+        externalDocs = None
+        if route.externalDocs:
+            externalDocs = s.ExternalDocumentation.model_validate(route.externalDocs)
         operation = s.Operation(
             tags=[t.name for t in endpoint_tags],
             summary=route.summary,
             description=route.description,
-            externalDocs=route.externalDocs,
+            externalDocs=externalDocs,
             operationId=definition.operation_id,
             deprecated=route.deprecated,
             parameters=parameters,  # type: ignore
@@ -206,7 +208,7 @@ class OpenApi:
             )
 
             if "$defs" in bd_json_schema:
-                nested_model_schema = bd_model.pop("$defs")
+                nested_model_schema = bd_json_schema.pop("$defs")
                 for model_name, model_schema in nested_model_schema.items():
                     schema_model_name = cls.get_reponse_schema_name(route, model_name)
                     schemas[schema_model_name] = model_schema
@@ -220,20 +222,12 @@ class OpenApi:
     def create_openapi_model(
         cls,
         routes: t.List[Route],
-        project_name: str,
-        version: str,
         openapi_setting: OpenAPISettingModel | None = None,
     ) -> s.OpenAPI:
         if not openapi_setting:
             raise ValueError("OpenAPI settings not found")
 
-        if openapi_setting.info is None:
-            info = s.Info(
-                title=project_name,
-                version=version,
-            )
-        else:
-            info = openapi_setting.info
+        info = openapi_setting.info
         ret = s.OpenAPI(
             info=s.Info.model_validate(info.model_dump()),
             servers=[
@@ -269,11 +263,9 @@ class OpenApi:
     def create_schema(
         cls,
         routes: t.List[Route],
-        project_name: str,
-        version: str,
         openapi_setting: OpenAPISettingModel | None = None,
     ) -> t.Dict:
-        ret = cls.create_openapi_model(routes, project_name, version, openapi_setting)
+        ret = cls.create_openapi_model(routes, openapi_setting)
         cls.schema = ret.model_dump(by_alias=True, exclude_none=True)
 
         return cls.schema

@@ -6,5 +6,6 @@ UNFAZED_SETTINGS = {
     "MIDDLEWARE": ["unfazed.middleware.internal.common.CommonMiddleware"],
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local"}],
+        "info": {"title": "myproject"},
     },
 }

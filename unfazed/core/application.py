@@ -227,8 +227,6 @@ class Unfazed:
 
         OpenApi.create_schema(
             t.cast(t.List[Route], self.router.routes),
-            self.settings.PROJECT_NAME,
-            self.settings.VERSION,
             self.settings.OPENAPI,
         )
 

@@ -7,7 +7,7 @@ from unfazed.http import HttpRequest, JsonResponse
 from unfazed.openapi import OpenApi
 from unfazed.route import Route, params
 from unfazed.route.params import ResponseSpec
-from unfazed.schema import OpenAPI, Server
+from unfazed.schema import OpenAPI
 
 
 class Ctx(BaseModel):
@@ -75,8 +75,6 @@ def test_openapi_create() -> None:
 
     ret = OpenApi.create_openapi_model(
         [route, route2],
-        project_name="myproject",
-        version="1.0.0",
         openapi_setting=openapi_setting,
     )
 
@@ -91,7 +89,9 @@ def test_openapi_create() -> None:
     assert ret.info.description == "desc"
     assert ret.info.summary == "summary"
     assert ret.info.termsOfService == "terms"
+    assert ret.info.contact is not None
     assert ret.info.contact.name == "contact"
+    assert ret.info.license is not None
     assert ret.info.license.name == "license"
 
     # servers
@@ -125,8 +125,7 @@ def test_openapi_create() -> None:
 
     assert request_body is not None
     assert "application/json" in request_body.content  # type: ignore
-
-    media = request_body.content["application/json"]
+    media = request_body.content["application/json"]  # type: ignore
 
     assert media.schema_ is not None
     assert media.schema_.ref is not None
@@ -159,10 +158,11 @@ def test_openapi_create() -> None:
     # test create schema result type
     schema = OpenApi.create_schema(
         [route, route2],
-        project_name="myproject",
-        version="1.0.0",
-        openapi_setting=OpenAPI(
-            servers=[Server(url="http://localhost:8000", description="dev")]
+        openapi_setting=OpenAPI.model_validate(
+            {
+                "servers": [{"url": "http://localhost:8000", "description": "dev"}],
+                "info": {"title": "myproject"},
+            }
         ),
     )
 
@@ -172,8 +172,6 @@ def test_openapi_create() -> None:
     with pytest.raises(ValueError):
         OpenApi.create_openapi_model(
             [route, route2],
-            project_name="myproject",
-            version="1.0.0",
         )
 
     # include_in_schema
@@ -182,10 +180,11 @@ def test_openapi_create() -> None:
     )
     ret = OpenApi.create_openapi_model(
         [route3],
-        project_name="myproject",
-        version="1.0.0",
-        openapi_setting=OpenAPI(
-            servers=[Server(url="http://localhost:8000", description="dev")]
+        openapi_setting=OpenAPI.model_validate(
+            {
+                "servers": [{"url": "http://localhost:8000", "description": "dev"}],
+                "info": {"title": "myproject"},
+            }
         ),
     )
 

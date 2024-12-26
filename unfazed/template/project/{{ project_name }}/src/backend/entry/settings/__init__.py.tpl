@@ -68,5 +68,10 @@ UNFAZED_SETTINGS = {
     },
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local dev"}],
+        "info": {
+            "title": PROJECT_NAME,
+            "version": "1.0.0",
+            "description": f"API for {PROJECT_NAME}",
+        },
     },
 }
