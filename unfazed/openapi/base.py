@@ -27,16 +27,15 @@ class OpenApi:
                 tags[name] = s.Tag(name=name)
 
     @classmethod
-    def get_reponse_schema_name(cls, route: Route, response: ResponseSpec) -> str:
+    def get_reponse_schema_name(cls, route: Route, model_name: str) -> str:
         definition = route.endpoint_definition
-        return f"{definition.endpoint_name}.{response.model.__name__}.{response.code}"
+        return f"{definition.endpoint_name}.{model_name}"
 
     @classmethod
     def create_pathitem_from_route(cls, route: Route) -> s.PathItem:
         definition = route.endpoint_definition
 
         # ----
-        endpoint_name = definition.endpoint_name
         endpoint_tags = [s.Tag(name=t) for t in definition.tags]
 
         # handle parameters
@@ -60,16 +59,27 @@ class OpenApi:
                     json_schema_extra_dict = {}  # pragma: no cover
                 example = json_schema_extra_dict.get("example")
                 examples = json_schema_extra_dict.get("examples")
+                deprecated = json_schema_extra_dict.get("deprecated", False)
+                allowEmptyValue = json_schema_extra_dict.get("allowEmptyValue", None)
+                explode = json_schema_extra_dict.get("explode", None)
+                allowReserved = json_schema_extra_dict.get("allowReserved", None)
+
                 item = s.Parameter.model_validate(
                     {
+                        "name": fieldinfo.alias or fieldinfo.title,
                         "in": json_schema_extra_dict["in_"],
                         "style": json_schema_extra_dict["style_"],
-                        "name": fieldinfo.alias or fieldinfo.title,
                         "required": fieldinfo.is_required(),
-                        "schema_": s.Schema(**json_schema["properties"][name]),
+                        "schema": s.Schema.model_validate(
+                            json_schema["properties"][name]
+                        ),
                         "description": fieldinfo.description,
                         "example": example,
                         "examples": examples,
+                        "deprecated": deprecated,
+                        "allowEmptyValue": allowEmptyValue,
+                        "explode": explode,
+                        "allowReserved": allowReserved,
                     }
                 )
                 parameters.append(item)
@@ -78,10 +88,12 @@ class OpenApi:
         content: t.Dict[str, s.MediaType] = {}
 
         required = False
+        request_body_desc: str | None = None
         if definition.body_model:
             bd_model: t.Type[BaseModel] = definition.body_model
             required = True
             bd_json_schema = bd_model.model_config.get("json_schema_extra", {})
+            request_body_desc = bd_json_schema.get("description")
 
             # comply with mypy check
             if not bd_json_schema or not isinstance(bd_json_schema, dict):
@@ -91,9 +103,9 @@ class OpenApi:
                 content_type = "application/json"  # pragma: no cover
             example = bd_json_schema.get("example")
             examples = bd_json_schema.get("examples")
-            body_schema = bd_model.model_json_schema(ref_template=DEFAULT_REF_TPL)
+            request_model_name = cls.get_reponse_schema_name(route, bd_model.__name__)
             media_type = s.MediaType(
-                schema=s.Schema.model_validate(body_schema),
+                schema=s.Reference(ref=REF + request_model_name),
                 examples=examples,  # type: ignore
                 example=example,
             )
@@ -102,7 +114,7 @@ class OpenApi:
         request_body = s.RequestBody(
             required=required,
             content=content,
-            description=f"Request Body for {endpoint_name}",
+            description=request_body_desc,
         )
 
         # handle responses
@@ -111,7 +123,7 @@ class OpenApi:
         response_models = definition.response_models or []
         for response in response_models:
             resp_model = response.model
-            resp_model_name = cls.get_reponse_schema_name(route, response)
+            resp_model_name = cls.get_reponse_schema_name(route, resp_model.__name__)
             rm_json_schema = resp_model.model_config.get("json_schema_extra", {})
             if not rm_json_schema or not isinstance(rm_json_schema, dict):
                 rm_json_schema = {}
@@ -125,19 +137,22 @@ class OpenApi:
             )
             responses[response.code] = s.Response(
                 description=response.description,
+                headers=response.headers,
                 content={response.content_type: media_type},
             )
 
-        description = (
-            definition.endpoint.__doc__ or f"endpoint for {definition.endpoint_name}"
-        )
+        # description = (
+        #     definition.endpoint.__doc__ or f"endpoint for {definition.endpoint_name}"
+        # )
 
         operation = s.Operation(
-            summary=definition.endpoint_name,
             tags=[t.name for t in endpoint_tags],
-            parameters=parameters,  # type: ignore
-            description=description,
+            summary=route.summary,
+            description=route.description,
+            externalDocs=route.externalDocs,
             operationId=definition.operation_id,
+            deprecated=route.deprecated,
+            parameters=parameters,  # type: ignore
             requestBody=request_body,
             responses=responses,
         )
@@ -146,6 +161,9 @@ class OpenApi:
         for method in definition.methods:
             method_map[method.lower()] = operation
         path_item = s.PathItem.model_validate(method_map)
+
+        path_item.summary = route.summary
+        path_item.description = route.description
 
         return path_item
 
@@ -159,15 +177,42 @@ class OpenApi:
         response_models = definition.response_models or []
         for response in response_models:
             response_schema = response.model.model_json_schema(
-                ref_template=DEFAULT_REF_TPL
+                ref_template=REF + route.endpoint_definition.endpoint_name + ".{model}"
             )
 
             if "$defs" in response_schema:
                 nested_model_schema = response_schema.pop("$defs")
-                schemas.update(nested_model_schema)
+                for model_name, model_schema in nested_model_schema.items():
+                    schema_model_name = cls.get_reponse_schema_name(route, model_name)
+                    schemas[schema_model_name] = model_schema
 
-            resp_model_name = cls.get_reponse_schema_name(route, response)
+            resp_model_name = cls.get_reponse_schema_name(
+                route, response.model.__name__
+            )
             schemas[resp_model_name] = response_schema
+
+        return schemas
+
+    @classmethod
+    def create_schema_from_route_request_model(cls, route: Route) -> t.Dict[str, t.Any]:
+        definition = route.endpoint_definition
+
+        schemas: t.Dict[str, t.Any] = {}
+
+        if definition.body_model:
+            bd_model: t.Type[BaseModel] = definition.body_model
+            bd_json_schema = bd_model.model_json_schema(
+                ref_template=REF + route.endpoint_definition.endpoint_name + ".{model}"
+            )
+
+            if "$defs" in bd_json_schema:
+                nested_model_schema = bd_model.pop("$defs")
+                for model_name, model_schema in nested_model_schema.items():
+                    schema_model_name = cls.get_reponse_schema_name(route, model_name)
+                    schemas[schema_model_name] = model_schema
+
+            resp_model_name = cls.get_reponse_schema_name(route, bd_model.__name__)
+            schemas[resp_model_name] = bd_json_schema
 
         return schemas
 
@@ -182,15 +227,19 @@ class OpenApi:
         if not openapi_setting:
             raise ValueError("OpenAPI settings not found")
 
-        info = s.Info(
-            title=project_name,
-            version=version,
-        )
+        if openapi_setting.info is None:
+            info = s.Info(
+                title=project_name,
+                version=version,
+            )
+        else:
+            info = openapi_setting.info
         ret = s.OpenAPI(
-            info=info,
+            info=s.Info.model_validate(info.model_dump()),
             servers=[
                 s.Server.model_validate(i.model_dump()) for i in openapi_setting.servers
             ],
+            jsonSchemaDialect=openapi_setting.jsonSchemaDialect,
         )
 
         paths: t.Dict[str, t.Any] = {}
@@ -202,13 +251,15 @@ class OpenApi:
                 continue
 
             cls.create_tags_from_route(route, tags)
-            temp_schemas = cls.create_schema_from_route_resp_model(route)
+            temp_resp_schemas = cls.create_schema_from_route_resp_model(route)
+            temp_req_schemas = cls.create_schema_from_route_request_model(route)
             pathitem = cls.create_pathitem_from_route(route)
             paths[route.path] = pathitem
-            schemas.update(temp_schemas)
+            schemas.update(temp_resp_schemas)
+            schemas.update(temp_req_schemas)
 
-        components: t.Dict[str, t.Any] = {"schemas": schemas}
-        ret.components = components  # type: ignore
+        components: s.Components = s.Components(schemas=schemas)
+        ret.components = components
         ret.tags = list(tags.values())
         ret.paths = paths
 
