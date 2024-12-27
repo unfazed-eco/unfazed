@@ -7,7 +7,14 @@ from starlette.types import Receive, Scope, Send
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.middleware import BaseMiddleware
-from unfazed.route import Route, include, parse_urlconf, path
+from unfazed.route import (
+    Convertor,
+    Route,
+    include,
+    parse_urlconf,
+    path,
+    register_url_convertor,
+)
 
 
 class TestInclude:
@@ -177,21 +184,29 @@ def test_route() -> None:
     match, _ = route3.matches(scope2)
     assert match == Match.NONE
 
-    # test regex path
-    route4 = Route(r"/foo/(?P<lang>[-_a-zA-Z]+)", view)
-    print(route4.path_regex)
-    import re
 
-    regex = re.compile(r"^/foo/(?P<lang>[-_a-zA-Z]+)$")
-    print(regex)
-    print(regex.match("/foo/en"))
+class LangConvertor(Convertor):
+    regex = r"[-_a-zA-Z]+"
 
-    scope3 = {
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        return value
+
+
+def test_route_converter() -> None:
+    register_url_convertor("lang", LangConvertor())
+
+    route = Route("/foo/{lang:lang}", view)
+
+    scope = {
         "type": "http",
         "path": "/foo/en",
         "root_path": "",
         "method": "GET",
     }
 
-    match, _ = route4.matches(scope3)
+    match, _ = route.matches(scope)
+
     assert match == Match.FULL

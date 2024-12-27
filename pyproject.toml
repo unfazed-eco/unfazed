@@ -33,6 +33,7 @@ asyncmy = "^0.2.9"
 pymysql = "^1.1.1"
 pytest-asyncio = "^0.24.0"
 types-pymysql = "^1.1.0.20241103"
+ipython = "^8.31.0"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -49,7 +50,7 @@ unfazed-cli = "unfazed.cli:main"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 testpaths = [
-    "tests/test_route",
+    "tests",
 ]
 
 [tool.coverage.report]
