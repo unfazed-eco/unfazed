@@ -340,7 +340,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
             if m2mfield.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=m2m_field_name,  # alse field.related_name
+                    source_field=m2m_field_name,  # also field.related_name
                     dest_field="",
                     relation="m2m",
                 )
@@ -354,7 +354,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
                 return Relation(
                     to=other_cls.__name__,
                     source_field=fk_field.source_field
-                    or "",  # alse fk_field.source_field
+                    or "",  # also fk_field.source_field
                     dest_field=fk_field.to_field,
                     relation="fk",
                 )

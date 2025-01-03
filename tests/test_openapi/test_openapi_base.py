@@ -10,10 +10,15 @@ from unfazed.route.params import ResponseSpec
 from unfazed.schema import OpenAPI
 
 
+class Fixed(BaseModel):
+    foo: str
+
+
 class Ctx(BaseModel):
     page: int
     size: int
     search: str
+    fixed: Fixed = Fixed(foo="bar")
 
 
 class Hdr(BaseModel):

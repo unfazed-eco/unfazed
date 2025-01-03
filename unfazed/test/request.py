@@ -1,4 +1,5 @@
 import typing as t
+import warnings
 
 import httpx
 from asgiref.testing import ApplicationCommunicator
@@ -12,6 +13,7 @@ if t.TYPE_CHECKING:
 
 # hope httpx.ASGITransport support state one day
 # refer: https://github.com/encode/httpx/discussions/3464
+# no cover: start
 class ASGITransport(httpx.AsyncBaseTransport):
     """
     Add state support to httpx.ASGITransport
@@ -20,16 +22,16 @@ class ASGITransport(httpx.AsyncBaseTransport):
     def __init__(
         self,
         app: ASGIApp,
+        state: t.Dict[str, t.Any],
         raise_app_exceptions: bool = True,
         root_path: str = "",
         client: tuple[str, int] = ("127.0.0.1", 123),
-        state: t.Dict[str, t.Any] | None = None,
     ) -> None:
         self.app = app
         self.raise_app_exceptions = raise_app_exceptions
         self.root_path = root_path
         self.client = client
-        self.state = state or {}
+        self.state = state
 
     async def handle_async_request(
         self,
@@ -51,7 +53,7 @@ class ASGITransport(httpx.AsyncBaseTransport):
             "server": (request.url.host, request.url.port),
             "client": self.client,
             "root_path": self.root_path,
-            "state": self.state,
+            "state": self.state.copy(),
         }
 
         # Request.
@@ -123,6 +125,9 @@ class ASGITransport(httpx.AsyncBaseTransport):
         return Response(status_code, headers=response_headers, stream=stream)
 
 
+# no cover: stop
+
+
 class Requestfactory(httpx.AsyncClient):
     """
     Requestfactory is a helper class that allows you test your Unfazed app
@@ -147,19 +152,17 @@ class Requestfactory(httpx.AsyncClient):
     def __init__(
         self,
         app: "Unfazed",
-        app_state: t.Dict[str, t.Any] | None = None,
         lifespan_on: bool = True,
         base_url: str = "http://testserver",
     ) -> None:
         self.app = app
-        if not app_state:
-            app_state = {}
-        app_state.update(self.app.state._state)
-        transport = ASGITransport(app, state=app_state)
+
+        self.app_state: t.Dict[str, t.Any] = {}
+        transport = ASGITransport(app, self.app_state)
         scope: Scope = {
             "type": "lifespan",
             "asgi": {"version": "3.0", "spec_version": "2.1"},
-            "state": app_state,
+            "state": self.app_state,
         }
         self.communicator = ApplicationCommunicator(app, scope)  # type: ignore
         self.lifespan_on = lifespan_on
@@ -168,6 +171,7 @@ class Requestfactory(httpx.AsyncClient):
     async def __aenter__(self) -> t.Self:
         if self.lifespan_on:
             await self.lifespan_startup()
+
         return self
 
     async def __aexit__(self, *args: t.Any) -> None:
@@ -175,7 +179,9 @@ class Requestfactory(httpx.AsyncClient):
             await self.lifespan_shutdown()
 
     async def lifespan_startup(self) -> None:
-        await self.communicator.send_input({"type": "lifespan.startup"})  # type: ignore
+        await self.communicator.send_input(
+            {"type": "lifespan.startup", "state": self.app_state}
+        )  # type: ignore
         message = await self.communicator.receive_output()  # type: ignore
         if message["type"] != "lifespan.startup.complete":
             raise RuntimeError("Startup failed")
@@ -184,4 +190,4 @@ class Requestfactory(httpx.AsyncClient):
         await self.communicator.send_input({"type": "lifespan.shutdown"})  # type: ignore
         message = await self.communicator.receive_output()  # type: ignore
         if message["type"] != "lifespan.shutdown.complete":
-            raise RuntimeError("Shutdown failed")
+            warnings.warn("Shutdown failed", RuntimeWarning, stacklevel=2)

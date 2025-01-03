@@ -52,6 +52,15 @@ wheels = [
 ]
 
 [[package]]
+name = "asgiref"
+version = "3.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/38/b3395cc9ad1b56d2ddac9970bc8f4141312dbaec28bc7c218b0dfafd0f42/asgiref-3.8.1.tar.gz", hash = "sha256:c343bd80a0bec947a9860adb4c432ffa7db769836c64238fc34bdc3fec84d590", size = 35186 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/e3/893e8757be2612e6c266d9bb58ad2e3651524b5b40cf56761e985a28b13e/asgiref-3.8.1-py3-none-any.whl", hash = "sha256:3e1e3ecc849832fe52ccf2cb6686b7a55f82bb1d6aee72a58826471390335e47", size = 23828 },
+]
+
+[[package]]
 name = "asyncclick"
 version = "8.1.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -731,6 +740,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "aerich" },
     { name = "anyio" },
+    { name = "asgiref" },
     { name = "click" },
     { name = "httpx" },
     { name = "itsdangerous" },
@@ -761,6 +771,7 @@ dev = [
 requires-dist = [
     { name = "aerich", specifier = ">=0.8.1" },
     { name = "anyio", specifier = ">=4.7.0" },
+    { name = "asgiref", specifier = ">=3.8.1" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "itsdangerous", specifier = ">=2.2.0" },

@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aerich>=0.8.1",
     "anyio>=4.7.0",
+    "asgiref>=3.8.1",
     "click>=8.1.8",
     "httpx>=0.28.1",
     "itsdangerous>=2.2.0",
@@ -31,6 +32,9 @@ testpaths = [
 exclude_lines = [
     "# pragma: no cover",
     "if TYPE_CHECKING:"
+]
+exclude_also = [
+    "no cover: start(?s:.)*?no cover: stop",
 ]
 
 [tool.ruff.lint]

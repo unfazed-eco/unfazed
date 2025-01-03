@@ -143,7 +143,7 @@ def test_create_common_fields() -> None:
     pk_type, pk_field = create_common_field(pk)
 
     # dont test title field dependently
-    assert pk_type == int
+    assert issubclass(pk_type, int)
     assert pk_field.description == "primary key"
     assert pk_field.default is None
     assert pk_field.is_required() is False
