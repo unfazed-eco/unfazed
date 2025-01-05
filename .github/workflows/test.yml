@@ -37,10 +37,11 @@ jobs:
           python-version: "${{ matrix.python-version }}"
           allow-prereleases: true
       - name: "Install dependencies"
+        env:
+          UV_PROJECT_ENVIRONMENT: "/usr/local"
         run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry install
+          pip install uv
+          uv sync
       - name: "Run Test"
         run: make test
         env:

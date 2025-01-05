@@ -4,6 +4,10 @@ version = "0.0.4"
 description = "a django-like async python web framework"
 readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+  { name="xin.zhou", email="zhouxin576@gmail.com" },
+]
+license = { file="LICENSE" }
 dependencies = [
     "aerich>=0.8.1",
     "anyio>=4.7.0",
@@ -20,6 +24,21 @@ dependencies = [
     "tortoise-orm>=0.23.0",
     "uvicorn>=0.34.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["unfazed"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "unfazed",
+]
+
+[project.scripts]
+unfazed-cli = "unfazed.cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
