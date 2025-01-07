@@ -9,6 +9,7 @@ from unfazed.app import AppCenter
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.lifespan import lifespan_handler
+from unfazed.test import Requestfactory
 
 HOST = os.getenv("REDIS_HOST", "redis")
 
@@ -74,9 +75,12 @@ Setting = UnfazedSettings.model_validate(_Setting)
 async def test_app_launch() -> None:
     unfazed = Unfazed(settings=Setting)
 
-    await unfazed.setup()
+    async with Requestfactory(unfazed) as request:
+        response = await request.get("/foo")
+        assert response.status_code == 200
 
-    assert unfazed.ready is True
+        assert unfazed.ready is True
+
     # test repeated setup
     await unfazed.setup()
     assert unfazed.ready is True

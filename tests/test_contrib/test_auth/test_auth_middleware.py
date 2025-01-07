@@ -55,6 +55,7 @@ def setup_middle_env() -> t.Generator:
 
 async def test_auth_middleware() -> None:
     unfazed = Unfazed(routes=[Route("/", endpoint)])
+    await unfazed.setup()
 
     m = AuthenticationMiddleware(unfazed)
 
@@ -64,6 +65,7 @@ async def test_auth_middleware() -> None:
         "user": None,
         "path": "/",
         "method": "GET",
+        "headers": [],
     }
 
     await m(scope, receive, send)
@@ -81,6 +83,7 @@ async def test_auth_middleware() -> None:
         "session": session,
         "path": "/",
         "method": "GET",
+        "headers": [],
     }
 
     await m(scope, receive, send)

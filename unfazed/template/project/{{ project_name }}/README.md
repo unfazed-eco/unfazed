@@ -4,6 +4,9 @@
 
 ## Quick Start
 
+
+### Use Docker-Compose(recommended)
+
 run {{ project_name }}
 
 ```bash
@@ -15,21 +18,29 @@ docker-compose up -d
 docker-compose exec backend bash
 
 # run command inside container
-
-python manage.py init-db
 python manage.py runserver --host 0.0.0.0 --port 9527
 
+# or
+make run
 
 ```
 
+### Use venv
 
-
-mkdocs
 
 ```bash
 
+cd {{project_name}}/src/backend
+
+
+pip install uv
+
+uv sync
+
 # run command inside container
-# becareful with the port number, now same as backend, change it if you need
-mkdocs serve 0.0.0.0:9527
+python manage.py runserver --host 0.0.0.0 --port 9527
+
+# or
+make run
 
 ```

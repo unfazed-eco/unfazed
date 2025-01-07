@@ -48,7 +48,7 @@ class Command(BaseCommand):
                 ["--template", "-t"],
                 help="template path of the app",
                 type=Choice([TemplateType.SIMPLE, TemplateType.STANDARD]),
-                default=TemplateType.SIMPLE,
+                default=TemplateType.STANDARD,
                 show_default=True,
                 show_choices=True,
             ),

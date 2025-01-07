@@ -1,5 +1,4 @@
-# from unfazed.route import path, include
-# from yourapp.routes import patterns
+from unfazed.route import path
 
 """
 
@@ -14,4 +13,6 @@ patterns = [
 
 """
 
+
 patterns = []
+
