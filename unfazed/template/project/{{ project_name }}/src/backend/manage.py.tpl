@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import traceback
 import warnings
 
 
@@ -21,6 +22,7 @@ async def main() -> None:
         await unfazed.setup()
 
     except Exception as e:
+        print(traceback.format_exc())
         warnings.warn(f"An error occurred when init unfazed: {e}", stacklevel=2)
         sys.exit(1)
 

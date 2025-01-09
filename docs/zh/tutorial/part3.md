@@ -57,7 +57,7 @@ class Course(Model):
             "default": {
                 "ENGINE": "tortoise.backends.sqlite",
                 "CREDENTIALS": {
-                    "PATH": os.path.join(PROJECT_DIR, "db.sqlite3"),
+                    "FILE_PATH": os.path.join(PROJECT_DIR, "db.sqlite3"),
                 },
             }
         }
@@ -80,4 +80,35 @@ python manage.py migrate
 
 
 ```
+
+
+
+### 序列化器
+
+
+序列化器定义在 serializers.py 中，定义以下两个序列化器
+
+
+```python
+
+# src/backend/enroll/serializers.py
+
+from unfazed.serializer import Serializer
+
+from . import models as m
+
+
+class StudentSerializer(Serializer):
+    class Meta:
+        model = m.Student
+
+
+class CourseSerializer(Serializer):
+    class Meta:
+        model = m.Course
+
+```
+
+
+序列化器会自动读取对应 model 的字段，生成一个 pydantic 模型，并且提供了增删改查的方法
 

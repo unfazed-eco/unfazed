@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 
 class SqliteCredential(BaseModel):
-    path: str = Field(..., alias="PATH")
+    file_path: str = Field(..., alias="FILE_PATH")
     journal_mode: str | None = Field(default=None, alias="JOURNAL_MODE")
     journal_size_limit: int | None = Field(default=None, alias="JOURNAL_SIZE_LIMIT")
     foreign_keys: str | None = Field(default=None, alias="FOREIGN_KEYS")
