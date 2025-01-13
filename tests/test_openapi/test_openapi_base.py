@@ -83,8 +83,6 @@ def test_openapi_create() -> None:
         openapi_setting=openapi_setting,
     )
 
-    # print(ret.model_dump_json(indent=2, exclude_none=True, by_alias=True))
-
     # version
     assert ret.openapi == "3.1.0"
 

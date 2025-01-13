@@ -102,7 +102,6 @@ def test_failed_path() -> None:
 
 def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
     # normal case
-    print(setup_route_unfazed.routes)
     assert len(setup_route_unfazed.routes) == 4
 
     # failed case
