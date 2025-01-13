@@ -59,7 +59,7 @@ async def test_auth_middleware() -> None:
 
     m = AuthenticationMiddleware(unfazed)
 
-    scope = {
+    scope: t.Dict[str, t.Any] = {
         "type": "http",
         "http_version": "1.1",
         "user": None,
@@ -77,7 +77,7 @@ async def test_auth_middleware() -> None:
     )
 
     await session.load()
-    scope = {
+    scope: t.Dict[str, t.Any] = {
         "type": "http",
         "http_version": "1.1",
         "session": session,

@@ -149,6 +149,10 @@ async def test_serializer_methods() -> None:
     assert ret.count == 4
     assert len(ret.data) == 2
 
+    ret1 = await CarSerializer.list(Car.filter(version__gt=4), page=3, size=2)
+    assert ret1.count == 5
+    assert len(ret1.data) == 1
+
     ret2 = await CarSerializer.list(Car.filter(version__gt=5), page=0, size=0)
     assert ret2.count == 4
     assert len(ret2.data) == 4

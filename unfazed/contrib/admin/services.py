@@ -7,7 +7,7 @@ from tortoise import Model as TModel
 
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
-from unfazed.schema import AdminRoute, Condition, RouteMeta
+from unfazed.schema import AdminRoute, Condition, Result, RouteMeta
 from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
@@ -120,8 +120,8 @@ class AdminModelService:
 
         cond = parse_cond(condtion=cond)
         serializer_cls: t.Type[Serializer] = admin_ins.serializer
-        queryset = serializer_cls.get_queryset(cond, fetch_related=False)
-        result: BaseModel = await serializer_cls.list(queryset, page, size)
+        queryset = serializer_cls.get_queryset(cond, fetch_relations=False)
+        result: Result = await serializer_cls.list(queryset, page, size)
 
         return result.model_dump(exclude_none=True)
 

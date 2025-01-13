@@ -7,7 +7,9 @@ from tortoise.fields.relational import (
     BackwardOneToOneRelation,
     ForeignKeyFieldInstance,
     ManyToManyFieldInstance,
+    ManyToManyRelation,
     OneToOneFieldInstance,
+    ReverseRelation,
 )
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
@@ -176,7 +178,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @classmethod
     async def list_from_ctx(
         cls, cond: t.Dict, page: int, size: int, **kwargs: t.Any
-    ) -> Result:
+    ) -> Result[t.Self]:
         queryset = cls.get_queryset(cond, **kwargs)
         return await cls.list(queryset, page, size, **kwargs)
 
@@ -184,7 +186,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @classmethod
     async def list_from_queryset(
         cls, queryset: QuerySet, page: int, size: int, **kwargs: t.Any
-    ) -> Result:
+    ) -> Result[t.Self]:
         return await cls.list(queryset, page, size, **kwargs)
 
     @t.final
@@ -309,7 +311,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @t.final
     @classmethod
-    async def list(cls, queryset: QuerySet, page: int, size: int) -> Result:
+    async def list(cls, queryset: QuerySet, page: int, size: int) -> Result[t.Self]:
         total = await queryset.count()
 
         if page == 0 or size <= 0:
@@ -324,8 +326,23 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @classmethod
     def from_instance(cls, instance: Model) -> t.Self:
-        # make sure set from_attributes=True
-        return cls.model_validate(instance, from_attributes=True)
+        mapping: t.Dict[str, t.Any] = {}
+        for k, _ in instance._meta.fields_map.items():
+            # skip relation fields
+            temp = getattr(instance, k)
+            if isinstance(
+                temp,
+                (
+                    BackwardFKRelation,
+                    BackwardOneToOneRelation,
+                    ManyToManyRelation,
+                    ReverseRelation,
+                ),
+            ):
+                continue
+            mapping[k] = temp
+
+        return cls.model_validate(mapping, from_attributes=True)
 
     @classmethod
     def find_relation(cls, other_cls: t.Type["Serializer"]) -> Relation | None:
