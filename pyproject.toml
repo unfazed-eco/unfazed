@@ -44,7 +44,7 @@ unfazed-cli = "unfazed.cli:main"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 testpaths = [
-    "tests/test_contrib/test_admin",
+    "tests"
 ]
 
 [tool.coverage.report]

@@ -736,7 +736,7 @@ wheels = [
 [[package]]
 name = "unfazed"
 version = "0.0.4"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "aerich" },
     { name = "anyio" },

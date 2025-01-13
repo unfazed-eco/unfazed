@@ -261,6 +261,17 @@ async def test_relations() -> None:
     assert student_serializer.bags[1].name == "bag2"
     assert student_serializer.profile.nickname == "profile1"
 
+    # with fetch_relations=False
+    student2 = await Student.filter(id=s1.id).first()
+    student_serializer2 = await StudenSerializer.retrieve(
+        student2, fetch_relations=False
+    )
+    assert student_serializer2.name == "student1"
+    assert student_serializer2.age == 18
+    assert student_serializer2.profile is None
+    assert student_serializer2.bags is None
+    assert student_serializer2.courses is None
+
     class CourseSerializer(Serializer):
         class Meta:
             model = Course

@@ -7,9 +7,7 @@ from tortoise.fields.relational import (
     BackwardOneToOneRelation,
     ForeignKeyFieldInstance,
     ManyToManyFieldInstance,
-    ManyToManyRelation,
     OneToOneFieldInstance,
-    ReverseRelation,
 )
 from tortoise.models import Field, Model
 from tortoise.queryset import QuerySet
@@ -282,8 +280,10 @@ class Serializer(BaseModel, metaclass=MetaClass):
     async def retrieve(cls, instance: Model, **kwargs: t.Any) -> t.Self:
         fetch_relations = kwargs.pop("fetch_relations", True)
         fetch_fields = cls.get_fetch_fields()
+
         if fetch_relations and fetch_fields:
             await instance.fetch_related(*fetch_fields)
+
         return cls.from_instance(instance)
 
     @t.final
@@ -318,7 +318,6 @@ class Serializer(BaseModel, metaclass=MetaClass):
             ins_list = await queryset.all()
         else:
             ins_list = await queryset.limit(size).offset((page - 1) * size)
-
         return Result(
             count=total,
             data=[cls.from_instance(ins) for ins in ins_list],
@@ -330,18 +329,11 @@ class Serializer(BaseModel, metaclass=MetaClass):
         for k, _ in instance._meta.fields_map.items():
             # skip relation fields
             temp = getattr(instance, k)
-            if isinstance(
-                temp,
-                (
-                    BackwardFKRelation,
-                    BackwardOneToOneRelation,
-                    ManyToManyRelation,
-                    ReverseRelation,
-                ),
-            ):
+            if hasattr(temp, "_fetched") and temp._fetched is False:
+                continue
+            if isinstance(temp, QuerySet):
                 continue
             mapping[k] = temp
-
         return cls.model_validate(mapping, from_attributes=True)
 
     @classmethod

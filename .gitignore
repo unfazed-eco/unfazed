@@ -8,3 +8,4 @@ migrations
 .VSCodeCounter
 dist
 .mypy_cache
+.vscode
