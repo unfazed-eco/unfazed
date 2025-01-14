@@ -1,4 +1,4 @@
-创建 app 以及 hello，world
+创建应用 以及 hello，world
 ====
 
 在上一节中，我们安装了 unfazed 并创建了一个项目。接下来，我们将在项目中创建一个 app，并在 app 中创建一个 hello，world 的接口。
