@@ -3,3 +3,23 @@ nav:
   - Home: index.md
 
 theme: readthedocs
+
+plugins:
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: en
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          default: true
+extra:
+  alternate:
+    - name: English
+      link: /en/ 
+      lang: en
+    - name: Deutsch
+      link: /zh/
+      lang: zh

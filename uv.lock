@@ -358,6 +358,18 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-static-i18n"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/39/e8c24a79d7fd557be67967e2bed3fd450247182ef01d3408a6b3193903c3/mkdocs_static_i18n-1.2.3.tar.gz", hash = "sha256:7ccf4da6dd29570ec49cd863ebff6fef9cb82dbb1cb85249bdf744e8d839c914", size = 1370068 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/19/4c9f865302cd773c30fc14ed1b1a15074a7f3132caf4543c77e57c22885f/mkdocs_static_i18n-1.2.3-py3-none-any.whl", hash = "sha256:e6f2f3c53b657d7632015b32dea3c64d0b80a7a8d6cde0334ca8f66f9e33b52f", size = 21431 },
+]
+
+[[package]]
 name = "mypy"
 version = "1.14.1"
 source = { registry = "https://pypi.org/simple" }
@@ -758,6 +770,7 @@ dependencies = [
 dev = [
     { name = "asyncmy" },
     { name = "mkdocs" },
+    { name = "mkdocs-static-i18n" },
     { name = "mypy" },
     { name = "pymysql" },
     { name = "pytest" },
@@ -789,6 +802,7 @@ requires-dist = [
 dev = [
     { name = "asyncmy", specifier = ">=0.2.10" },
     { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-static-i18n", specifier = ">=1.2.3" },
     { name = "mypy", specifier = ">=1.14.1" },
     { name = "pymysql", specifier = ">=1.1.1" },
     { name = "pytest", specifier = ">=8.3.4" },
