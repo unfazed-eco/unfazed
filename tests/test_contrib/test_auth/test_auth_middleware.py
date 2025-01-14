@@ -27,7 +27,7 @@ async def endpoint(request: HttpRequest) -> HttpResponse:
 
 DEFAULT_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
-    "COOKIE_DOMAIN": "garena.com",
+    "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,
 }
 

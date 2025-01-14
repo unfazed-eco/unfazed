@@ -10,8 +10,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build and publish to pypi
         uses: astral-sh/setup-uv@v5
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: |
+      - run: |
           uv build
           uv publish
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}

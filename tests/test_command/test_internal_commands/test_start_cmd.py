@@ -73,7 +73,7 @@ async def test_start_cmd(tmp_path: Path) -> None:
     assert (be_path / "simpleapp" / "admin.py").exists()
     assert (be_path / "simpleapp" / "app.py").exists()
     assert (be_path / "simpleapp" / "settings.py").exists()
-    assert (be_path / "simpleapp" / "tests.py").exists()
+    assert (be_path / "simpleapp" / "test_all.py").exists()
 
     start_app = StartAppCommand(
         unfazed=unfazed, name="start_complex_app_cmd", app_label="start_cmd"

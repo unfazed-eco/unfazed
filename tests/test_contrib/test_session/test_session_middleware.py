@@ -26,13 +26,13 @@ UNFAZED_SETTINGS = {
 
 DEFAULT_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
-    "COOKIE_DOMAIN": "garena.com",
+    "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,
 }
 
 CACHE_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
-    "COOKIE_DOMAIN": "garena.com",
+    "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,
     "CACHE_ALIAS": "default",
     "ENGINE": "unfazed.contrib.session.backends.cache.CacheSession",
@@ -76,7 +76,7 @@ ROUTES = [
 async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> None:
     settings["SESSION_SETTINGS"] = session_setting
 
-    async with Requestfactory(unfazed, base_url="https://garena.com") as request:
+    async with Requestfactory(unfazed, base_url="https://unfazed.com") as request:
         # login
         resp = await request.get("/login")
         assert resp.status_code == 200

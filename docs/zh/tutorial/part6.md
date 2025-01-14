@@ -19,22 +19,21 @@ unfazed 非常注重代码的鲁棒性，并且将 `方便测试` 放在很高�
 ```python
 
 
-# src/backend/enroll/tests.py
-
+# src/backend/enroll/test_all.py
 import typing as t
 
 import pytest
 from unfazed.core import Unfazed
 from unfazed.test import Requestfactory
 
-from . import models as m
-from . import services as svc
+from enroll import models as m
+from enroll import services as svc
 
 
 @pytest.fixture(autouse=True)
 async def setup_enroll() -> t.AsyncGenerator[None, None]:
-    m.Student.all().delete()
-    m.Course.all().delete()
+    await m.Student.all().delete()
+    await m.Course.all().delete()
 
     # create more than 10 students
     for student in [
@@ -50,82 +49,62 @@ async def setup_enroll() -> t.AsyncGenerator[None, None]:
         "Jack",
         "Kevin",
     ]:
-        await m.Student.create(name=student)
+        await m.Student.create(name=student, age=20)
 
     for course in ["Math", "Physics", "Chemistry"]:
-        await m.Course.create(name=course)
+        await m.Course.create(name=course, description=f"description of {course}")
 
     yield
 
-    m.Student.all().delete()
-    m.Course.all().delete()
+    await m.Student.all().delete()
+    await m.Course.all().delete()
 
 
 async def test_enroll_services() -> None:
     # test list_student
     ret = await svc.EnrollService.list_student(1, 10)
-    assert ret["total"] == 11
-    assert len(ret["students"]) == 10
+    assert len(ret["data"]) == 10
 
     ret = await svc.EnrollService.list_student(2, 10)
-    assert ret["total"] == 11
-    assert len(ret["students"]) == 1
+    assert len(ret["data"]) == 1
 
     # test list_course
     ret = await svc.EnrollService.list_course(1, 10)
-    assert ret["total"] == 3
-    assert len(ret["courses"]) == 3
+
+    assert len(ret["data"]) == 3
 
     ret = await svc.EnrollService.list_course(2, 10)
-    assert ret["total"] == 3
-    assert len(ret["courses"]) == 0
+
+    assert len(ret["data"]) == 0
 
     # test bind
     student = await m.Student.get(name="Alice")
     course = await m.Course.get(name="Math")
     ret = await svc.EnrollService.bind(student.id, course.id)
-    assert ret["status"] == "success"
-
-    ret = await svc.EnrollService.bind(student.id, course.id)
-    assert ret["status"] == "failed"
-    assert ret["message"] == "Already enrolled"
-
-    student = await m.Student.get(name="Bob")
-    course = await m.Course.get(name="Math")
-    ret = await svc.EnrollService.bind(student.id, course.id)
-    assert ret["status"] == "success"
-
-    student = await m.Student.get(name="Alice")
-    course = await m.Course.get(name="Physics")
-    ret = await svc.EnrollService.bind(student.id, course.id)
-    assert ret["status"] == "success"
-
-    student = await m.Student.get(name="Alice")
-    course = await m.Course.get(name="Chemistry")
-    ret = await svc.EnrollService.bind(student.id, course.id)
-    assert ret["status"] == "success"
+    assert ret["status"] == "ok"
 
 
 async def test_enroll_endpoints(unfazed: Unfazed) -> None:
     async with Requestfactory(unfazed) as rf:
         # test hello
-        resp = await rf.get("/hello")
-        assert resp.status == 200
+        resp = await rf.get("/enroll/hello")
+        assert resp.status_code == 200
 
         # test list_student
-        resp = await rf.get("/student-list")
-        assert resp.status == 200
+        resp = await rf.get("/enroll/student-list")
+        assert resp.status_code == 200
 
         # test list_course
-        resp = await rf.get("/course-list")
-        assert resp.status == 200
+        resp = await rf.get("/enroll/course-list")
+        assert resp.status_code == 200
 
         student = await m.Student.get(name="Bob")
         course = await m.Course.get(name="Math")
         resp = await rf.post(
-            "/bind", json={"student_id": student.id, "course_id": course.id}
+            "/enroll/bind", json={"student_id": student.id, "course_id": course.id}
         )
-        assert resp.status == 200
+        assert resp.status_code == 200
+
 
 ```
 
@@ -147,6 +126,11 @@ make test
 pytest
 
 ```
+
+显示
+
+![test](../../images/tutorial-test-cov.png)
+
 
 
 > 在实际的业务场景中，可能很难达到 100% 的测试覆盖率，但请尽量往这个方向努力。
