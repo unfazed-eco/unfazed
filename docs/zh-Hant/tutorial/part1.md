@@ -89,7 +89,7 @@ pip install uv
 
 ```
 
-关于 uv 的使用可以参考 [uv](
+关于 uv 的使用可以参考 [uv](https://docs.astral.sh/uv/)
 
 
 2、安装项目依赖
@@ -118,7 +118,7 @@ python manage.py runserver --host 127.0.0.1 --port 9527
 
 正常情况下，控制台会打印出
 
-```
+```bash
 
 python manage.py runserver --host 0.0.0.0 --port 9527
 INFO:     Uvicorn running on http://0.0.0.0:9527 (Press CTRL+C to quit)

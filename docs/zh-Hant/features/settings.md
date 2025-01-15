@@ -245,7 +245,7 @@ LIFESPAN = [
 
 ```
 
-关于生命周期的详细信息，请参考 [生命周期](lifespan.md)。
+关于生命周期的详细信息，请参考 [生命周期](./lifespan.md)。
 
 
 #### OPENAPI

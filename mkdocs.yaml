@@ -2,12 +2,12 @@ site_name: Unfazed
 nav:
   - Home: index.md
   - Tutorial:
-    - Part 1: tutorial/part1.md
-    - Part 2: tutorial/part2.md
-    - Part 3: tutorial/part3.md
-    - Part 4: tutorial/part4.md
-    - Part 5: tutorial/part5.md
-    - Part 6: tutorial/part6.md
+    - Part 1 Install & Create Project: tutorial/part1.md
+    - Part 2 Create Application: tutorial/part2.md
+    - Part 3 Models and Serializer: tutorial/part3.md
+    - Part 4 Endpoint and Schema: tutorial/part4.md
+    - Part 5 Services: tutorial/part5.md
+    - Part 6 Test: tutorial/part6.md
   - Features:
     - Settings: features/settings.md
     - Middleware: features/middleware.md
@@ -16,6 +16,12 @@ nav:
     - Request: features/request.md
     - Response: features/response.md
     - Endpoint: features/endpoint.md
+    - ORM: features/tortoise-orm.md
+    - Serializer: features/serializer.md
+    - Cache: features/cache.md
+    - OPENAPI: features/openapi.md
+    - Command: features/command.md
+    - Test Client: features/testclient.md
   - Contrib:
     - Admin: features/contrib/admin.md
     - Auth: features/contrib/auth.md
@@ -34,10 +40,11 @@ plugins:
   - i18n:
       docs_structure: folder
       languages:
-        - locale: en
-          name: English
-          build: true
-        - locale: zh
+        - locale: zh-Hant
           name: 中文
           build: true
           default: true
+        - locale: en
+          name: English
+          build: true
+        
