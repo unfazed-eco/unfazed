@@ -263,6 +263,7 @@ async def test_relations() -> None:
 
     # with fetch_relations=False
     student2 = await Student.filter(id=s1.id).first()
+    assert student2 is not None
     student_serializer2 = await StudenSerializer.retrieve(
         student2, fetch_relations=False
     )

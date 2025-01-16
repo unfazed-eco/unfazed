@@ -12,6 +12,7 @@ class User(BaseModel):
     name = fields.CharField(max_length=255)
     age = fields.IntField()
 
+    profile: fields.BackwardOneToOneRelation["Profile"]
     groups: fields.ManyToManyRelation["Group"]
     books: fields.ReverseRelation["Book"]
 
