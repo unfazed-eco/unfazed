@@ -37,11 +37,8 @@ jobs:
           python-version: "${{ matrix.python-version }}"
           allow-prereleases: true
       - name: "Install dependencies"
-        env:
-          UV_PROJECT_ENVIRONMENT: "/usr/local"
         run: |
           pip install uv
-          which python
           uv sync
       - name: "Run Test"
         run: make test
