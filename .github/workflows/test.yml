@@ -3,7 +3,7 @@ name: Test Unfazed
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev_opt_from_feedback"]
   pull_request:
     branches: ["main"]
 
