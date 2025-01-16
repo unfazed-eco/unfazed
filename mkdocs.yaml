@@ -10,6 +10,8 @@ nav:
     - Part 6 Test: tutorial/part6.md
   - Features:
     - Settings: features/settings.md
+    - App: features/app.md
+    - Route: features/route.md
     - Middleware: features/middleware.md
     - Lifespan: features/lifespan.md
     - Logging: features/logging.md
@@ -19,6 +21,7 @@ nav:
     - ORM: features/tortoise-orm.md
     - Serializer: features/serializer.md
     - Cache: features/cache.md
+    - Error: features/error.md
     - OPENAPI: features/openapi.md
     - Command: features/command.md
     - Test Client: features/testclient.md

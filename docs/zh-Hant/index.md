@@ -31,16 +31,19 @@ Unfazed 是一个工程导向、异步优先、易测试、易扩展的 Python w
 ### 特性
 
 1. 配置模块：[settings](features/settings.md) 
-2. 中间件设计：[middleware](features/middleware.md)
-3. Lifespan 管理：[lifespan](features/lifespan.md)
-4. 日志系统：[logging](features/logging.md)
-5. HTTP 相关：[request](features/request.md) | [response](features/response.md)
-6. 视图函数设计：[endpoint](features/endpoint.md)
-7. Tortoise-orm 相关：[ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
-8. 缓存：[cache](features/cache.md)
-9. OPENAPI：[openapi](features/openapi.md)
-10. 命令行设计：[command](features/command.md)
-11. 测试 client：[test_client](features/testclient.md)
+2. 应用管理：[app](features/app.md)
+3. 路由管理：[route](features/route.md)
+4. 中间件设计：[middleware](features/middleware.md)
+5. Lifespan 管理：[lifespan](features/lifespan.md)
+6. 日志系统：[logging](features/logging.md)
+7. HTTP 相关：[request](features/request.md) | [response](features/response.md)
+8. 视图函数设计：[endpoint](features/endpoint.md)
+9. Tortoise-orm 相关：[ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
+10. 缓存：[cache](features/cache.md)
+11. 错误处理：[error](features/error.md)
+12. OPENAPI：[openapi](features/openapi.md)
+13. 命令行设计：[command](features/command.md)
+14. 测试 client：[test_client](features/testclient.md)
 
 
 ### contrib

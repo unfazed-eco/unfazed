@@ -65,7 +65,7 @@ Client 包含了请求的客户端信息，通过 `request.client` 获取，包�
 
 State 包含了请求的状态信息，配合 `lifespan` 使用，通过 `request.state` 获取。
 
-> 参考 [lifespan](../others/lifespan.md)。
+> 参考 [lifespan](./lifespan.md)。
 
 
 ### Headers
