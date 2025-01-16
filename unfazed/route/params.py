@@ -1,6 +1,6 @@
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 
 
@@ -10,6 +10,9 @@ class ResponseSpec(BaseModel):
     content_type: str = "application/json"
     code: str = "200"
     description: str = ""
+    headers: t.Dict[str, "Header"] | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Param(FieldInfo):

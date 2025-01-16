@@ -35,7 +35,7 @@ def record(func: t.Callable) -> t.Callable:
             path=request.url.path,
             ip=ip,
             request=json.dumps(request_json).decode(),
-            response=resp.body.decode(),
+            response=t.cast(bytes, resp.body).decode(),
         )
 
         return resp

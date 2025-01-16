@@ -176,7 +176,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @classmethod
     async def list_from_ctx(
         cls, cond: t.Dict, page: int, size: int, **kwargs: t.Any
-    ) -> Result:
+    ) -> Result[t.Self]:
         queryset = cls.get_queryset(cond, **kwargs)
         return await cls.list(queryset, page, size, **kwargs)
 
@@ -184,7 +184,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @classmethod
     async def list_from_queryset(
         cls, queryset: QuerySet, page: int, size: int, **kwargs: t.Any
-    ) -> Result:
+    ) -> Result[t.Self]:
         return await cls.list(queryset, page, size, **kwargs)
 
     @t.final
@@ -280,8 +280,10 @@ class Serializer(BaseModel, metaclass=MetaClass):
     async def retrieve(cls, instance: Model, **kwargs: t.Any) -> t.Self:
         fetch_relations = kwargs.pop("fetch_relations", True)
         fetch_fields = cls.get_fetch_fields()
+
         if fetch_relations and fetch_fields:
             await instance.fetch_related(*fetch_fields)
+
         return cls.from_instance(instance)
 
     @t.final
@@ -309,14 +311,13 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @t.final
     @classmethod
-    async def list(cls, queryset: QuerySet, page: int, size: int) -> Result:
+    async def list(cls, queryset: QuerySet, page: int, size: int) -> Result[t.Self]:
         total = await queryset.count()
 
         if page == 0 or size <= 0:
             ins_list = await queryset.all()
         else:
             ins_list = await queryset.limit(size).offset((page - 1) * size)
-
         return Result(
             count=total,
             data=[cls.from_instance(ins) for ins in ins_list],
@@ -324,8 +325,16 @@ class Serializer(BaseModel, metaclass=MetaClass):
 
     @classmethod
     def from_instance(cls, instance: Model) -> t.Self:
-        # make sure set from_attributes=True
-        return cls.model_validate(instance, from_attributes=True)
+        mapping: t.Dict[str, t.Any] = {}
+        for k, _ in instance._meta.fields_map.items():
+            # skip relation fields
+            temp = getattr(instance, k)
+            if hasattr(temp, "_fetched") and temp._fetched is False:
+                continue
+            if isinstance(temp, QuerySet):
+                continue
+            mapping[k] = temp
+        return cls.model_validate(mapping, from_attributes=True)
 
     @classmethod
     def find_relation(cls, other_cls: t.Type["Serializer"]) -> Relation | None:
@@ -340,7 +349,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
             if m2mfield.related_model == other_model:
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=m2m_field_name,  # alse field.related_name
+                    source_field=m2m_field_name,  # also field.related_name
                     dest_field="",
                     relation="m2m",
                 )
@@ -354,7 +363,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
                 return Relation(
                     to=other_cls.__name__,
                     source_field=fk_field.source_field
-                    or "",  # alse fk_field.source_field
+                    or "",  # also fk_field.source_field
                     dest_field=fk_field.to_field,
                     relation="fk",
                 )

@@ -1,5 +1,5 @@
 
-
+![unfazed](docs/images/unfazed-title.png)
 
 <p align="center">
     <em>Production Ready ASGI web framework</em>
@@ -8,7 +8,7 @@
 
 -----
 
-**Documentation**: [unfazed](https://unfazed.readthedocs.io/)
+**Documentation**: [unfazed](https://unfazed.github.io/)
 
 -----
 
@@ -96,6 +96,6 @@ python manage.py runserver --host 0.0.0.0 --port 9527
 
 4. follow toturial
 
-[unfazed-tutorial](https://unfazed.readthedocs.io/zh_CN/latest/tutorial/index.html)
+[unfazed-tutorial](https://unfazed.github.io/)
 
 

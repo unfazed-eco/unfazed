@@ -149,6 +149,10 @@ async def test_serializer_methods() -> None:
     assert ret.count == 4
     assert len(ret.data) == 2
 
+    ret1 = await CarSerializer.list(Car.filter(version__gt=4), page=3, size=2)
+    assert ret1.count == 5
+    assert len(ret1.data) == 1
+
     ret2 = await CarSerializer.list(Car.filter(version__gt=5), page=0, size=0)
     assert ret2.count == 4
     assert len(ret2.data) == 4
@@ -256,6 +260,18 @@ async def test_relations() -> None:
     assert student_serializer.bags[0].name == "bag1"
     assert student_serializer.bags[1].name == "bag2"
     assert student_serializer.profile.nickname == "profile1"
+
+    # with fetch_relations=False
+    student2 = await Student.filter(id=s1.id).first()
+    assert student2 is not None
+    student_serializer2 = await StudenSerializer.retrieve(
+        student2, fetch_relations=False
+    )
+    assert student_serializer2.name == "student1"
+    assert student_serializer2.age == 18
+    assert student_serializer2.profile is None
+    assert student_serializer2.bags is None
+    assert student_serializer2.courses is None
 
     class CourseSerializer(Serializer):
         class Meta:

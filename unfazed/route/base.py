@@ -54,6 +54,10 @@ def path(
     middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
+    summary: str | None = None,
+    description: str | None = None,
+    externalDocs: t.Dict | None = None,
+    deprecated: bool = False,
 ) -> Route: ...
 
 
@@ -68,6 +72,10 @@ def path(
     middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
+    summary: str | None = None,
+    description: str | None = None,
+    externalDocs: t.Dict | None = None,
+    deprecated: bool = False,
 ) -> t.List[Route]: ...
 
 
@@ -82,6 +90,10 @@ def path(
     middlewares: t.List[CanBeImported] | None = None,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
+    summary: str | None = None,
+    description: str | None = None,
+    externalDocs: t.Dict | None = None,
+    deprecated: bool | None = None,
 ) -> Route | t.List[Route]:
     """
 
@@ -119,6 +131,10 @@ def path(
                 app_label=app_label,
                 include_in_schema=include_in_schema,
                 tags=tags,
+                summary=summary,
+                description=description,
+                externalDocs=externalDocs,
+                deprecated=deprecated,
             )
 
         else:

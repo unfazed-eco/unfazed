@@ -22,10 +22,14 @@ class Route(StartletteRoute):
         *,
         methods: t.List[HttpMethod] | None = None,
         name: str | None = None,
-        include_in_schema: bool = True,
         middlewares: t.List[CanBeImported] | None = None,
         app_label: str | None = None,
         tags: t.List[str] | None = None,
+        include_in_schema: bool = True,
+        summary: str | None = None,
+        description: str | None = None,
+        externalDocs: t.Dict | None = None,
+        deprecated: bool | None = None,
         response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
@@ -38,6 +42,10 @@ class Route(StartletteRoute):
         self.endpoint = endpoint
         self.name = u.get_endpoint_name(endpoint) if name is None else name
         self.include_in_schema = include_in_schema
+        self.summary = summary
+        self.description = description
+        self.externalDocs = externalDocs
+        self.deprecated = deprecated
 
         if methods is None:
             methods_set = {"GET", "HEAD"}

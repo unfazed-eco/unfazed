@@ -70,6 +70,6 @@ async def test_requestfactory_shutdown_failed() -> None:
     )
 
     await unfazed.setup()
-    with pytest.raises(RuntimeError):
+    with pytest.warns(RuntimeWarning):
         async with Requestfactory(unfazed) as request:
             await request.get("/")

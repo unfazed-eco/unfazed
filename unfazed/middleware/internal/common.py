@@ -7,7 +7,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.core import Unfazed
-from unfazed.http import HttpResponse
+from unfazed.http import HtmlResponse, HttpResponse
 from unfazed.middleware import BaseMiddleware
 
 TEMPLATE = """
@@ -93,9 +93,11 @@ class CommonMiddleware(BaseMiddleware):
             await self.app(scope, receive, send)
         except Exception as e:
             unfazed = t.cast(Unfazed, scope.get("app"))
+
+            response: HttpResponse
             if self.debug:
                 content = render_error_html(e, unfazed.settings.model_dump())
-                response = HttpResponse(content=content, status_code=500)
+                response = HtmlResponse(content=content, status_code=500)
             else:
                 response = HttpResponse(
                     status_code=500, content="Internal Server Error"

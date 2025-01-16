@@ -156,10 +156,9 @@ class Unfazed:
     def routes(self) -> t.List[Route]:
         return self.router.routes  # type: ignore
 
-    # def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
-    #     return self.router.url_path_for(name, **path_params)
-
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self.ready:
+            await self.setup()
         scope["app"] = self
         if self.middleware_stack is None:
             self.middleware_stack = self.build_middleware_stack()
@@ -225,8 +224,6 @@ class Unfazed:
 
         OpenApi.create_schema(
             t.cast(t.List[Route], self.router.routes),
-            self.settings.PROJECT_NAME,
-            self.settings.VERSION,
             self.settings.OPENAPI,
         )
 

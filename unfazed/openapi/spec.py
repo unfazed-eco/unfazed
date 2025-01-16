@@ -1,23 +1,19 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class Contact(BaseModel):
     name: Optional[str] = None
-    url: Optional[AnyUrl] = None
+    url: Optional[str] = None
     email: Optional[str] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class License(BaseModel):
     name: str
     identifier: Optional[str] = None
-    url: Optional[AnyUrl] = None
-
-    model_config = ConfigDict(extra="allow")
+    url: Optional[str] = None
 
 
 class Info(BaseModel):
@@ -29,29 +25,21 @@ class Info(BaseModel):
     license: Optional[License] = None
     version: str | None = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class ServerVariable(BaseModel):
     enum: Optional[List[str]] = None
     default: str
     description: Optional[str] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class Server(BaseModel):
-    url: Union[AnyUrl, str]
+    url: Union[str, str]
     description: Optional[str] = None
     variables: Optional[Dict[str, ServerVariable]] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class Reference(BaseModel):
     ref: str = Field(serialization_alias="$ref")
-
-    model_config = ConfigDict(extra="allow")
 
 
 class Discriminator(BaseModel):
@@ -66,14 +54,10 @@ class XML(BaseModel):
     attribute: Optional[bool] = None
     wrapped: Optional[bool] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class ExternalDocumentation(BaseModel):
     description: Optional[str] = None
-    url: AnyUrl
-
-    model_config = ConfigDict(extra="allow")
+    url: str
 
 
 class Schema(BaseModel):
@@ -114,8 +98,6 @@ class Schema(BaseModel):
     example: Optional[Any] = None
     deprecated: Optional[bool] = None
 
-    model_config = ConfigDict(extra="allow")
-
     # @classmethod
     # def from_fieldinfo(cls, fieldinfo: FieldInfo) -> "Schema":
     #     attrs = fieldinfo.__dict__
@@ -125,9 +107,7 @@ class Example(BaseModel):
     summary: Optional[str] = None
     description: Optional[str] = None
     value: Optional[Any] = None
-    externalValue: Optional[AnyUrl] = None
-
-    model_config = ConfigDict(extra="allow")
+    externalValue: Optional[str] = None
 
 
 class ParameterInType(str, Enum):
@@ -160,16 +140,12 @@ class Encoding(BaseModel):
     explode: Optional[bool] = None
     allowReserved: Optional[bool] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class MediaType(BaseModel):
     schema_: Optional[Union[Schema, Reference]] = Field(None, alias="schema")
     example: Optional[Any] = None
     examples: Optional[Dict[str, Union[Example, Reference]]] = None
     encoding: Optional[Dict[str, Encoding]] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class ParameterBase(BaseModel):
@@ -187,8 +163,6 @@ class ParameterBase(BaseModel):
     # Serialization rules for more complex scenarios
     content: Optional[Dict[str, MediaType]] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class Parameter(ParameterBase):
     name: str
@@ -204,8 +178,6 @@ class RequestBody(BaseModel):
     content: Dict[str, MediaType]
     required: Optional[bool] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class Link(BaseModel):
     operationRef: Optional[str] = None
@@ -215,16 +187,12 @@ class Link(BaseModel):
     description: Optional[str] = None
     server: Optional[Server] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class Response(BaseModel):
     description: str
     headers: Optional[Dict[str, Union[Header, Reference]]] = None
     content: Optional[Dict[str, MediaType]] = None
     links: Optional[Dict[str, Union[Link, Reference]]] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class Operation(BaseModel):
@@ -242,8 +210,6 @@ class Operation(BaseModel):
     security: Optional[List[Dict[str, List[str]]]] = None
     servers: Optional[List[Server]] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class PathItem(BaseModel):
     ref: Optional[str] = Field(None, alias="$ref")
@@ -260,8 +226,6 @@ class PathItem(BaseModel):
     servers: Optional[List[Server]] = None
     parameters: Optional[List[Union[Parameter, Reference]]] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class SecuritySchemeType(Enum):
     apiKey = "apiKey"
@@ -273,8 +237,6 @@ class SecuritySchemeType(Enum):
 class SecurityBase(BaseModel):
     type_: SecuritySchemeType = Field(..., alias="type")
     description: Optional[str] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class APIKeyIn(Enum):
@@ -303,8 +265,6 @@ class OAuthFlow(BaseModel):
     refreshUrl: Optional[str] = None
     scopes: Dict[str, str] = {}
 
-    model_config = ConfigDict(extra="allow")
-
 
 class OAuthFlowImplicit(OAuthFlow):
     authorizationUrl: str
@@ -328,8 +288,6 @@ class OAuthFlows(BaseModel):
     password: Optional[OAuthFlowPassword] = None
     clientCredentials: Optional[OAuthFlowClientCredentials] = None
     authorizationCode: Optional[OAuthFlowAuthorizationCode] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class OAuth2(SecurityBase):
@@ -356,15 +314,11 @@ class Components(BaseModel):
     links: Optional[Dict[str, Union[Link, Reference]]] = None
     callbacks: Optional[Dict[str, Union[Dict[str, PathItem], Reference, Any]]] = None
 
-    model_config = ConfigDict(extra="allow")
-
 
 class Tag(BaseModel):
     name: str
     description: Optional[str] = None
     externalDocs: Optional[ExternalDocumentation] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 class OpenAPI(BaseModel):
@@ -378,8 +332,6 @@ class OpenAPI(BaseModel):
     security: Optional[List[Dict[str, List[str]]]] = None
     tags: Optional[List[Tag]] = None
     externalDocs: Optional[ExternalDocumentation] = None
-
-    model_config = ConfigDict(extra="allow")
 
 
 Schema.model_rebuild()

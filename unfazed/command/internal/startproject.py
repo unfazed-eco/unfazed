@@ -1,4 +1,5 @@
 import typing as t
+import uuid
 from pathlib import Path
 
 from click import Option
@@ -48,6 +49,7 @@ class Command(BaseCommand):
 
         context = {
             "project_name": project_name,
+            "secret": uuid.uuid4().hex + uuid.uuid4().hex,
         }
 
         for root, _, files in template_path.walk():

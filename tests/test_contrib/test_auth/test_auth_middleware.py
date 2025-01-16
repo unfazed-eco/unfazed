@@ -27,7 +27,7 @@ async def endpoint(request: HttpRequest) -> HttpResponse:
 
 DEFAULT_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
-    "COOKIE_DOMAIN": "garena.com",
+    "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,
 }
 
@@ -55,15 +55,17 @@ def setup_middle_env() -> t.Generator:
 
 async def test_auth_middleware() -> None:
     unfazed = Unfazed(routes=[Route("/", endpoint)])
+    await unfazed.setup()
 
     m = AuthenticationMiddleware(unfazed)
 
-    scope = {
+    scope: t.Dict[str, t.Any] = {
         "type": "http",
         "http_version": "1.1",
         "user": None,
         "path": "/",
         "method": "GET",
+        "headers": [],
     }
 
     await m(scope, receive, send)
@@ -75,12 +77,13 @@ async def test_auth_middleware() -> None:
     )
 
     await session.load()
-    scope = {
+    scope: t.Dict[str, t.Any] = {
         "type": "http",
         "http_version": "1.1",
         "session": session,
         "path": "/",
         "method": "GET",
+        "headers": [],
     }
 
     await m(scope, receive, send)

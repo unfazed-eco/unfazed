@@ -1,12 +1,20 @@
 import typing as t
 
 import pytest
+from starlette.routing import Match
 from starlette.types import Receive, Scope, Send
 
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.middleware import BaseMiddleware
-from unfazed.route import Route, include, parse_urlconf, path
+from unfazed.route import (
+    Convertor,
+    Route,
+    include,
+    parse_urlconf,
+    path,
+    register_url_convertor,
+)
 
 
 class TestInclude:
@@ -94,7 +102,6 @@ def test_failed_path() -> None:
 
 def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
     # normal case
-    print(setup_route_unfazed.routes)
     assert len(setup_route_unfazed.routes) == 4
 
     # failed case
@@ -144,3 +151,61 @@ def test_route() -> None:
 
     route.update_label("test_route2")
     assert route.app_label == "test_route2"
+
+    # test route match
+
+    route2 = Route("/foo/{id}", view)
+
+    scope1 = {
+        "type": "http",
+        "path": "/foo/1",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    scope2 = {
+        "type": "http",
+        "path": "/foo/abc",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    match, _ = route2.matches(scope1)
+    assert match == Match.FULL
+
+    match, _ = route2.matches(scope2)
+    assert match == Match.FULL
+
+    route3 = Route("/foo/{id:int}", view)
+    match, _ = route3.matches(scope1)
+    assert match == Match.FULL
+
+    match, _ = route3.matches(scope2)
+    assert match == Match.NONE
+
+
+class LangConvertor(Convertor):
+    regex = r"[-_a-zA-Z]+"
+
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        return value
+
+
+def test_route_converter() -> None:
+    register_url_convertor("lang", LangConvertor())
+
+    route = Route("/foo/{lang:lang}", view)
+
+    scope = {
+        "type": "http",
+        "path": "/foo/en",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    match, _ = route.matches(scope)
+
+    assert match == Match.FULL

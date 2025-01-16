@@ -2,10 +2,12 @@ import typing as t
 
 from pydantic import BaseModel
 
+T = t.TypeVar("T", bound=BaseModel)
 
-class Result(BaseModel):
+
+class Result[T](BaseModel):
     count: int
-    data: t.List[BaseModel]
+    data: t.List[T]
 
 
 class Relation(BaseModel):
