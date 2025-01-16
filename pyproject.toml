@@ -1,6 +1,6 @@
 [project]
 name = "unfazed"
-version = "0.0.4"
+version = "0.0.5"
 description = "a django-like async python web framework"
 readme = "README.md"
 requires-python = ">=3.12"
