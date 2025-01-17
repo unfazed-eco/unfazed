@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 import pytest
@@ -14,6 +15,7 @@ from unfazed.route import (
     parse_urlconf,
     path,
     register_url_convertor,
+    static,
 )
 
 
@@ -209,3 +211,23 @@ def test_route_converter() -> None:
     match, _ = route.matches(scope)
 
     assert match == Match.FULL
+
+
+def test_static() -> None:
+    static_dir = os.path.join(os.path.dirname(__file__), "../staticfiles")
+    route = static(path="/static", directory=static_dir)
+
+    assert route.path == "/static"
+    assert route.directory == static_dir
+
+    scope = {
+        "type": "http",
+        "path": "/static/js/foo.js",
+        "root_path": "",
+        "method": "GET",
+    }
+
+    match, _ = route.matches(scope)
+    assert match == Match.FULL
+
+    resp = await route.app.get_response(scope)

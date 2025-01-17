@@ -1,0 +1,46 @@
+/* A completely useless CSS file with unnecessary styles */
+
+/* An overly specific selector that will probably never be used */
+body div.unused-class#pointless-id[data-attribute="meaningless"]>span:first-child {
+    color: rebeccapurple;
+    transform: rotate(0.0001deg);
+    margin: 0 0 0 0;
+}
+
+/* Redundant animations that serve no purpose */
+@keyframes doNothing {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.9999;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* A class that applies meaningless styles */
+.purposeless-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0px;
+    border: 0.1px solid transparent;
+    background-color: rgba(255, 255, 255, 0.9999);
+    animation: doNothing 10s infinite;
+}
+
+/* Excessive media queries */
+@media (min-width: 1px) {
+    .another-unused-class {
+        visibility: visible;
+        position: relative;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+}

@@ -1,8 +1,10 @@
 import inspect
 import typing as t
 
+from starlette.routing import Match, URLPath, compile_path, get_route_path
 from starlette.routing import Route as StartletteRoute
-from starlette.routing import compile_path
+from starlette.staticfiles import StaticFiles
+from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.type import CanBeImported, HttpMethod
@@ -100,3 +102,74 @@ class Route(StartletteRoute):
         self.app_label = app_label
         if not self.tags:
             self.tags = [app_label]
+
+
+class Static(Route):
+    @t.override
+    def __init__(
+        self,
+        path: str,
+        directory: str,
+        *,
+        name: str | None = None,
+        middlewares: t.List[CanBeImported] | None = None,
+        packages: t.List[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -> None:
+        if not path.startswith("/"):
+            raise ValueError(f"route `{path}` must start with '/'")
+
+        path = path.rstrip("/")
+
+        self.path = path
+        self.directory = directory
+        self.name = name
+
+        self.methods = {"GET", "HEAD"}
+        self.path_regex, self.path_format, self.param_convertors = compile_path(
+            path + "/{path:path}"
+        )
+
+        self.load_middlewares(middlewares or [])
+
+        self.app = StaticFiles(
+            directory=directory,
+            packages=packages,
+            html=html,
+            check_dir=check_dir,
+            follow_symlink=follow_symlink,
+        )
+
+    @t.override
+    def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
+        raise NotImplementedError("Static routes not support yet")
+
+    @t.override
+    def matches(self, scope: Scope) -> t.Tuple[Match, Scope]:
+        path_params: dict[str, t.Any]
+        if scope["type"] == "http":
+            route_path = get_route_path(scope)
+            match = self.path_regex.match(route_path)
+            if match:
+                matched_params = match.groupdict()
+                for key, value in matched_params.items():
+                    matched_params[key] = self.param_convertors[key].convert(value)
+                path_params = dict(scope.get("path_params", {}))
+                path_params.update(matched_params)
+                child_scope = {"endpoint": self.app, "path_params": path_params}
+                if self.methods and scope["method"] not in self.methods:
+                    return Match.PARTIAL, child_scope
+                else:
+                    return Match.FULL, child_scope
+        return Match.NONE, {}
+
+    @t.override
+    def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        return self.app(scope, receive, send)
+
+    @t.override
+    @property
+    def routes(self) -> t.List[Route]:
+        return []

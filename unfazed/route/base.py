@@ -5,7 +5,7 @@ from importlib import import_module
 from unfazed.type import CanBeImported, HttpMethod
 
 from .registry import _flatten_patterns
-from .routing import Route
+from .routing import Route, Static
 
 
 def include(route_path: str) -> t.List[Route]:
@@ -161,3 +161,7 @@ def path(
     # never reach here
     else:
         return []  # pragma: no cover
+
+
+def static(path: str, directory: str, name: str | None = None) -> Static:
+    return Static(path=path, directory=directory, name=name)
