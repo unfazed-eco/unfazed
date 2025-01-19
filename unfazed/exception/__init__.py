@@ -6,6 +6,7 @@ from .auth import (
     WrongPassword,
 )
 from .base import BaseUnfazedException
+from .http import MethodNotAllowed
 from .route import ParameterError
 
 
@@ -22,4 +23,5 @@ __all__ = [
     "AccountNotFound",
     "WrongPassword",
     "AccountExisted",
+    "MethodNotAllowed",
 ]
