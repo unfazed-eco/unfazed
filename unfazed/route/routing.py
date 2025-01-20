@@ -3,10 +3,10 @@ import typing as t
 
 from starlette.routing import Match, URLPath, compile_path, get_route_path
 from starlette.routing import Route as StartletteRoute
-from starlette.staticfiles import StaticFiles
 from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
+from unfazed.static import StaticFiles
 from unfazed.type import CanBeImported, HttpMethod
 from unfazed.utils import import_string
 
@@ -113,10 +113,16 @@ class Static(Route):
         *,
         name: str | None = None,
         middlewares: t.List[CanBeImported] | None = None,
-        packages: t.List[str | tuple[str, str]] | None = None,
         html: bool = False,
-        check_dir: bool = True,
         follow_symlink: bool = False,
+        app_label: str | None = None,
+        tags: t.List[str] | None = None,
+        include_in_schema: bool = True,
+        summary: str | None = None,
+        description: str | None = None,
+        externalDocs: t.Dict | None = None,
+        deprecated: bool | None = None,
+        response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
             raise ValueError(f"route `{path}` must start with '/'")
@@ -125,22 +131,28 @@ class Static(Route):
 
         self.path = path
         self.directory = directory
-        self.name = name
+        self.name = name or "static"
 
         self.methods = {"GET", "HEAD"}
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             path + "/{path:path}"
         )
+        self.app = StaticFiles(
+            directory=directory,
+            html=html,
+            follow_symlink=follow_symlink,
+        )
 
         self.load_middlewares(middlewares or [])
 
-        self.app = StaticFiles(
-            directory=directory,
-            packages=packages,
-            html=html,
-            check_dir=check_dir,
-            follow_symlink=follow_symlink,
-        )
+        self.app_label = app_label
+        self.tags = tags or [app_label]
+        self.include_in_schema = include_in_schema
+        self.summary = summary
+        self.description = description
+        self.externalDocs = externalDocs
+        self.deprecated = deprecated
+        self.response_models = response_models
 
     @t.override
     def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:

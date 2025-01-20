@@ -1,7 +1,7 @@
 import typing as t
 from importlib import import_module
 
-from .routing import Route
+from .routing import Route, Static
 
 if t.TYPE_CHECKING:
     from unfazed.app import AppCenter  # pragma: no cover
@@ -37,6 +37,9 @@ def parse_urlconf(root_urlconf: str, app_center: "AppCenter") -> t.List[Route]:
     patterns = _flatten_patterns(module_patterns)
 
     for route in patterns:
+        if isinstance(route, Static):
+            ret.append(route)
+            continue
         if route.app_label and route.app_label not in app_center:
             raise ValueError(f"App {route.app_label} is not installed")
 

@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import pytest
@@ -15,8 +14,8 @@ from unfazed.route import (
     parse_urlconf,
     path,
     register_url_convertor,
-    static,
 )
+from unfazed.test import Requestfactory
 
 
 class TestInclude:
@@ -47,7 +46,7 @@ def test_include() -> None:
 
     patterns = include(import_path)
 
-    assert len(patterns) == 4
+    assert len(patterns) == 5
 
 
 async def view(request: HttpRequest) -> HttpResponse:
@@ -104,7 +103,7 @@ def test_failed_path() -> None:
 
 def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
     # normal case
-    assert len(setup_route_unfazed.routes) == 4
+    assert len(setup_route_unfazed.routes) == 5
 
     # failed case
     import_path = "tests.apps.route.include.nopatternroutes"
@@ -213,21 +212,7 @@ def test_route_converter() -> None:
     assert match == Match.FULL
 
 
-def test_static() -> None:
-    static_dir = os.path.join(os.path.dirname(__file__), "../staticfiles")
-    route = static(path="/static", directory=static_dir)
-
-    assert route.path == "/static"
-    assert route.directory == static_dir
-
-    scope = {
-        "type": "http",
-        "path": "/static/js/foo.js",
-        "root_path": "",
-        "method": "GET",
-    }
-
-    match, _ = route.matches(scope)
-    assert match == Match.FULL
-
-    resp = await route.app.get_response(scope)
+async def test_staticfiles(setup_route_unfazed: Unfazed) -> None:
+    async with Requestfactory(setup_route_unfazed) as request:
+        response = await request.get("/static/js/foo.js")
+        assert response.status_code == 200

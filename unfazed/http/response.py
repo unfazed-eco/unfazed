@@ -2,6 +2,7 @@ import os
 import typing as t
 from datetime import datetime
 from functools import partial
+from pathlib import Path
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
@@ -14,7 +15,7 @@ from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import ASGIType
-from unfazed.type import ContentStream
+from unfazed.type import ContentStream, PathLike
 
 T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentStream])
 
@@ -190,17 +191,18 @@ class StreamingResponse(HttpResponse[ContentStream]):
 class RangeFileHandler:
     def __init__(
         self,
-        path: str,
+        path: PathLike,
         download_name: str | None = None,
         chunk_size: int = 65536,
     ) -> None:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"File {path} not found")
+        resolved_path = Path(path).resolve()
+        if not resolved_path.exists():
+            raise FileNotFoundError(f"File {resolved_path} not found")
 
-        self.path = path
-        self.stat = os.stat(path)
+        self.path = resolved_path
+        self.stat = os.stat(resolved_path)
 
-        self._file_name = download_name or path.split("/")[-1]
+        self._file_name = download_name or resolved_path.name.split("/")[-1]
         self.chunk_size = chunk_size
 
         self.range_start = 0
@@ -330,7 +332,7 @@ class FileResponse(StreamingResponse):
 
     def __init__(
         self,
-        path: str,
+        path: PathLike,
         filename: str | None = None,
         *,
         chunk_size: int = 65536,
