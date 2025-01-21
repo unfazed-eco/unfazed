@@ -12,13 +12,6 @@ Unfazed
 
 Unfazed 是一个工程导向、异步优先、易测试、易扩展的 Python web 框架，基于 [starlette](https://www.starlette.io/) 开发，项目组织形式向 [django](https://www.djangoproject.com/) 靠拢。
 
-### Unfazed 介绍
-
-1. unfazed 设计理念
-2. unfazed 适用场景
-3. benchmark
-4. DDD vs MTV
-
 ### 新手入门
 
 1. [Part 1 安装与创建项目](tutorial/part1.md)
@@ -38,12 +31,13 @@ Unfazed 是一个工程导向、异步优先、易测试、易扩展的 Python w
 6. 日志系统：[logging](features/logging.md)
 7. HTTP 相关：[request](features/request.md) | [response](features/response.md)
 8. 视图函数设计：[endpoint](features/endpoint.md)
-9. Tortoise-orm 相关：[ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
-10. 缓存：[cache](features/cache.md)
-11. 错误处理：[error](features/error.md)
-12. OPENAPI：[openapi](features/openapi.md)
-13. 命令行设计：[command](features/command.md)
-14. 测试 client：[test_client](features/testclient.md)
+9. 静态文件服务：[staticfiles](features/staticfiles.md)
+10. Tortoise-orm 相关：[ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
+11. 缓存：[cache](features/cache.md)
+12. 错误处理：[error](features/error.md)
+13. OPENAPI：[openapi](features/openapi.md)
+14. 命令行设计：[command](features/command.md)
+15. 测试 client：[test_client](features/testclient.md)
 
 
 ### contrib

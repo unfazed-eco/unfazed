@@ -114,7 +114,6 @@ class Static(Route):
         name: str | None = None,
         middlewares: t.List[CanBeImported] | None = None,
         html: bool = False,
-        follow_symlink: bool = False,
         app_label: str | None = None,
         tags: t.List[str] | None = None,
         include_in_schema: bool = True,
@@ -137,11 +136,7 @@ class Static(Route):
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             path + "/{path:path}"
         )
-        self.app = StaticFiles(
-            directory=directory,
-            html=html,
-            follow_symlink=follow_symlink,
-        )
+        self.app = StaticFiles(directory=directory, html=html)
 
         self.load_middlewares(middlewares or [])
 
@@ -162,19 +157,25 @@ class Static(Route):
     def matches(self, scope: Scope) -> t.Tuple[Match, Scope]:
         path_params: dict[str, t.Any]
         if scope["type"] == "http":
+            root_path = scope.get("root_path", "")
             route_path = get_route_path(scope)
             match = self.path_regex.match(route_path)
             if match:
                 matched_params = match.groupdict()
                 for key, value in matched_params.items():
                     matched_params[key] = self.param_convertors[key].convert(value)
+
+                remaining_path = "/" + matched_params.pop("path")
+                matched_path = route_path[: -len(remaining_path)]
                 path_params = dict(scope.get("path_params", {}))
                 path_params.update(matched_params)
-                child_scope = {"endpoint": self.app, "path_params": path_params}
-                if self.methods and scope["method"] not in self.methods:
-                    return Match.PARTIAL, child_scope
-                else:
-                    return Match.FULL, child_scope
+                child_scope = {
+                    "path_params": path_params,
+                    "root_path": root_path + matched_path,
+                    "endpoint": self.app,
+                }
+
+                return Match.FULL, child_scope
         return Match.NONE, {}
 
     @t.override

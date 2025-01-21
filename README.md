@@ -8,7 +8,7 @@
 
 -----
 
-**Documentation**: [unfazed](https://unfazed.github.io/)
+**Documentation**: [unfazed](https://unfazed-eco.github.io/)
 
 -----
 
@@ -38,7 +38,7 @@ Unfazed offer you
 - request args parser support
 
 
-and with unfazed ecosystem
+and with unfazed ecosystems (coming soon)
 
 - unfazed-admin
 - unfazed-prometheus
@@ -47,7 +47,8 @@ and with unfazed ecosystem
 - unfazed-redis
 - unfazed-locust
 - unfazed-pyroscope
-- unfazed-scalene ?
+- pytest-unfazed
+
 
 with these tools, you can build a production-ready web application quickly.
 
@@ -96,6 +97,6 @@ python manage.py runserver --host 0.0.0.0 --port 9527
 
 4. follow toturial
 
-[unfazed-tutorial](https://unfazed.github.io/)
+[unfazed-tutorial](https://unfazed-eco.github.io/)
 
 

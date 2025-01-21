@@ -50,8 +50,7 @@ python manage.py startapp -n enroll -t simple
 - test_all.py: 该 app 的测试文件，unfazed 默认使用 pytest 来做测试
 
 
-关于文件结构的设计，参考 [ddd-vs-mtv](../instruction/ddd-vs-mtv.md)。
-
+关于文件结构的设计，参考之后的文章。
 
 ### Hello, World
 

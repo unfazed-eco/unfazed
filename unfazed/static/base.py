@@ -13,20 +13,13 @@ ONE_MEGABYTE = 1024 * 1024
 
 
 class StaticFiles:
-    def __init__(
-        self,
-        *,
-        directory: PathLike,
-        html: bool = False,
-        follow_symlink: bool = True,
-    ) -> None:
+    def __init__(self, *, directory: PathLike, html: bool = False) -> None:
         if not os.path.exists(directory):
             raise FileExistsError(f"Directory '{directory}' does not exist")
         if not os.path.isdir(directory):
             raise ValueError(f"'{directory}' is not a directory")
         self.directory = Path(directory)
         self.html = html
-        self.follow_symlink = follow_symlink
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -44,6 +37,7 @@ class StaticFiles:
 
     def lookup_path(self, scope: Scope) -> Path:
         path = get_route_path(scope)
+        path = path.lstrip("/")
         joined_path = self.directory / path
 
         full_path = joined_path.resolve()
