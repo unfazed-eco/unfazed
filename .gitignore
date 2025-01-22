@@ -9,3 +9,4 @@ migrations
 dist
 .mypy_cache
 .vscode
+site
