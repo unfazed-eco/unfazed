@@ -8,7 +8,7 @@
 
 -----
 
-**Documentation**: [unfazed](https://unfazed.github.io/)
+**Documentation**: [unfazed](https://unfazed-eco.github.io/)
 
 -----
 
@@ -16,40 +16,31 @@
 Unfazed
 ----
 
+Unfazed is a production-oriented ASGI web framework focused on building enterprise-grade applications. 100% test coverage, with a robust architecture inspired by Django, it provides high performance、scalability、maintainability、testability web application.
 
-Unfazed is a fully-featured ASGI web framework that is production ready. It is designed to build fast, scalable, maintainable web applications and inspired by Django.
 
+Unfazed offers powerful features:
 
-Unfazed offer you
-
+Core Features:
 - pluggable app system
-- command system
-- middleware
-- tortoise-orm integration
-- redis cache integration
-- process safe log handler
-- lifespan protocol
-- openapi support
-- serializer support based on tortoise-orm
-- scalable admin page with unfazed-admin(coming soon)
-- basic rbac system
-- session support
-- test client support
-- request args parser support
+- Built-in command line interface
+- Flexible middleware system
+- Robust ORM with Tortoise-ORM integration
+- Caching for high performance
+- Lifespan protocol support
 
+API Development:
+- Focus only on correct business logic
+- Full OpenAPI/Swagger support
+- Serializer framework built on Tortoise-ORM
+- Request argument parsing and validation
+- Comprehensive test client
+- Static files service
 
-and with unfazed ecosystem
-
-- unfazed-admin
-- unfazed-prometheus
-- unfazed-celery
-- unfazed-sentry
-- unfazed-redis
-- unfazed-locust
-- unfazed-pyroscope
-- unfazed-scalene ?
-
-with these tools, you can build a production-ready web application quickly.
+Security & Sessions:
+- Role-based access control (RBAC)
+- Secure session management
+- Production-ready admin interface (coming soon)
 
 
 ## Installation
@@ -96,6 +87,6 @@ python manage.py runserver --host 0.0.0.0 --port 9527
 
 4. follow toturial
 
-[unfazed-tutorial](https://unfazed.github.io/)
+[unfazed-tutorial](https://unfazed-eco.github.io/)
 
 

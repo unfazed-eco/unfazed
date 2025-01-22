@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 import pytest
@@ -14,7 +15,9 @@ from unfazed.route import (
     parse_urlconf,
     path,
     register_url_convertor,
+    static,
 )
+from unfazed.test import Requestfactory
 
 
 class TestInclude:
@@ -45,7 +48,7 @@ def test_include() -> None:
 
     patterns = include(import_path)
 
-    assert len(patterns) == 4
+    assert len(patterns) == 5
 
 
 async def view(request: HttpRequest) -> HttpResponse:
@@ -102,7 +105,7 @@ def test_failed_path() -> None:
 
 def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
     # normal case
-    assert len(setup_route_unfazed.routes) == 4
+    assert len(setup_route_unfazed.routes) == 5
 
     # failed case
     import_path = "tests.apps.route.include.nopatternroutes"
@@ -209,3 +212,42 @@ def test_route_converter() -> None:
     match, _ = route.matches(scope)
 
     assert match == Match.FULL
+
+
+async def test_staticfiles(setup_route_unfazed: Unfazed) -> None:
+    async with Requestfactory(setup_route_unfazed) as request:
+        response = await request.get("/static/js/foo.js")
+        assert response.status_code == 200
+
+        response = await request.get("/static/css/bar.css")
+        assert response.status_code == 200
+
+        response = await request.get("/static/nested/top/sub/bar.js")
+        assert response.status_code == 200
+
+        response = await request.get("/static/index.html")
+        assert response.status_code == 200
+
+        with pytest.raises(FileNotFoundError):
+            await request.get("/static/not_found.html")
+
+
+async def test_static() -> None:
+    abs_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../staticfiles")
+    )
+
+    with pytest.raises(ValueError):
+        static("static", abs_path)
+
+    route = static("/static", abs_path)
+
+    with pytest.raises(NotImplementedError):
+        route.url_path_for("static")
+
+    assert route.routes == []
+
+    ret = route.matches(
+        {"type": "unknown", "path": "/static/js/foo.js", "method": "GET"}
+    )
+    assert ret == (Match.NONE, {})

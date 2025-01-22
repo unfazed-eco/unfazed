@@ -18,6 +18,7 @@ nav:
     - Request: features/request.md
     - Response: features/response.md
     - Endpoint: features/endpoint.md
+    - Staticfiles: features/staticfiles.md
     - ORM: features/tortoise-orm.md
     - Serializer: features/serializer.md
     - Cache: features/cache.md
@@ -29,6 +30,8 @@ nav:
     - Admin: features/contrib/admin.md
     - Auth: features/contrib/auth.md
     - Session: features/contrib/session.md
+
+  - ReleaseNote: release-note.md
 
 theme:
   name: material

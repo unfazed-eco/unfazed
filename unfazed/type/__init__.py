@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 from .base import Doc
@@ -23,6 +24,8 @@ Domain = t.Annotated[
     ),
 ]
 
+PathLike = t.Union[str, "os.PathLike[str]"]
+
 
 __all__ = [
     "CanBeImported",
@@ -32,4 +35,5 @@ __all__ = [
     "GenericReponse",
     "ContentStream",
     "CacheBackend",
+    "PathLike",
 ]
