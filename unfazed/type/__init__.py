@@ -1,6 +1,7 @@
 import os
 import typing as t
 
+from .asgi import Scope
 from .base import Doc
 from .cache import CacheBackend, CacheOptions
 from .http import (
@@ -36,4 +37,5 @@ __all__ = [
     "ContentStream",
     "CacheBackend",
     "PathLike",
+    "Scope",
 ]
