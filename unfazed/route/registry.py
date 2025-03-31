@@ -28,7 +28,7 @@ def parse_urlconf(root_urlconf: str, app_center: "AppCenter") -> t.List[Route]:
     and will flatten the patterns and return a list of Route, dont support Mount
 
     """
-    ret = []
+    ret: t.List[t.Union[Route, Static]] = []
     root_url_module = import_module(root_urlconf)
     if not hasattr(root_url_module, "patterns"):
         raise ValueError(f"ROOT_URLCONF {root_urlconf} should have patterns defined")

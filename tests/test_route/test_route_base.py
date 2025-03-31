@@ -251,3 +251,9 @@ async def test_static() -> None:
         {"type": "unknown", "path": "/static/js/foo.js", "method": "GET"}
     )
     assert ret == (Match.NONE, {})
+
+    route2 = static("/static", abs_path, app_label="test_route")
+    assert route2.app_label == "test_route"
+
+    route3 = static("/static", abs_path, tags=["foo", "bar"])
+    assert route3.tags == ["foo", "bar"]

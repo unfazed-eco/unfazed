@@ -166,7 +166,9 @@ def path(
 def static(
     path: str,
     directory: str,
+    *,
     name: str | None = None,
+    app_label: str | None = None,
     html: bool = False,
     include_in_schema: bool = True,
     tags: t.List[str] | None = None,
@@ -180,6 +182,7 @@ def static(
         directory=directory,
         name=name,
         html=html,
+        app_label=app_label,
         include_in_schema=include_in_schema,
         tags=tags,
         summary=summary,
