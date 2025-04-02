@@ -1,7 +1,7 @@
 import typing as t
 from contextlib import asynccontextmanager
 
-from starlette.types import ASGIApp
+from unfazed.type import ASGIApp
 
 from .base import BaseLifeSpan
 

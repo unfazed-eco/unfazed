@@ -1,9 +1,9 @@
 from starlette.middleware.trustedhost import (
     TrustedHostMiddleware as StarletteTrustedHostMiddleware,
 )
-from starlette.types import ASGIApp
 
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.type import ASGIApp
 
 
 class TrustedHostMiddleware(StarletteTrustedHostMiddleware):

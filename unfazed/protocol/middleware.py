@@ -1,6 +1,6 @@
 import typing as t
 
-from starlette.types import ASGIApp, Receive, Scope, Send
+from unfazed.type import ASGIApp, Receive, Scope, Send
 
 
 @t.runtime_checkable

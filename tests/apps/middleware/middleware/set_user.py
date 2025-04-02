@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from starlette.types import Receive, Scope, Send
 
 from unfazed.middleware import BaseMiddleware
+from unfazed.type import Receive, Scope, Send
 
 
 class User(BaseModel):

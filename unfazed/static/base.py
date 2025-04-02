@@ -2,11 +2,10 @@ import os
 from pathlib import Path
 
 from starlette._utils import get_route_path
-from starlette.types import Receive, Scope, Send
 
 from unfazed.exception import MethodNotAllowed
 from unfazed.http import FileResponse
-from unfazed.type import PathLike
+from unfazed.type import PathLike, Receive, Scope, Send
 
 ONE_DAY = 60 * 60 * 24
 ONE_MEGABYTE = 1024 * 1024

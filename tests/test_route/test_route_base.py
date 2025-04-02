@@ -3,7 +3,6 @@ import typing as t
 
 import pytest
 from starlette.routing import Match
-from starlette.types import Receive, Scope, Send
 
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
@@ -18,6 +17,7 @@ from unfazed.route import (
     static,
 )
 from unfazed.test import Requestfactory
+from unfazed.type import Receive, Scope, Send
 
 
 class TestInclude:

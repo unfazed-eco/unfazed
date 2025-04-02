@@ -3,11 +3,10 @@ import typing as t
 
 from starlette.routing import Match, URLPath, compile_path, get_route_path
 from starlette.routing import Route as StartletteRoute
-from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.static import StaticFiles
-from unfazed.type import CanBeImported, HttpMethod
+from unfazed.type import CanBeImported, HttpMethod, Receive, Scope, Send
 from unfazed.utils import import_string
 
 from . import params as p

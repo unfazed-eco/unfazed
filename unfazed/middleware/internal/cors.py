@@ -1,7 +1,7 @@
 from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
-from starlette.types import ASGIApp
 
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.type import ASGIApp
 
 
 class CORSMiddleware(StarletteCORSMiddleware):

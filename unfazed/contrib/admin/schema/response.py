@@ -14,6 +14,7 @@ class BaseResp(BaseModel):
 class DescField(BaseModel):
     blank: bool
     choices: list
+    # TODO: should be dumpable
     default: str | None
     help_text: str
     readonly: bool

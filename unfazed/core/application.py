@@ -3,7 +3,6 @@ import typing as t
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import State
 from starlette.routing import Router
-from starlette.types import ASGIApp, Receive, Send
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
@@ -18,7 +17,7 @@ from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
-from unfazed.type import Scope
+from unfazed.type import ASGIApp, Receive, Scope, Send
 from unfazed.utils import import_string, unfazed_locker
 
 

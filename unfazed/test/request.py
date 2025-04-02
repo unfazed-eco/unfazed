@@ -5,7 +5,8 @@ import httpx
 from asgiref.testing import ApplicationCommunicator
 from httpx import Request, Response
 from httpx._transports.asgi import ASGIResponseStream, create_event
-from starlette.types import ASGIApp, Receive, Scope, Send
+
+from unfazed.type import ASGIApp, Receive, Scope, Send
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover

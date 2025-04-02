@@ -4,7 +4,6 @@ import typing as t
 import pytest
 from pydantic import BaseModel, Field
 from starlette.routing import Match
-from starlette.types import Receive
 
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
@@ -15,6 +14,7 @@ from unfazed.route import Route
 from unfazed.route import params as p
 from unfazed.route.endpoint import EndPointDefinition
 from unfazed.test import Requestfactory
+from unfazed.type import Receive
 
 
 async def _reiceive() -> t.AsyncGenerator[t.MutableMapping[str, t.Any], None]:

@@ -1,10 +1,9 @@
 import typing as t
 
-from starlette.types import ASGIApp, Receive, Scope, Send
-
 from unfazed.conf import settings
 from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.settings import UnfazedContribAuthSettings
+from unfazed.type import ASGIApp, Receive, Scope, Send
 
 if t.TYPE_CHECKING:
     from unfazed.contrib.session.backends.base import SessionBase  # pragma: no cover

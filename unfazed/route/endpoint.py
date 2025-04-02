@@ -3,11 +3,11 @@ import typing as t
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from starlette.concurrency import run_in_threadpool
-from starlette.types import Receive, Scope, Send
 
 from unfazed.exception import ParameterError, TypeHintRequired
 from unfazed.file import UploadFile
 from unfazed.http import HttpRequest
+from unfazed.type import Receive, Scope, Send
 
 from . import params as p
 from . import utils as u

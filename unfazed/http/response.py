@@ -12,10 +12,9 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.concurrency import iterate_in_threadpool
 from starlette.responses import Response
-from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import ASGIType
-from unfazed.type import ContentStream, PathLike
+from unfazed.type import ContentStream, PathLike, Receive, Scope, Send
 
 T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentStream])
 
