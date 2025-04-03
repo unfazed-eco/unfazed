@@ -3,7 +3,7 @@ import typing as t
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
 import anyio
@@ -20,6 +20,20 @@ T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentS
 
 
 class HttpResponse[T](Response):
+    """
+    Base HTTP response class that extends Starlette's Response.
+
+    This class provides a foundation for all HTTP responses in the Unfazed framework.
+    It supports various content types and can be extended for specific response formats.
+
+    Args:
+        content: The response content, can be of various types.
+        status_code: HTTP status code, defaults to 200.
+        headers: Optional HTTP headers.
+        media_type: Content type of the response, defaults to "text/plain".
+        background: Optional background task to run after the response is sent.
+    """
+
     media_type = "text/plain"
 
     def __init__(
@@ -34,35 +48,56 @@ class HttpResponse[T](Response):
 
 
 class PlainTextResponse(HttpResponse[str]):
+    """
+    Response class for plain text content.
+
+    This response type is suitable for simple text-based responses.
+    The content type is set to "text/plain".
+    """
+
     pass
 
 
 class HtmlResponse(HttpResponse[str]):
+    """
+    Response class for HTML content.
+
+    This response type is suitable for HTML-based responses.
+    The content type is set to "text/html".
+    """
+
     media_type = "text/html"
 
 
-class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
+class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List, t.Any]]):
     """
-    Json response
+    Response class for JSON content.
+
+    This response type is suitable for JSON-based responses.
+    It supports serializing Pydantic models, dictionaries, and lists.
 
     Usage:
-
     ```python
-
     from pydantic import BaseModel
 
-
+    # Dictionary response
     resp = JsonResponse({"foo": "bar"})
-    resp2 = JsonResponse([1,2,3])
 
+    # List response
+    resp2 = JsonResponse([1, 2, 3])
+
+    # Pydantic model response
     class Resp(BaseModel):
         name: str
 
     resp3 = JsonResponse(Resp(name="unfazed"))
-
-
     ```
 
+    Args:
+        content: The response content, must be a Pydantic model, dictionary, or list.
+        status_code: HTTP status code, defaults to 200.
+        headers: Optional HTTP headers.
+        background: Optional background task to run after the response is sent.
     """
 
     media_type = "application/json"
@@ -79,20 +114,30 @@ class JsonResponse(HttpResponse[t.Union[BaseModel, t.Dict, t.List]]):
 
 class RedirectResponse(HttpResponse):
     """
+    Response class for HTTP redirects.
 
-    Redirect Response
-
+    This response type is suitable for redirecting clients to another URL.
+    It properly sets the Location header and handles URL encoding.
 
     Usage:
-
     ```python
-
     from unfazed.http import RedirectResponse
 
+    # Redirect to Google
     resp = RedirectResponse("https://www.google.com")
 
+    # Redirect with custom status code (e.g., 301 for permanent redirect)
+    resp2 = RedirectResponse("https://example.com", status_code=301)
     ```
 
+    Args:
+        url: The URL to redirect to.
+        status_code: HTTP status code, defaults to 302 (Found).
+        headers: Optional HTTP headers.
+        background: Optional background task to run after the response is sent.
+
+    Raises:
+        ValueError: If the URL is invalid or potentially unsafe.
     """
 
     def __init__(
@@ -102,33 +147,42 @@ class RedirectResponse(HttpResponse):
         headers: t.Mapping[str, str] | None = None,
         background: BackgroundTask | None = None,
     ) -> None:
+        # Validate URL to prevent open redirect vulnerabilities
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError(f"Invalid redirect URL: {url}")
+
         super().__init__(
             content=b"", status_code=status_code, headers=headers, background=background
         )
         self.headers["location"] = quote(str(url), safe=":/%#?=@[]!$&'()*+,;")
 
 
-# Copy most code from starlette.responses.StreamingResponse
-
-
 class StreamingResponse(HttpResponse[ContentStream]):
     """
-    StreamingResponse is a response class that can be used to stream large
+    Response class for streaming content.
 
+    This response type is suitable for streaming large amounts of data,
+    such as file downloads or real-time data streams.
+
+    Usage:
     ```python
-
     from unfazed.http import StreamingResponse
 
     async def stream_large_file(request) -> StreamingResponse:
-
         def content():
             for chunk in large_file:
                 yield chunk
 
         return StreamingResponse(content())
-
     ```
 
+    Args:
+        content: An iterable or async iterable that yields content chunks.
+        status_code: HTTP status code, defaults to 200.
+        headers: Optional HTTP headers.
+        media_type: Content type of the response.
+        background: Optional background task to run after the response is sent.
     """
 
     def __init__(
@@ -149,12 +203,24 @@ class StreamingResponse(HttpResponse[ContentStream]):
         self.init_headers(headers)
 
     async def listen_for_disconnect(self, receive: Receive) -> None:
+        """
+        Listen for client disconnection events.
+
+        Args:
+            receive: The ASGI receive callable.
+        """
         while True:
             message = await receive()
             if message["type"] == ASGIType.HTTP_DISCONNECT:
                 break
 
     async def stream_response(self, send: Send) -> None:
+        """
+        Stream the response content to the client.
+
+        Args:
+            send: The ASGI send callable.
+        """
         await send(
             {
                 "type": ASGIType.HTTP_RESPONSE_START,
@@ -174,6 +240,14 @@ class StreamingResponse(HttpResponse[ContentStream]):
         )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """
+        ASGI callable implementation.
+
+        Args:
+            scope: The ASGI scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
         async with anyio.create_task_group() as task_group:
 
             async def wrap(func: t.Callable[[], t.Awaitable[None]]) -> None:
@@ -188,6 +262,18 @@ class StreamingResponse(HttpResponse[ContentStream]):
 
 
 class RangeFileHandler:
+    """
+    Handler for file streaming with range request support.
+
+    This class manages file streaming with support for HTTP range requests,
+    allowing clients to request specific portions of a file.
+
+    Args:
+        path: Path to the file to stream.
+        download_name: Optional name for the downloaded file.
+        chunk_size: Size of each chunk to stream, defaults to 65536 bytes.
+    """
+
     def __init__(
         self,
         path: PathLike,
@@ -209,51 +295,91 @@ class RangeFileHandler:
         self._content_length = self.stat.st_size
 
         self.downloaded = 0
+        self.file = None
+        self._open_file()
 
+    def _open_file(self) -> None:
+        """Open the file for reading."""
         self.file = open(self.path, "rb")
 
     @property
     def file_name(self) -> str:
+        """Get the name of the file for download."""
         return self._file_name
 
     @property
     def content_length(self) -> int:
+        """Get the content length of the file or range."""
         return self._content_length
 
     @property
     def file_size(self) -> int:
+        """Get the total size of the file."""
         return self.stat.st_size
 
     @property
     def etag(self) -> str:
+        """Generate an ETag for the file based on size and modification time."""
         modified = int(self.stat.st_mtime * 1000)
         return f'W/"{self.file_size}-{modified}"'
 
     @property
     def last_modified(self) -> str:
-        tz = ZoneInfo("GMT")
+        """Get the last modified time of the file in RFC 2822 format."""
+        # Use UTC for consistency across different timezones
+        tz = ZoneInfo("UTC")
         modified = int(self.stat.st_mtime)
 
         return datetime.fromtimestamp(modified, tz).strftime("%a, %d %b %Y %H:%M:%S %Z")
 
     @property
     def content_range(self) -> str:
+        """Get the Content-Range header value for the current range."""
         return f"bytes {self.range_start}-{self.range_end - 1}/{self.file_size}"
 
     def close(self) -> None:
-        self.file.close()
+        """Close the file handle."""
+        if self.file:
+            self.file.close()
+            self.file = None
+
+    def __enter__(self) -> "RangeFileHandler":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit, ensuring file is closed."""
+        self.close()
 
     def set_range(self, start: int, end: int) -> None:
+        """
+        Set the range to stream.
+
+        Args:
+            start: Start byte position.
+            end: End byte position (exclusive).
+        """
         self.range_start = start
         self.range_end = end
         self._content_length = self.range_end - self.range_start
 
-        self.file.seek(self.range_start)
+        if self.file:
+            self.file.seek(self.range_start)
 
     def __iter__(self) -> t.Iterator[bytes]:
+        """Make the handler iterable."""
         return self
 
     def __next__(self) -> bytes:
+        """
+        Get the next chunk of data.
+
+        Returns:
+            bytes: The next chunk of data.
+
+        Raises:
+            StopIteration: When all data has been streamed.
+        """
         if self.downloaded >= self.range_end - self.range_start:
             self.close()
             raise StopIteration
@@ -267,6 +393,22 @@ class RangeFileHandler:
 def parse_request(
     handler: RangeFileHandler, headers: t.Dict[str, str]
 ) -> t.Tuple[int, int, int]:
+    """
+    Parse HTTP range request headers.
+
+    This function handles the parsing of Range and If-Range headers
+    to determine which portion of a file to serve.
+
+    Args:
+        handler: The RangeFileHandler instance.
+        headers: The HTTP request headers.
+
+    Returns:
+        Tuple containing:
+        - range_start: Start byte position.
+        - range_end: End byte position (exclusive).
+        - status_code: HTTP status code (200, 206, or 416).
+    """
     header_if_range = headers.get("If-Range", None)
     header_range = headers.get("Range", None)
 
@@ -274,8 +416,8 @@ def parse_request(
     range_end: int | str
     range_start, range_end = 0, handler.file_size
 
-    # compare If-Range and etag if If-Range existed
-    # if they are not equal, download the whole file
+    # Compare If-Range and etag if If-Range exists
+    # If they are not equal, download the whole file
     continue_download = True
     status_code = 200
     if header_if_range:
@@ -285,48 +427,55 @@ def parse_request(
             continue_download = False
 
     if header_range and continue_download:
-        # we only support "bytes =start-end"
-        # if other range format, download the whole file
-
+        # We only support "bytes=start-end"
+        # If other range format, download the whole file
         try:
             range_start, range_end = header_range.split("=")[1].split("-")
         except Exception:
             range_start, range_end = 0, handler.file_size
+
         if range_end == "":
             range_end = handler.file_size
 
         if range_start == "":
             range_start = 0
+
         try:
             range_start = int(range_start)
             range_end = int(range_end)
             status_code = 206
-        except Exception:
+        except ValueError:
             range_start = 0
             range_end = handler.file_size
             status_code = 200
 
         if range_start > range_end:
-            status_code = 416
+            status_code = 416  # Requested Range Not Satisfiable
 
     return range_start, range_end, status_code
 
 
 class FileResponse(StreamingResponse):
     """
-    FileResponse is a response class that can be used to stream large file
-    also, it can handle range request
+    Response class for file downloads with range request support.
 
+    This response type is suitable for streaming files to clients,
+    with support for HTTP range requests to allow resumable downloads.
+
+    Usage:
     ```python
-
     from unfazed.http import FileResponse
 
-    async def stream_large_file(request) -> FileResponse:
-
-        return FileResponse("path/to/file")
-
+    async def download_file(request) -> FileResponse:
+        return FileResponse("path/to/file.pdf", filename="document.pdf")
     ```
 
+    Args:
+        path: Path to the file to stream.
+        filename: Optional name for the downloaded file.
+        chunk_size: Size of each chunk to stream, defaults to 65536 bytes.
+        headers: Optional HTTP headers.
+        background: Optional background task to run after the response is sent.
     """
 
     def __init__(
@@ -355,6 +504,15 @@ class FileResponse(StreamingResponse):
         )
 
     def build_headers(self, handler: RangeFileHandler) -> t.Dict[str, str]:
+        """
+        Build HTTP headers for the file response.
+
+        Args:
+            handler: The RangeFileHandler instance.
+
+        Returns:
+            Dictionary of HTTP headers.
+        """
         headers = {
             "ETag": handler.etag,
             "Accept-Ranges": "bytes",
