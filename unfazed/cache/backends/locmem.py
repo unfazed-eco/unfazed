@@ -15,23 +15,54 @@ _locks: t.Dict[str, Lock] = {}
 
 class LocMemCache:
     """
-    Local memory cache backend. only for single process.
+    Local memory cache backend implementation for single-process applications.
 
+    This class provides an in-memory caching solution with the following features:
+    - Thread-safe operations using asyncio locks
+    - Configurable cache size limits
+    - Automatic cache eviction when size limit is reached
+    - Support for key versioning
+    - Configurable key prefixing
+    - TTL (Time To Live) support for cache entries
+
+    Parameters:
+        location (str): Unique identifier for this cache instance
+        options (Dict[str, Any] | None): Configuration options including:
+            - PREFIX: Optional prefix for cache keys
+            - VERSION: Default version number for keys
+            - MAX_ENTRIES: Maximum number of entries to store in cache
 
     Usage:
+        ```python
+        from unfazed.cache import caches
 
-    ```python
+        # Get the default cache instance
+        cache: LocMemCache = caches["default"]
 
-    from unfazed.cache import caches
+        # Basic operations
+        await cache.set("user:1", {"name": "John", "age": 30}, timeout=3600)
+        user = await cache.get("user:1")
 
-    default: LocMemCache = caches["default"]
+        # Counter operations
+        await cache.set("counter", 0)
+        await cache.incr("counter")  # Increment by 1
+        await cache.decr("counter")  # Decrement by 1
 
-    await default.set("foo", "bar")
-    ret = await default.get("foo")
+        # Check existence
+        exists = await cache.has_key("user:1")
 
-    ```
+        # Delete key
+        await cache.delete("user:1")
 
+        # Clear all entries
+        await cache.clear()
+        ```
 
+    Notes:
+        - This cache is not suitable for multi-process applications
+        - Cache entries are stored in memory and will be lost on process restart
+        - Keys are automatically evicted when the cache reaches its size limit
+        - Expired entries are automatically removed on access
     """
 
     pickle_protocol = pickle.HIGHEST_PROTOCOL

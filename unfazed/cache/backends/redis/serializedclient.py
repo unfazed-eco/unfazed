@@ -11,27 +11,43 @@ from unfazed.utils import import_string
 
 class SerializerBackend:
     """
-    Limited Redis backend with serializer and compressor
-    SerializerBackend can store any type of data
+    A Redis backend with serialization and compression support.
 
-    only supports string commands, if you need more commands,
-    please use DefaultBackend
+    This backend extends Redis functionality by adding serialization and compression capabilities,
+    allowing storage of complex Python objects. It supports all basic string operations and
+    numeric operations (incr/decr) while maintaining data type integrity.
 
-    Usage:
+    Key Features:
+    - Serialization of complex Python objects (dicts, lists, etc.)
+    - Optional compression of serialized data
+    - Support for numeric operations (incr/decr)
+    - Key prefixing for namespace isolation
+    - Configurable connection options
 
+    Usage Example:
     ```python
-
     from unfazed.cache import caches
 
-    default: SerializerBackend = caches["default"]
+    # Get the default cache backend
+    cache: SerializerBackend = caches["default"]
 
-    await default.set("key", {"foo": "bar"})
-    await default.set("key2", 1)
-    await default.set("key3", [1, 2, 3])
+    # Store various data types
+    await cache.set("user_data", {"name": "John", "age": 30})
+    await cache.set("counter", 1)
+    await cache.set("items", [1, 2, 3])
 
+    # Increment numeric values
+    await cache.incr("counter")  # counter becomes 2
+
+    # Retrieve data
+    user = await cache.get("user_data")  # Returns dict
+    count = await cache.get("counter")   # Returns int
     ```
 
-
+    Note:
+    - This backend does not support decode_responses=True
+    - For advanced Redis operations, consider using DefaultBackend or unfazed-redis
+    - Serializer is required if compression is enabled
     """
 
     def __init__(self, location: str, options: t.Dict[str, t.Any] | None = None):
@@ -99,7 +115,12 @@ class SerializerBackend:
     async def __aenter__(self) -> t.Self:
         return self
 
-    async def __aexit__(self, *args: t.Any, **kw: t.Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: t.Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: t.TracebackType | None,
+    ) -> None:
         await self.client.aclose()
 
     async def close(self) -> None:
@@ -148,8 +169,11 @@ class SerializerBackend:
         return value
 
     # general commands
-    async def flushdb(self, asynchronous: bool = False, **kw: t.Any) -> t.Any:
+    async def flushdb(
+        self, asynchronous: bool = False, **kw: t.Dict[str, t.Any]
+    ) -> bool:
         await self.client.flushdb(asynchronous, **kw)
+        return True
 
     async def exists(self, name: str) -> int:
         key = self.make_key(name)
@@ -163,11 +187,11 @@ class SerializerBackend:
         xx: bool = False,
         gt: bool = False,
         lt: bool = False,
-    ) -> t.Any:
+    ) -> bool:
         key = self.make_key(name)
         return await self.client.expire(key, time, nx, xx, gt, lt)
 
-    async def touch(self, *args: t.Any) -> int:
+    async def touch(self, *args: str) -> int:
         args = [self.make_key(key) for key in args]
         return await self.client.touch(*args)
 
@@ -209,12 +233,12 @@ class SerializerBackend:
         value = await self.client.getset(key, new_value)
         return self.decode(value)
 
-    async def mget(self, keys: t.List[str], *args: t.Any) -> t.List:
+    async def mget(self, keys: t.List[str], *args: str) -> t.List[t.Any]:
         keys = [self.make_key(key) for key in keys]
         values = await self.client.mget(keys, *args)
         return [self.decode(value) for value in values]
 
-    async def mset(self, mapping: t.Dict[str, t.Any]) -> str:
+    async def mset(self, mapping: t.Dict[str, t.Any]) -> bool:
         mapping = {
             self.make_key(key): self.encode(value) for key, value in mapping.items()
         }
@@ -238,12 +262,14 @@ class SerializerBackend:
         get: bool = False,
         exat: int | datetime | None = None,
         pxat: int | datetime | None = None,
-    ) -> t.Any:
+    ) -> bool | None:
         key = self.make_key(name)
         value = self.encode(value)
-        await self.client.set(key, value, ex, px, nx, xx, keepttl, get, exat, pxat)
+        return await self.client.set(
+            key, value, ex, px, nx, xx, keepttl, get, exat, pxat
+        )
 
-    async def setex(self, name: str, time: int, value: t.Any) -> str:
+    async def setex(self, name: str, time: int, value: t.Any) -> bool:
         key = self.make_key(name)
         value = self.encode(value)
         return await self.client.setex(key, time, value)
@@ -253,7 +279,7 @@ class SerializerBackend:
         value = self.encode(value)
         return await self.client.setnx(key, value)
 
-    async def psetex(self, name: str, time: int, value: t.Any) -> str:
+    async def psetex(self, name: str, time: int, value: t.Any) -> bool:
         key = self.make_key(name)
         value = self.encode(value)
         return await self.client.psetex(key, time, value)
@@ -279,6 +305,6 @@ class SerializerBackend:
         key = self.make_key(name)
         return await self.client.incrbyfloat(key, amount)
 
-    async def delete(self, *names: str) -> t.Any:
+    async def delete(self, *names: str) -> int:
         names = [self.make_key(key) for key in names]
         return await self.client.delete(*names)
