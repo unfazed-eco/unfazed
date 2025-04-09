@@ -151,7 +151,7 @@ class CommandCenter(Base):
         Returns:
             A list of Command objects representing internal commands
         """
-        ret = []
+        ret: t.List[Command] = []
         internal_command_dir = Path(unfazed.__path__[0]) / "command" / "internal"
 
         if not internal_command_dir.exists():
@@ -225,7 +225,7 @@ class CliCommandCenter(Base):
         Returns:
             A list of Command objects representing CLI commands
         """
-        ret = []
+        ret: t.List[Command] = []
         internal_command_dir = Path(unfazed.__path__[0]) / "command" / "internal"
 
         if not internal_command_dir.exists():

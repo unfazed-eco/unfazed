@@ -41,7 +41,28 @@ DEFAULT_LOGGING_CONFIG = {
 
 
 class LogCenter:
-    def __init__(self, unfazed: "Unfazed", dictconfig: t.Dict) -> None:
+    """Central logging configuration manager for Unfazed applications.
+
+    This class handles the configuration and setup of logging for Unfazed applications.
+    It provides a way to merge custom logging configurations with default settings
+    and ensures proper logging setup.
+
+    Attributes:
+        unfazed: The Unfazed application instance
+        raw_dictconfig: The raw logging configuration dictionary
+        config: The merged logging configuration
+    """
+
+    def __init__(self, unfazed: "Unfazed", dictconfig: t.Dict[str, t.Any]) -> None:
+        """Initialize the LogCenter with an Unfazed instance and logging configuration.
+
+        Args:
+            unfazed: The Unfazed application instance
+            dictconfig: The logging configuration dictionary
+
+        Raises:
+            UnfazedSetupError: If the configuration is invalid
+        """
         self.unfazed = unfazed
         self.raw_dictconfig = dictconfig
         self.config = self.merge_default(dictconfig)

@@ -295,11 +295,6 @@ class RangeFileHandler:
         self._content_length = self.stat.st_size
 
         self.downloaded = 0
-        self.file = None
-        self._open_file()
-
-    def _open_file(self) -> None:
-        """Open the file for reading."""
         self.file = open(self.path, "rb")
 
     @property
@@ -339,17 +334,7 @@ class RangeFileHandler:
 
     def close(self) -> None:
         """Close the file handle."""
-        if self.file:
-            self.file.close()
-            self.file = None
-
-    def __enter__(self) -> "RangeFileHandler":
-        """Context manager entry."""
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit, ensuring file is closed."""
-        self.close()
+        self.file.close()
 
     def set_range(self, start: int, end: int) -> None:
         """
@@ -363,8 +348,7 @@ class RangeFileHandler:
         self.range_end = end
         self._content_length = self.range_end - self.range_start
 
-        if self.file:
-            self.file.seek(self.range_start)
+        self.file.seek(self.range_start)
 
     def __iter__(self) -> t.Iterator[bytes]:
         """Make the handler iterable."""

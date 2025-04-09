@@ -131,23 +131,44 @@ class ASGITransport(httpx.AsyncBaseTransport):
 
 class Requestfactory(httpx.AsyncClient):
     """
-    Requestfactory is a helper class that allows you test your Unfazed app
+    A test client factory for Unfazed applications that provides an easy way to test your ASGI application.
+
+    This class extends httpx.AsyncClient and provides a convenient interface for making HTTP requests
+    to your Unfazed application during testing. It handles the ASGI transport and lifespan events
+    automatically.
+
+    Features:
+        - Automatic lifespan management (startup/shutdown)
+        - State sharing between requests
+        - Simple HTTP request methods (get, post, put, etc.)
+        - ASGI transport integration
 
     Usage:
-    ```python
+        ```python
+        from unfazed import Unfazed
+        from unfazed.test.request import Requestfactory
 
-    from unfazed import Unfazed
-    from unfazed.test.request import Requestfactory
+        async def test_your_app() -> None:
+            # Initialize your Unfazed application
+            unfazed = Unfazed()
+            await unfazed.setup()
 
-    async def test_your_app() -> None:
+            # Create a test client and make requests
+            async with Requestfactory(unfazed) as request:
+                # Make HTTP requests using httpx.AsyncClient methods
+                response = await request.get("/")
+                assert response.status_code == 200
+                assert response.json() == {"message": "Hello, World!"}
 
-        unfazed = Unfazed()
-        await unfazed.setup()
+                # Make POST request with data
+                response = await request.post("/api/data", json={"key": "value"})
+                assert response.status_code == 201
+        ```
 
-        async with Requestfactory(unfazed) as request:
-            response = await request.get("/")
-            assert response.status_code == 200
-
+    Args:
+        app: The Unfazed application instance to test
+        lifespan_on: Whether to handle lifespan events (startup/shutdown). Defaults to True
+        base_url: The base URL for all requests. Defaults to "http://testserver"
     """
 
     def __init__(

@@ -5,7 +5,7 @@ from .auth import (
     PermissionDenied,
     WrongPassword,
 )
-from .base import BaseUnfazedException
+from .base import BaseUnfazedException, UnfazedSetupError
 from .http import MethodNotAllowed
 from .route import ParameterError
 
@@ -24,4 +24,5 @@ __all__ = [
     "WrongPassword",
     "AccountExisted",
     "MethodNotAllowed",
+    "UnfazedSetupError",
 ]

@@ -9,7 +9,7 @@ from .base import BaseLifeSpan
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
-logger = logging.getLogger("unfazed.lifespan")
+logger = logging.getLogger("unfazed.setup")
 
 
 class State(t.Dict[str, t.Any]):
@@ -70,6 +70,7 @@ class LifeSpanHandler:
             except Exception as e:
                 # Log the error but continue with other components
                 logger.error(f"Error during startup: {e}")
+                raise e
 
     async def on_shutdown(self) -> None:
         """
@@ -83,6 +84,7 @@ class LifeSpanHandler:
             except Exception as e:
                 # Log the error but continue with other components
                 logger.error(f"Error during shutdown: {e}")
+                raise e
 
     @property
     def state(self) -> State:

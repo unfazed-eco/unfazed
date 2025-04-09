@@ -8,14 +8,13 @@ from starlette.concurrency import run_in_threadpool
 from .handler import caches
 
 P = t.ParamSpec("P")
-R = t.TypeVar("R")
 
 
 def cached(
     using: str = "default",
     timeout: int = 60,
     include: t.List[str] | None = None,
-) -> t.Callable[[t.Callable[P, t.Awaitable[R]]], t.Callable[P, t.Awaitable[R]]]:
+) -> t.Callable:
     """
     Decorator for caching the results of async or sync functions.
 
@@ -69,9 +68,11 @@ def cached(
         - The cache can be bypassed using the `force_update=True` parameter.
     """
 
-    def decorator(func: t.Callable[P, t.Awaitable[R]]) -> t.Callable[P, t.Awaitable[R]]:
+    def decorator(
+        func: t.Callable[P, t.Awaitable[t.Any] | t.Any],
+    ) -> t.Callable[P, t.Awaitable[t.Any] | t.Any]:
         @wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
             if args:
                 warnings.warn(
                     "The cached decorator will ignore positional arguments, use keyword arguments instead.",
@@ -101,7 +102,7 @@ def cached(
 
             value = await cache.get(key)
             if value and not force_update:
-                return t.cast(R, value)
+                return value
             else:
                 if inspect.iscoroutinefunction(func):
                     result = await func(*args, **kwargs)

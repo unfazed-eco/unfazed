@@ -1,5 +1,6 @@
 import typing as t
 from datetime import datetime
+from types import TracebackType
 
 from redis.asyncio import Redis
 from redis.asyncio.connection import parse_url
@@ -119,7 +120,7 @@ class SerializerBackend:
         self,
         exc_type: t.Type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: t.TracebackType | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.client.aclose()
 

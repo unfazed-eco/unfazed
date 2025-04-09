@@ -7,11 +7,34 @@ from logging.handlers import BaseRotatingHandler
 
 class UnfazedRotatingFileHandler(BaseRotatingHandler):
     """
-    Process safe logging handler
+    A process-safe rotating file handler for logging.
 
-    this handler will create unique name for each process log file
+    This handler creates unique log files for each process by appending the process ID
+    and timestamp to the filename. It supports log rotation based on file size.
 
+    Features:
+        - Process-safe logging with unique filenames
+        - Automatic log rotation based on file size
+        - Support for delayed file opening
+        - Customizable encoding
 
+    Args:
+        filename (str): The base filename for the log file. Must end with '.log'.
+        mode (str, optional): The file opening mode. Defaults to 'a'.
+        maxBytes (int, optional): Maximum size in bytes before rotation. Defaults to 0 (no rotation).
+        encoding (str | None, optional): File encoding. Defaults to None.
+        delay (bool, optional): If True, delay file opening until first write. Defaults to False.
+
+    Raises:
+        ValueError: If filename is empty or doesn't end with '.log'.
+        OSError: If there are issues with file operations.
+
+    Example:
+        >>> handler = UnfazedRotatingFileHandler(
+        ...     filename="app.log",
+        ...     maxBytes=1024*1024,  # 1MB
+        ...     encoding="utf-8"
+        ... )
     """
 
     def __init__(
@@ -29,6 +52,15 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
         self.maxBytes = maxBytes
 
     def validate_filename(self, filename: str) -> None:
+        """
+        Validate the log filename.
+
+        Args:
+            filename (str): The filename to validate.
+
+        Raises:
+            ValueError: If filename is empty or doesn't end with '.log'.
+        """
         if not filename:
             raise ValueError("filename cannot be empty")
 
@@ -36,7 +68,15 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
             raise ValueError("filename must end with .log")
 
     def create_process_safe_name(self, filename: str) -> str:
-        # create a process safe name with pid
+        """
+        Create a process-safe filename by appending PID and timestamp.
+
+        Args:
+            filename (str): The base filename.
+
+        Returns:
+            str: A process-safe filename with format: {name}_pid{pid}_ts{timestamp}.log
+        """
         name, suffix = filename.rsplit(".", 1)
         return f"{name}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
 
@@ -47,10 +87,13 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
 
     def shouldRollover(self, record: LogRecord) -> bool:
         """
-        Determine if rollover should occur.
+        Determine if log rotation should occur based on file size.
 
-        Basically, see if the supplied record would cause the file to exceed
-        the size limit we have.
+        Args:
+            record (LogRecord): The log record to be written.
+
+        Returns:
+            bool: True if rotation should occur, False otherwise.
         """
         if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
             return False
@@ -65,7 +108,16 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
 
     def doRollover(self) -> None:
         """
-        Do a rollover, as described in __init__().
+        Perform the log rotation.
+
+        This method:
+        1. Closes the current log file
+        2. Renames the current file to an archived name
+        3. Creates a new log file with a process-safe name
+        4. Opens the new file if not in delay mode
+
+        Raises:
+            OSError: If there are issues with file operations.
         """
         if self.stream:
             self.stream.close()
