@@ -138,17 +138,14 @@ class BaseCommand(ClickCommand, ABC):
         Args:
             **options: Command options passed from Click
         """
-        try:
-            if asyncio.iscoroutinefunction(self.handle):
-                asyncio.run(self.handle(**options))
-            else:
-                # This branch should never be reached as handle must be a coroutine
-                raise NotImplementedError(
-                    "handle method must be a coroutine"
-                )  # pragma: no cover
-        except Exception as e:
-            logger.error(f"Error executing command '{self.name}': {str(e)}")
-            raise
+
+        if asyncio.iscoroutinefunction(self.handle):
+            asyncio.run(self.handle(**options))
+        else:
+            # This branch should never be reached as handle must be a coroutine
+            raise NotImplementedError(
+                "handle method must be a coroutine"
+            )  # pragma: no cover
 
     def add_arguments(self) -> t.List[Option]:
         """
@@ -176,20 +173,4 @@ class BaseCommand(ClickCommand, ABC):
         Raises:
             NotImplementedError: If not implemented by subclass
         """
-        raise NotImplementedError("Subclasses must implement handle method")
-
-    def get_option(
-        self, options: t.Dict[str, t.Any], key: str, default: t.Any = None
-    ) -> t.Any:
-        """
-        Helper method to safely get an option value with a default.
-
-        Args:
-            options: Dictionary of options
-            key: Option key to retrieve
-            default: Default value if key not found
-
-        Returns:
-            The option value or default if not found
-        """
-        return options.get(key, default)
+        ...  # pragma: no cover

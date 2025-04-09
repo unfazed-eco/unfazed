@@ -56,6 +56,9 @@ def test_RedirectResponse() -> None:
     assert resp.headers["location"] == "http://example.com/api"
     assert resp.status_code == 302
 
+    with pytest.raises(ValueError):
+        RedirectResponse(url="/api")
+
 
 class StreamingApp:
     def __init__(self) -> None:

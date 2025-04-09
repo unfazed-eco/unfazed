@@ -52,34 +52,22 @@ class Base(Group):
             TypeError: If the command class is not a subclass of BaseCommand
             ImportError: If the command class cannot be imported
         """
-        try:
-            logger.debug(f"Loading command from path: {command.path}")
-            cls = import_string(command.path)
 
-            if not issubclass(cls, BaseCommand):
-                error_msg = (
-                    f"Command at {command.path} must be a subclass of BaseCommand"
-                )
-                logger.error(error_msg)
-                raise TypeError(error_msg)
+        logger.debug(f"Loading command from path: {command.path}")
+        cls = import_string(command.path)
 
-            escaped_name = command.stem.replace("_", "-")
-            cmd = cls(
-                self.unfazed,
-                escaped_name,
-                command.label,
-            )
+        if not issubclass(cls, BaseCommand):
+            error_msg = f"Command at {command.path} must be a subclass of BaseCommand"
+            logger.error(error_msg)
+            raise TypeError(error_msg)
 
-            self.add_command(cmd)
-            logger.info(
-                f"Successfully loaded command '{escaped_name}' from '{command.path}'"
-            )
-        except ImportError as e:
-            logger.error(f"Failed to import command from {command.path}: {str(e)}")
-            raise
-        except Exception as e:
-            logger.error(f"Error loading command from {command.path}: {str(e)}")
-            raise
+        escaped_name = command.stem.replace("_", "-")
+        cmd = cls(self.unfazed, escaped_name, command.label)
+
+        self.add_command(cmd)
+        logger.info(
+            f"Successfully loaded command '{escaped_name}' from '{command.path}'"
+        )
 
 
 class CommandCenter(Base):
@@ -154,12 +142,6 @@ class CommandCenter(Base):
         ret: t.List[Command] = []
         internal_command_dir = Path(unfazed.__path__[0]) / "command" / "internal"
 
-        if not internal_command_dir.exists():
-            logger.warning(
-                f"Internal command directory not found: {internal_command_dir}"
-            )
-            return ret
-
         for command_file in internal_command_dir.glob("*.py"):
             command_name = command_file.stem
 
@@ -227,12 +209,6 @@ class CliCommandCenter(Base):
         """
         ret: t.List[Command] = []
         internal_command_dir = Path(unfazed.__path__[0]) / "command" / "internal"
-
-        if not internal_command_dir.exists():
-            logger.warning(
-                f"Internal command directory not found: {internal_command_dir}"
-            )
-            return ret
 
         for command_file in internal_command_dir.glob("*.py"):
             command_name = command_file.stem

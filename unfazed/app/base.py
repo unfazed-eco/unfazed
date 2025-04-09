@@ -202,7 +202,7 @@ class BaseAppConfig(ABC):
         This abstract method must be implemented by subclasses to perform
         any necessary initialization when the application is ready to run.
         """
-        ...
+        ...  # pragma: no cover
 
     def __str__(self) -> str:
         """

@@ -1,7 +1,6 @@
 import logging
 import typing as t
 
-from unfazed.exception import UnfazedSetupError
 from unfazed.protocol import DataBaseDriver
 from unfazed.schema import Database
 from unfazed.utils import import_string
@@ -29,15 +28,11 @@ class ModelCenter:
             logger.info("No database configuration provided, skipping setup")
             return
 
-        try:
-            driver_cls = import_string(self.conf.driver)
-            driver: DataBaseDriver = driver_cls(self.unfazed, self.conf)
-            await driver.setup()
-            self.driver = driver
-            logger.info("Database driver setup completed successfully")
-        except Exception as e:
-            logger.error(f"Failed to setup database driver: {str(e)}")
-            raise UnfazedSetupError(f"Database setup failed: {str(e)}") from e
+        driver_cls = import_string(self.conf.driver)
+        driver: DataBaseDriver = driver_cls(self.unfazed, self.conf)
+        await driver.setup()
+        self.driver = driver
+        logger.info("Database driver setup completed successfully")
 
     async def migrate(self) -> None:
         """

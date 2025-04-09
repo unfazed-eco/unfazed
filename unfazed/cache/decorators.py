@@ -93,12 +93,7 @@ def cached(
 
             force_update = kwargs.pop("force_update", False)
 
-            try:
-                cache = caches[using]
-            except KeyError:
-                raise KeyError(
-                    f"Cache backend '{using}' is not available set '{using}' in settings.CACHES"
-                )
+            cache = caches[using]
 
             value = await cache.get(key)
             if value and not force_update:
