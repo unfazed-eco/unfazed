@@ -69,7 +69,9 @@ class SettingsProxy(Storage[T]):
             return super().__getitem__(key)
 
         if key in self._client_cls_map:
-            ins = self._client_cls_map[key].model_validate(self.settingskv[key])
+            ins = t.cast(
+                T, self._client_cls_map[key].model_validate(self.settingskv[key])
+            )
             self.storage[key] = ins
             return ins
 
@@ -79,7 +81,7 @@ class SettingsProxy(Storage[T]):
         self._settingskv = None
         return super().clear()
 
-    def register_client_cls(self, key: str, cls: t.Type[BaseModel]) -> None:
+    def register_client_cls(self, key: str, cls: t.Type[T]) -> None:
         if key in self._client_cls_map:
             warnings.warn(
                 f"Setting {key} already registered, it will be overwritten",
