@@ -1,4 +1,5 @@
 import typing as t
+import warnings
 
 from pydantic import BaseModel
 
@@ -55,6 +56,7 @@ class SettingsProxy(Storage[T]):
     def __init__(self) -> None:
         super().__init__()
         self._settingskv: t.Dict[str, t.Any] | None = None
+        self._client_cls_map: t.Dict[str, t.Type[BaseModel]] = {}
 
     @property
     def settingskv(self) -> t.Dict[str, t.Any]:
@@ -62,40 +64,29 @@ class SettingsProxy(Storage[T]):
             self._settingskv = u.import_setting(self.unfazed_settings_module)
         return self._settingskv
 
-    def guess_client_cls(self, alias: str) -> t.Type[T]:
-        if alias == "UNFAZED_SETTINGS":
-            client_str = "unfazed.conf.UnfazedSettings"
-
-        else:
-            # extract from settingskv or try to guess from alias
-            alias_settings_kv = self.settingskv[alias]
-            if "CLIENT_CLASS" in alias_settings_kv:
-                client_str = alias_settings_kv["CLIENT_CLASS"]
-            else:
-                app = alias.lower().replace("_", ".").rsplit(".", 1)[0]
-                alias_prefix = alias.rsplit("_", 1)[0]
-                client_str = f"{app}.settings.{alias_prefix.capitalize()}Settings"
-
-        return u.import_string(client_str)
-
     def __getitem__(self, key: str) -> T:
         if key in self.storage:
-            return self.storage[key]
+            return super().__getitem__(key)
 
-        if key not in self.settingskv:
-            raise KeyError(
-                f"Key {key} not found in {self.unfazed_settings_module} module"
-            )
+        if key in self._client_cls_map:
+            ins = self._client_cls_map[key].model_validate(self.settingskv[key])
+            self.storage[key] = ins
+            return ins
 
-        client_cls = self.guess_client_cls(key)
-        client = client_cls.model_validate(self.settingskv[key])
-        self.storage[key] = client
-
-        return client
+        raise KeyError(f"Setting {key} not found")
 
     def clear(self) -> None:
         self._settingskv = None
         return super().clear()
+
+    def register_client_cls(self, key: str, cls: t.Type[BaseModel]) -> None:
+        if key in self._client_cls_map:
+            warnings.warn(
+                f"Setting {key} already registered, it will be overwritten",
+                UserWarning,
+                stacklevel=2,
+            )
+        self._client_cls_map[key] = cls
 
 
 settings: SettingsProxy = SettingsProxy()

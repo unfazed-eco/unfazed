@@ -26,14 +26,14 @@ UNFAZED_SETTINGS = {
 # settings.py
 
 # 使用默认的内存存储
-SESSION_SETTINGS = {
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
     "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,
 }
 
 # 使用 redis 存储
-SESSION_SETTINGS = {
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
     "COOKIE_DOMAIN": "unfazed.com",
     "COOKIE_SECURE": True,

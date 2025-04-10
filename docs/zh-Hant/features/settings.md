@@ -39,15 +39,15 @@ print(settings.FOO)  # bar
 
 APP_SETTINGS = {
     'FOO': 'bar'
-    "CLIENT_CLASS": "app.settings.AppSettings"
 }
 
 
 # app/settings.py
 
 from pydantic import BaseModel
+from unfazed.conf import register_settings
 
-
+@register_settings("APP_SETTINGS")
 class AppSettings(BaseModel):
     FOO: str
 

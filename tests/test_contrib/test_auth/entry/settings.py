@@ -32,7 +32,6 @@ UNFAZED_SETTINGS = {
 
 
 UNFAZED_CONTRIB_AUTH_SETTINGS = {
-    "CLIENT_CLASS": "unfazed.contrib.auth.settings.UnfazedContribAuthSettings",
     "USER_MODEL": "tests.apps.auth.common.models.User",
     "BACKENDS": {
         "default": {
@@ -42,8 +41,7 @@ UNFAZED_CONTRIB_AUTH_SETTINGS = {
     },
 }
 
-SESSION_SETTINGS = {
-    "CLIENT_CLASS": "unfazed.contrib.session.settings.SessionSettings",
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
     "SECRET": uuid.uuid4().hex,
     "COOKIE_DOMAIN": "http://testserver",
     "COOKIE_SECURE": True,

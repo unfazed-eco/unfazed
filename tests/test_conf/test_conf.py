@@ -11,6 +11,7 @@ class App3Settings(BaseModel):
 
 async def test_setting_proxy(setup_conf_unfazed: Unfazed) -> None:
     unfazed = setup_conf_unfazed
+
     assert unfazed.settings.PROJECT_NAME == "test_conf"
 
     unfazed_setting = settings["UNFAZED_SETTINGS"]
@@ -19,10 +20,6 @@ async def test_setting_proxy(setup_conf_unfazed: Unfazed) -> None:
     assert unfazed_setting.PROJECT_NAME == "test_conf"
 
     assert app1_setting.name == "app1"
-
-    app2_setting = settings["APP2_SETTINGS"]
-
-    assert app2_setting.name == "app2"
 
     # test not found
     with pytest.raises(KeyError):
@@ -35,5 +32,8 @@ async def test_setting_proxy(setup_conf_unfazed: Unfazed) -> None:
 
     with pytest.raises(KeyError):
         settings["APP3_SETTINGS"]
+
+    with pytest.warns(UserWarning):
+        settings.register_client_cls("APP1_SETTINGS", App3Settings)
 
     settings.clear()

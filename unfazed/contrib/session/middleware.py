@@ -16,7 +16,7 @@ class SessionMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-        self.setting: SessionSettings = settings["SESSION_SETTINGS"]
+        self.setting: SessionSettings = settings["UNFAZED_CONTRIB_SESSION_SETTINGS"]
         self.engine_cls: t.Type[SessionBase] = import_string(self.setting.engine)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
