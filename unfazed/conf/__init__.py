@@ -6,8 +6,10 @@ from unfazed.schema import Cache, Cors, Database, GZip, OpenAPI, TrustedHost
 from unfazed.type import CanBeImported
 
 from .base import settings
+from .decorators import register_settings
 
 
+@register_settings("UNFAZED_SETTINGS")
 class UnfazedSettings(BaseModel):
     INSTALLED_APPS: t.List[CanBeImported] = []
     MIDDLEWARE: t.List[CanBeImported] = []
@@ -25,4 +27,4 @@ class UnfazedSettings(BaseModel):
     GZIP: GZip | None = None
 
 
-__all__ = ["UnfazedSettings", "settings"]
+__all__ = ["UnfazedSettings", "settings", "register_settings"]

@@ -3,12 +3,12 @@ from traceback import format_exception
 
 import orjson as json
 from jinja2 import Template
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.core import Unfazed
 from unfazed.http import HtmlResponse, HttpResponse
 from unfazed.middleware import BaseMiddleware
+from unfazed.type import ASGIApp, Receive, Scope, Send
 
 TEMPLATE = """
 

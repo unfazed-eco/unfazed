@@ -1,6 +1,5 @@
-from starlette.types import Receive, Scope, Send
-
 from unfazed.middleware import BaseMiddleware
+from unfazed.type import Receive, Scope, Send
 
 from .utils import response_error
 

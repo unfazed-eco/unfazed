@@ -3,11 +3,10 @@ import typing as t
 
 from starlette.routing import Match, URLPath, compile_path, get_route_path
 from starlette.routing import Route as StartletteRoute
-from starlette.types import Receive, Scope, Send
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.static import StaticFiles
-from unfazed.type import CanBeImported, HttpMethod
+from unfazed.type import CanBeImported, HttpMethod, Receive, Scope, Send
 from unfazed.utils import import_string
 
 from . import params as p
@@ -141,7 +140,12 @@ class Static(Route):
         self.load_middlewares(middlewares or [])
 
         self.app_label = app_label
-        self.tags = tags or [app_label]
+
+        if tags:
+            self.tags = tags
+        else:
+            self.tags = [app_label] if app_label else []
+
         self.include_in_schema = include_in_schema
         self.summary = summary
         self.description = description
@@ -179,10 +183,9 @@ class Static(Route):
         return Match.NONE, {}
 
     @t.override
-    def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
-        return self.app(scope, receive, send)
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        return await self.app(scope, receive, send)
 
-    @t.override
     @property
     def routes(self) -> t.List[Route]:
         return []

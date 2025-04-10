@@ -3,11 +3,11 @@ import typing as t
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from starlette.concurrency import run_in_threadpool
-from starlette.types import Receive, Scope, Send
 
 from unfazed.exception import ParameterError, TypeHintRequired
 from unfazed.file import UploadFile
 from unfazed.http import HttpRequest
+from unfazed.type import Receive, Scope, Send
 
 from . import params as p
 from . import utils as u
@@ -17,20 +17,27 @@ SUPPOTED_REQUEST_TYPE = (str, int, float, t.List, BaseModel, UploadFile)
 
 class EndpointHandler:
     """
-    A wrapper for endpoint function, which is responsible for solving params
+    A wrapper class that handles parameter resolution for endpoint functions.
 
-    make `async def endpoint(request: HttpRequest) -> Response`
+    This class transforms a simple endpoint function signature:
+    ```python
+    async def endpoint(request: HttpRequest) -> Response
+    ```
 
-    to
+    Into a more detailed signature with typed parameters:
+    ```python
+    async def endpoint(
+        request: HttpRequest,
+        ctx: t.Annotated[PathModel, p.Path()],      # Path parameters
+        q: t.Annotated[QueryModel, p.Query()],      # Query parameters
+        h: t.Annotated[HeaderModel, p.Header()],    # Header parameters
+        c: t.Annotated[CookieModel, p.Cookie()],    # Cookie parameters
+        b: t.Annotated[JsonModel, p.Json()]         # JSON body parameters
+    ) -> Response
+    ```
 
-    `async def endpoint(request: HttpRequest,
-                        ctx: t.Annotated[PathModel, p.Path()],
-                        q: t.Annotated[QueryModel, p.Query()],
-                        h: t.Annotated[HeaderModel, p.Header()],
-                        c: t.Annotated[CookieModel, p.Cookie()],
-                        b: t.Annotated[JsonModel, p.Json()]) -> Response`
-
-
+    The handler automatically resolves and validates parameters from different sources
+    (path, query, headers, cookies, and request body) based on their annotations.
     """
 
     def __init__(self, endpoint_definition: "EndPointDefinition") -> None:

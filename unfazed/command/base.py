@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import typing as t
 from abc import ABC, abstractmethod
 
@@ -9,36 +10,60 @@ if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
 
 
+logger = logging.getLogger("unfazed.command")
+
+
 class BaseCommand(ClickCommand, ABC):
     """
-    Base class for all commands.
+    Base class for all commands in the Unfazed framework.
+
+    This class extends Click's Command class and provides a foundation for creating
+    command-line interfaces with async support. It handles the integration between
+    Click's synchronous command execution and asynchronous command handlers.
+
+    Key features:
+    - Async command handling with automatic coroutine execution
+    - Automatic argument management
+    - Integration with Unfazed application context
+    - Type-safe command implementation
 
     Usage:
     ```python
-
     from unfazed.command import BaseCommand
     from click import Option
 
-    class Command(BaseCommand):
-        help_text = "This is a command"
+    class MyCommand(BaseCommand):
+        help_text = "This is a command that does something"
+
         def add_arguments(self) -> t.List[Option]:
             return [
                 Option(
                     ["--host"],
                     type=str,
                     help="The host to listen on",
-                    default="")
-                ]
+                    default="localhost"
+                ),
+                Option(
+                    ["--port"],
+                    type=int,
+                    help="The port to listen on",
+                    default=8000
+                )
+            ]
 
-        async def handle(self, **option: t.Any) -> None:
+        async def handle(self, **options: t.Any) -> None:
+            host = options["host"]
+            port = options["port"]
+            logger.info(f"Starting server on {host}:{port}")
+            # Command implementation here
 
-            host = option["host"]
-            print(f"Host: {host}")
-
-    # >>> python manage.py {command} --host 0.0.0.0
-
+    # Usage: python manage.py my-command --host 0.0.0.0 --port 8080
     ```
 
+    Attributes:
+        help_text (str): Default help text for the command
+        unfazed (Unfazed): Reference to the Unfazed application instance
+        app_label (str): Label identifying the application this command belongs to
     """
 
     help_text = ""
@@ -62,6 +87,25 @@ class BaseCommand(ClickCommand, ABC):
         hidden: bool = False,
         deprecated: bool = False,
     ) -> None:
+        """
+        Initialize a new command instance.
+
+        Args:
+            unfazed: The Unfazed application instance
+            name: The command name
+            app_label: The application label this command belongs to
+            context_settings: Optional Click context settings
+            callback: Optional callback function (not used, handled internally)
+            params: Optional list of Click parameters
+            help: Optional help text
+            epilog: Optional epilog text
+            short_help: Optional short help text
+            options_metavar: Optional options metavar string
+            add_help_option: Whether to add the help option
+            no_args_is_help: Whether to show help when no args are provided
+            hidden: Whether the command should be hidden
+            deprecated: Whether the command is deprecated
+        """
         help = help or self.help_text
         params = params or []
         params.extend(self.add_arguments())
@@ -85,19 +129,48 @@ class BaseCommand(ClickCommand, ABC):
             deprecated,
         )
 
-    def _callback(self, **option: t.Optional[t.Any]) -> None:
+        logger.debug(f"Initialized command '{name}' for app '{app_label}'")
+
+    def _callback(self, **options: t.Optional[t.Any]) -> None:
+        """
+        Internal callback that handles the execution of the async handle method.
+
+        Args:
+            **options: Command options passed from Click
+        """
+
         if asyncio.iscoroutinefunction(self.handle):
-            asyncio.run(self.handle(**option))
+            asyncio.run(self.handle(**options))
         else:
-            # due to handle must be implemented as a coroutine
-            # so this branch will never be reached
-            # just for type checking
+            # This branch should never be reached as handle must be a coroutine
             raise NotImplementedError(
                 "handle method must be a coroutine"
             )  # pragma: no cover
 
     def add_arguments(self) -> t.List[Option]:
+        """
+        Add command-specific arguments.
+
+        Override this method to add custom command arguments.
+        The default implementation returns an empty list.
+
+        Returns:
+            A list of Click Option objects
+        """
         return []
 
     @abstractmethod
-    async def handle(self, **option: t.Any) -> None: ...
+    async def handle(self, **options: t.Any) -> None:
+        """
+        Handle the command execution.
+
+        This method must be implemented by all command subclasses.
+        It contains the main command logic and is executed asynchronously.
+
+        Args:
+            **options: Command options passed from Click
+
+        Raises:
+            NotImplementedError: If not implemented by subclass
+        """
+        ...  # pragma: no cover

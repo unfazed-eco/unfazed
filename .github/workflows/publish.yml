@@ -1,8 +1,9 @@
-name: Publish
+name: Publish to PyPI
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v[0-9]+.[0-9]+.[0-9]+"  # 更精确的版本号匹配
+
 jobs:
   build:
     runs-on: ubuntu-latest

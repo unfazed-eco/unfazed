@@ -74,7 +74,7 @@ ROUTES = [
 
 
 async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> None:
-    settings["SESSION_SETTINGS"] = session_setting
+    settings["UNFAZED_CONTRIB_SESSION_SETTINGS"] = session_setting
 
     async with Requestfactory(unfazed, base_url="https://unfazed.com") as request:
         # login

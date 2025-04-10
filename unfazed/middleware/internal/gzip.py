@@ -1,7 +1,7 @@
 from starlette.middleware.gzip import GZipMiddleware as StarletteGZipMiddleware
-from starlette.types import ASGIApp
 
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.type import ASGIApp
 
 
 class GZipMiddleware(StarletteGZipMiddleware):

@@ -3,19 +3,40 @@ import typing as t
 
 class Storage[T]:
     """
-    Generic storage class.
-    Use to manage data in a dictionary-like object.
+    A generic storage class that provides dictionary-like functionality for managing typed data.
+
+    This class implements the standard dictionary interface (__getitem__, __setitem__, etc.)
+    while maintaining type safety through Python's type hints.
+
+    Type Parameters:
+        T: The type of values to be stored in the storage.
 
     Example:
-    ```python
+        ```python
+        from typing import Any
 
-    class CacheHandler(Storage[CacheBackend]):
-        pass
+        class CacheBackend:
+            def __init__(self, data: Any):
+                self.data = data
 
-    handler = CacheHandler()
-    handler["key"] = CacheBackend()
+        class CacheHandler(Storage[CacheBackend]):
+            pass
 
-    ```
+        # Create a cache handler instance
+        handler = CacheHandler()
+
+        # Store a cache backend instance
+        handler["user_data"] = CacheBackend({"id": 123, "name": "John"})
+
+        # Retrieve the stored data
+        cache = handler["user_data"]
+        print(cache.data)  # Output: {"id": 123, "name": "John"}
+        ```
+
+    Note:
+        - All keys must be strings
+        - Values must be of type T
+        - Raises KeyError if attempting to access a non-existent key
     """
 
     def __init__(self) -> None:

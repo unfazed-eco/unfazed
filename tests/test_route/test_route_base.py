@@ -3,7 +3,6 @@ import typing as t
 
 import pytest
 from starlette.routing import Match
-from starlette.types import Receive, Scope, Send
 
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
@@ -18,6 +17,7 @@ from unfazed.route import (
     static,
 )
 from unfazed.test import Requestfactory
+from unfazed.type import Receive, Scope, Send
 
 
 class TestInclude:
@@ -251,3 +251,9 @@ async def test_static() -> None:
         {"type": "unknown", "path": "/static/js/foo.js", "method": "GET"}
     )
     assert ret == (Match.NONE, {})
+
+    route2 = static("/static", abs_path, app_label="test_route")
+    assert route2.app_label == "test_route"
+
+    route3 = static("/static", abs_path, tags=["foo", "bar"])
+    assert route3.tags == ["foo", "bar"]

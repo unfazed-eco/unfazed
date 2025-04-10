@@ -2,6 +2,7 @@ import typing as t
 
 from pydantic import BaseModel
 
+from unfazed.conf import register_settings
 from unfazed.type import CanBeImported
 
 
@@ -10,6 +11,7 @@ class AuthBackend(BaseModel):
     OPTIONS: t.Dict[str, t.Any] = {}
 
 
+@register_settings("UNFAZED_CONTRIB_AUTH_SETTINGS")
 class UnfazedContribAuthSettings(BaseModel):
     """
     example:

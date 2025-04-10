@@ -3,7 +3,6 @@ import typing as t
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import State
 from starlette.routing import Router
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from unfazed import protocol as p
 from unfazed.app import AppCenter
@@ -18,6 +17,7 @@ from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
+from unfazed.type import ASGIApp, Receive, Scope, Send
 from unfazed.utils import import_string, unfazed_locker
 
 
@@ -42,42 +42,16 @@ class Unfazed:
 
     Step to setup Unfazed:
 
-    1. setup settings
-        unfazed loads settings from os.environ["UNFAZED_SETTINGS_MODULE"], see `unfazed.conf.UnfazedSettings`
-
-    2. setup logging
-        unfazed setup logging from settings.LOGGING, unfazed has default logging config
-        and default config will merge with settings.LOGGING
-
-    3. setup cache
-        unfazed setup cache from settings.CACHE
-        unfazed provide two cache backend: Memory Backend, Redis Backend
-        if settings.CACHE is empty, unfazed will skip
-
-    4. setup app center
-        unfazed setup app center from settings.INSTALLED_APPS
-        unfazed loop through all apps and call app.setup()
-
-    5. setup model center
-        unfazed setup model center from settings.DATABASE
-        now unfazed only support tortoise orm
-
-    6. setup routes
-        unfazed use settings.ROOT_URLCONF to setup routes as the entry point
-        then loop through all apps and extract routes from app.routes
-
-    7. setup middleware
-        unfazed setup middleware from settings.MIDDLEWARE
-
-    8. setup command center
-        unfazed loop through all apps and extract commands from app.commands
-
-    9. setup lifespan
-        unfazed setup lifespan from settings.LIFESPAN
-
-    10. setup openapi
-        unfazed setup openapi from settings.OPENAPI
-
+    1. Settings - Load from UNFAZED_SETTINGS_MODULE environment variable
+    2. Logging - Configure from settings.LOGGING with default fallback
+    3. Cache - Setup from settings.CACHE (Memory/Redis backends)
+    4. App Center - Initialize apps from settings.INSTALLED_APPS
+    5. Model Center - Setup database from settings.DATABASE (Tortoise ORM)
+    6. Routes - Configure from settings.ROOT_URLCONF and app routes
+    7. Middleware - Load from settings.MIDDLEWARE
+    8. Command Center - Collect commands from all apps
+    9. Lifespan - Configure from settings.LIFESPAN
+    10. OpenAPI - Setup from settings.OPENAPI
     """
 
     def __init__(
@@ -93,6 +67,7 @@ class Unfazed:
         self._app_center: AppCenter | None = None
         self._command_center: CommandCenter | None = None
         self._model_center: ModelCenter | None = None
+        self._cli_command_center: CliCommandCenter | None = None
 
         # convinient for building test
         if settings:
@@ -136,12 +111,9 @@ class Unfazed:
 
     @property
     def cli_command_center(self) -> CliCommandCenter:
-        if hasattr(self, "_cli_command_center"):
-            return self._cli_command_center
-        else:
-            cmd = CliCommandCenter(self)
-            setattr(self, "_cli_command_center", cmd)
-            return cmd
+        if self._cli_command_center is None:
+            self._cli_command_center = CliCommandCenter(self)
+        return self._cli_command_center
 
     @property
     def model_center(self) -> ModelCenter:
@@ -170,46 +142,36 @@ class Unfazed:
     def setup_routes(self) -> None:
         if not self.settings.ROOT_URLCONF:
             return
-        # add routes from settings.ROOT_URLCONF
-        for route in parse_urlconf(self.settings.ROOT_URLCONF, self.app_center):
-            self.router.routes.append(route)
+        routes = parse_urlconf(self.settings.ROOT_URLCONF, self.app_center)
+        self.router.routes.extend(routes)
 
     def setup_middleware(self) -> None:
         if not self.settings.MIDDLEWARE:
             return
-        for middleware in self.settings.MIDDLEWARE:
-            cls = import_string(middleware)
-            self.user_middleware.append(cls)
+        self.user_middleware.extend(
+            import_string(middleware) for middleware in self.settings.MIDDLEWARE
+        )
 
     def setup_cache(self) -> None:
-        cache = self.settings.CACHE
-        if not cache:
+        if not (cache_settings := self.settings.CACHE):
             return
 
-        for alias, conf in cache.items():
+        for alias, conf in cache_settings.items():
             backend_cls = import_string(conf.BACKEND)
-            location = conf.LOCATION
-            options = conf.OPTIONS
-            cache_backend = backend_cls(location, options)
-            caches[alias] = cache_backend
+            caches[alias] = backend_cls(conf.LOCATION, conf.OPTIONS)
 
     def setup_logging(self) -> None:
-        if not self.settings.LOGGING:
-            config = {}
-
-        else:
+        config = {}
+        if self.settings.LOGGING:
             config = LogConfig.model_validate(self.settings.LOGGING).model_dump(
                 exclude_none=True, by_alias=True
             )
-        log_center = LogCenter(self, config)
-        log_center.setup()
+        LogCenter(self, config).setup()
 
     def setup_lifespan(self) -> None:
         lifespan_handler.unfazed = self
 
-        lifespan_list = self.settings.LIFESPAN or []
-
-        for name in lifespan_list:
+        for name in self.settings.LIFESPAN or []:
             cls = import_string(name)
             instance = cls(self)
             if not isinstance(instance, BaseLifeSpan):
@@ -226,24 +188,17 @@ class Unfazed:
             t.cast(t.List[Route], self.router.routes),
             self.settings.OPENAPI,
         )
-
-        pattern: Route
-        for pattern in patterns:  # type: ignore
-            self.router.routes.append(pattern)
+        self.router.routes.extend(patterns)  # type: ignore
 
     def build_middleware_stack(self) -> ASGIApp:
-        middleware = self.user_middleware
         app = self.router
-        for cls in reversed(middleware):
+        for cls in reversed(self.user_middleware):
             app = cls(app)  # type: ignore
         return app
 
     @unfazed_locker
     async def setup(self) -> None:
-        """
-        Setup Order is very important, refer above docstring for more info
-
-        """
+        """Setup application components in order"""
         self.setup_logging()
         self.setup_cache()
         await self.app_center.setup()

@@ -2,9 +2,11 @@ import typing as t
 
 from pydantic import BaseModel, Field
 
+from unfazed.conf import register_settings
 from unfazed.type import CanBeImported
 
 
+@register_settings("UNFAZED_CONTRIB_SESSION_SETTINGS")
 class SessionSettings(BaseModel):
     # required
     secret_key: str = Field(..., alias="SECRET")

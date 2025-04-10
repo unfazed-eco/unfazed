@@ -2,13 +2,13 @@ import typing as t
 
 from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from unfazed.conf import settings
 from unfazed.contrib.session.backends.base import SessionBase
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.contrib.session.utils import build_cookie
 from unfazed.protocol import ASGIType
+from unfazed.type import ASGIApp, Message, Receive, Scope, Send
 from unfazed.utils import import_string
 
 
@@ -16,7 +16,7 @@ class SessionMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-        self.setting: SessionSettings = settings["SESSION_SETTINGS"]
+        self.setting: SessionSettings = settings["UNFAZED_CONTRIB_SESSION_SETTINGS"]
         self.engine_cls: t.Type[SessionBase] = import_string(self.setting.engine)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

@@ -52,9 +52,12 @@ def test_jsonresponse() -> None:
 
 
 def test_RedirectResponse() -> None:
-    resp = RedirectResponse(url="/api")
-    assert resp.headers["location"] == "/api"
+    resp = RedirectResponse(url="http://example.com/api")
+    assert resp.headers["location"] == "http://example.com/api"
     assert resp.status_code == 302
+
+    with pytest.raises(ValueError):
+        RedirectResponse(url="/api")
 
 
 class StreamingApp:

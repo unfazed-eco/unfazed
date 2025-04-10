@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from starlette.types import ASGIApp, Receive, Scope, Send
+from unfazed.type import ASGIApp, Receive, Scope, Send
 
 
 class BaseMiddleware(ABC):

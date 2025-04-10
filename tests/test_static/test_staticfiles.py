@@ -55,9 +55,16 @@ async def test_staticfiles_methods() -> None:
 
     # test __call__
     scope4 = {"type": "websocket", "path": "js/foo.js"}
+
+    async def mock_receive() -> t.Dict:
+        return {}
+
+    async def mock_send(message: t.Any) -> None:
+        pass
+
     with pytest.raises(ValueError):
-        await static_files(scope4, None, None)
+        await static_files(scope4, mock_receive, mock_send)
 
     scope5 = {"type": "http", "method": "POST", "path": "js/foo.js"}
     with pytest.raises(MethodNotAllowed):
-        await static_files(scope5, None, None)
+        await static_files(scope5, mock_receive, mock_send)

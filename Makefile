@@ -6,9 +6,9 @@ test:
 
 format:
 	@echo "Formatting code..."
-	ruff format tests/ unfazed/
-	ruff check tests/ unfazed/  --fix
-	mypy --check-untyped-defs --explicit-package-bases tests/ unfazed/
+	uv run ruff format tests/ unfazed/
+	uv run ruff check tests/ unfazed/  --fix
+	uv run mypy --check-untyped-defs --explicit-package-bases tests/ unfazed/
 
 publish:
 	@echo "Publishing package..."

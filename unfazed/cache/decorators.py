@@ -7,54 +7,72 @@ from starlette.concurrency import run_in_threadpool
 
 from .handler import caches
 
+P = t.ParamSpec("P")
+
 
 def cached(
-    using: str = "default", timeout: int = 60, include: t.List[str] | None = None
+    using: str = "default",
+    timeout: int = 60,
+    include: t.List[str] | None = None,
 ) -> t.Callable:
     """
-    Cache decorator for async function.
+    Decorator for caching the results of async or sync functions.
+
+    This decorator caches the return value of a function based on its arguments.
+    The cache key is generated using the function's module, name, and specified parameters.
 
     Args:
-        using (str): cache backend name.
-        timeout (int): cache timeout.
-        include (List[str]): cache key include list.
+        using (str): Name of the cache backend to use. Must be configured in settings.CACHES.
+                    Defaults to "default".
+        timeout (int): Time in seconds before the cache entry expires. Defaults to 60.
+        include (List[str] | None): List of parameter names to include in the cache key.
+                                  If None, all parameters are included. Defaults to None.
 
-    Usage:
+    Returns:
+        Callable: A decorated async function that caches its results.
+
+    Raises:
+        KeyError: If the specified cache backend is not available.
+
+    Examples:
+        Basic usage:
         ```python
-
         @cached(timeout=60)
-        def get_user_info(user_id: int) -> dict:
+        async def get_user_info(user_id: int) -> dict:
             return {"user_id": user_id, "name": "Alice"}
-
-        get_user_info(user_id=1)
-
-
-        @cached(timeout=60, include=["user_id"])
-        def get_user_info(user_id: int, name: str) -> dict:
-            return {"user_id": user_id, "name": name}
-
-
-        v1 = get_user_info(user_id=1, name="Alice")
-        v2 = get_user_info(user_id=1, name="Bob")
-
-        # v1 == v2
-
-        @cached(using="redis", timeout=60)
-        def get_user_info(user_id: int) -> dict:
-            return {"user_id": user_id, "name": "Alice"}
-
-        get_user_info(user_id=1)
-
-
         ```
 
-    Attention:
-        The cached decorator will ignore positional arguments, use keyword arguments instead.
+        Using specific parameters for cache key:
+        ```python
+        @cached(timeout=60, include=["user_id"])
+        async def get_user_info(user_id: int, name: str) -> dict:
+            return {"user_id": user_id, "name": name}
+        ```
+
+        Using a different cache backend:
+        ```python
+        @cached(using="redis", timeout=60)
+        async def get_user_info(user_id: int) -> dict:
+            return {"user_id": user_id, "name": "Alice"}
+        ```
+
+        Force cache update:
+        ```python
+        # This will bypass the cache and update it with new data
+        await get_user_info(user_id=1, force_update=True)
+        ```
+
+    Notes:
+        - The decorator only works with keyword arguments. Positional arguments are ignored.
+        - Cache keys are generated using the format: "module:function_name:param1_value:param2_value"
+        - The cache can be bypassed using the `force_update=True` parameter.
     """
 
-    def decorator(func: t.Callable) -> t.Callable:
+    def decorator(
+        func: t.Callable[P, t.Awaitable[t.Any] | t.Any],
+    ) -> t.Callable[P, t.Awaitable[t.Any] | t.Any]:
         @wraps(func)
-        async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
             if args:
                 warnings.warn(
                     "The cached decorator will ignore positional arguments, use keyword arguments instead.",
@@ -76,6 +94,7 @@ def cached(
             force_update = kwargs.pop("force_update", False)
 
             cache = caches[using]
+
             value = await cache.get(key)
             if value and not force_update:
                 return value

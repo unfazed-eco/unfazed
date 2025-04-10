@@ -7,13 +7,20 @@ def import_string(name: str) -> t.Type:
     """
     Import a class or object from a module using its fully qualified name.
 
+    Args:
+        name (str): The fully qualified name of the class or object to import.
+                   Format should be 'module.submodule.ClassName'.
+
+    Returns:
+        t.Type: The imported class or object.
+
     Raises:
-    ImportError: If the module path is invalid or the module cannot be imported.
+        ImportError: If the module path is invalid or the module cannot be imported.
+        ValueError: If the name does not contain a dot (.) separator.
 
     Example:
-    >>> import_string("unfazed.http.HttpResponse")
-    <class 'unfazed.http.HttpResponse'>
-
+        >>> import_string("unfazed.http.HttpResponse")
+        <class 'unfazed.http.HttpResponse'>
     """
 
     try:
@@ -27,14 +34,21 @@ def import_string(name: str) -> t.Type:
 
 def import_setting(env: str) -> t.Dict[str, t.Any]:
     """
-    Import the settings module specified by the environment variable `env`.
+    Import the settings module specified by the environment variable.
+
+    Args:
+        env (str): The name of the environment variable containing the settings module path.
+
+    Returns:
+        t.Dict[str, t.Any]: A dictionary containing all settings from the imported module.
 
     Raises:
-    ValueError: If the environment variable is not set.
-    ImportError: If the settings module cannot be imported.
+        ValueError: If the environment variable is not set.
+        ImportError: If the settings module cannot be imported.
 
     Example:
-    >>> import_setting("UNFAZED_SETTINGS_MODULE")
+        >>> import_setting("UNFAZED_SETTINGS_MODULE")
+        {'DEBUG': True, 'SECRET_KEY': '...', ...}
     """
     settings_module = os.environ.get(env)
     if not settings_module:
