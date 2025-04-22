@@ -57,7 +57,7 @@ class BaseCommand(ClickCommand, ABC):
             logger.info(f"Starting server on {host}:{port}")
             # Command implementation here
 
-    # Usage: python manage.py my-command --host 0.0.0.0 --port 8080
+    # Usage: unfazed-cli my-command --host 0.0.0.0 --port 8080
     ```
 
     Attributes:

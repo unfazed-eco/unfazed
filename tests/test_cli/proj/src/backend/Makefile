@@ -15,14 +15,3 @@ format:
 
 run:
 	uvicorn asgi:application --host 0.0.0.0 --port 9527
-
-
-init-db:
-	unfazed-cli init-db
-	unfazed-cli migrate
-
-upgrade:
-	unfazed-cli upgrade
-
-shell:
-	unfazed-cli shell

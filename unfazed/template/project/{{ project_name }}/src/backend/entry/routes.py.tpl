@@ -1,18 +1,7 @@
-from unfazed.route import path
+import typing as t
 
-"""
+from unfazed.route import Route
 
-example:
+patterns: t.List[Route] = []
 
-patterns = [
-    path("/index", endpoint="index"),
-    path("/api/account", routes=include("account.routes")),
-    path("/api/auth", routes=patterns),
-]
-
-
-"""
-
-
-patterns = []
 

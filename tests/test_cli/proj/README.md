@@ -1,4 +1,4 @@
-{{project_name}}
+proj
 =====
 
 
@@ -7,11 +7,11 @@
 
 ### Use Docker-Compose(recommended)
 
-run {{ project_name }}
+run proj
 
 ```bash
 
-cd {{project_name}}/src/backend
+cd proj/src/backend
 
 docker-compose up -d 
 
@@ -30,7 +30,7 @@ make run
 
 ```bash
 
-cd {{project_name}}/src/backend
+cd proj/src/backend
 
 
 pip install uv

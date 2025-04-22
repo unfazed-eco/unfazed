@@ -30,7 +30,7 @@ async def test_start_cmd(tmp_path: Path) -> None:
     assert (project_path / "myproject" / "src" / "Dockerfile").exists()
     assert (project_path / "myproject" / "src" / "backend" / "entry").exists()
     assert (project_path / "myproject" / "src" / "backend" / "Makefile").exists()
-    assert (project_path / "myproject" / "src" / "backend" / "manage.py").exists()
+    assert (project_path / "myproject" / "src" / "backend" / "asgi.py").exists()
     assert (project_path / "myproject" / "src" / "backend" / "pyproject.toml").exists()
     assert (
         project_path / "myproject" / "src" / "backend" / "entry" / "settings"
@@ -49,9 +49,6 @@ async def test_start_cmd(tmp_path: Path) -> None:
     ).exists()
     assert (
         project_path / "myproject" / "src" / "backend" / "entry" / "routes.py"
-    ).exists()
-    assert (
-        project_path / "myproject" / "src" / "backend" / "entry" / "asgi.py"
     ).exists()
 
     be_path = project_path / "myproject" / "src" / "backend"

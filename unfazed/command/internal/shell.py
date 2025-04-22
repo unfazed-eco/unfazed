@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     Usage:
 
-    >>> python manage.py shell
+    >>> unfazed-cli shell
     """
 
     async def handle(self, **options: t.Any) -> None:

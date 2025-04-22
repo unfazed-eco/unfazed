@@ -75,8 +75,8 @@ class Course(Model):
 
 ```bash
 
-python manage.py init-db
-python manage.py migrate
+unfazed-cli init-db
+unfazed-cli migrate
 
 
 ```

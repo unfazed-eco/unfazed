@@ -41,7 +41,7 @@ UNFAZED_SETTINGS = {
 
 ```shell
 
->>> python manage.py runserver
+>>> uvicorn asgi:application --host 0.0.0.0 --port 9527
 # on_startup
 
 ```

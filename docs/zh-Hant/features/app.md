@@ -23,7 +23,7 @@ Unfazed APP
 在项目根目录下，执行以下命令创建新应用：
 
 ```bash
-python manage.py startapp -n <app_name>
+unfazed-cli startapp -n <app_name>
 ```
 
 ### 应用目录结构

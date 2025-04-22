@@ -13,7 +13,7 @@
 
 cd tutorial/src/backend
 
-python manage.py startapp -n enroll -t simple
+unfazed-cli startapp -n enroll -t simple
 
 
 ```
@@ -122,7 +122,7 @@ INSTALLED_APPS = [
 
 cd tutorial/src/backend
 
-python manage.py runserver --host 127.0.0.1 --port 9527
+uvicorn asgi:application --host 127.0.0.1 --port 9527
 
 
 ```

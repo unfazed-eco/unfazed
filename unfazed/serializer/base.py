@@ -17,6 +17,11 @@ from unfazed.schema import Relation, Result
 from .utils import create_model_from_tortoise, prepare_meta_config
 
 
+class QuerySetKwargs(t.TypedDict):
+    order_by: t.NotRequired[t.Union[str, t.List[str], t.Tuple[str, ...]]]
+    fetch_relations: t.NotRequired[bool]
+
+
 class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
     def __new__(
         mcs,
@@ -175,17 +180,25 @@ class Serializer(BaseModel, metaclass=MetaClass):
     @t.final
     @classmethod
     async def list_from_ctx(
-        cls, cond: t.Dict, page: int, size: int, **kwargs: t.Any
+        cls,
+        cond: t.Dict,
+        page: int,
+        size: int,
+        **kwargs: t.Unpack[QuerySetKwargs],
     ) -> Result[t.Self]:
         queryset = cls.get_queryset(cond, **kwargs)
-        return await cls.list(queryset, page, size, **kwargs)
+        return await cls.list(queryset, page, size)
 
     @t.final
     @classmethod
     async def list_from_queryset(
-        cls, queryset: QuerySet, page: int, size: int, **kwargs: t.Any
+        cls,
+        queryset: QuerySet,
+        page: int,
+        size: int,
+        **kwargs: t.Unpack[QuerySetKwargs],
     ) -> Result[t.Self]:
-        return await cls.list(queryset, page, size, **kwargs)
+        return await cls.list(queryset, page, size)
 
     @t.final
     @classmethod
@@ -301,13 +314,28 @@ class Serializer(BaseModel, metaclass=MetaClass):
             raise ValueError("id not found")
 
     @classmethod
-    def get_queryset(cls, cond: t.Dict[str, t.Any], **kwargs: t.Any) -> QuerySet:
+    def get_queryset(
+        cls, cond: t.Dict[str, t.Any], **kwargs: t.Unpack[QuerySetKwargs]
+    ) -> QuerySet:
         model: t.Type[Model] = cls.Meta.model
         fetch_relations = kwargs.pop("fetch_relations", True)
         fetch_fields = cls.get_fetch_fields()
+
+        raw_query = model.filter(**cond)
+
+        if "order_by" in kwargs:
+            order_by_fields = []
+            if isinstance(kwargs["order_by"], str):
+                order_by_fields.append(kwargs["order_by"])
+            elif isinstance(kwargs["order_by"], (t.List, t.Tuple)):  # type: ignore
+                order_by_fields.extend(list(kwargs["order_by"]))
+            else:
+                raise ValueError("order_by must be a string or a list/tuple of strings")
+            raw_query = raw_query.order_by(*order_by_fields)
+
         if fetch_relations and fetch_fields:
-            return model.filter(**cond).prefetch_related(*fetch_fields)
-        return model.filter(**cond)
+            return raw_query.prefetch_related(*fetch_fields)
+        return raw_query
 
     @t.final
     @classmethod
