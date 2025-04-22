@@ -1,10 +1,19 @@
 import os
 from unittest.mock import patch
 
+import pytest
 from starlette.concurrency import run_in_threadpool
 
 from unfazed.cli import import_unfazed, main
+from unfazed.conf import settings
 from unfazed.core import Unfazed
+
+
+@pytest.fixture(autouse=True)
+def setup_cli_env() -> None:
+    settings.clear()
+
+    yield
 
 
 async def test_main() -> None:
