@@ -493,10 +493,22 @@ class EndPointDefinition(BaseModel):
         else:
             config_dict["json_schema_extra"] = json_schema_extra
 
-        field_difinitions["model_config"] = config_dict
+        # field_difinitions["model_config"] = config_dict
 
-        return create_model(
-            model_name,
-            __base__=tuple(bases) or None,
-            **field_difinitions,
-        )
+        if bases:
+            base_one = bases[0]
+            base_one.model_config = config_dict
+
+            model_cls = create_model(
+                model_name,
+                __base__=tuple(bases) or None,
+                **field_difinitions,
+            )
+        else:
+            model_cls = create_model(
+                model_name,
+                **field_difinitions,
+                __config__=config_dict,
+            )
+
+        return model_cls

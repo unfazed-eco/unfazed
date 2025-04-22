@@ -26,20 +26,20 @@ UNFAZED_SETTINGS = {
     "PROJECT_NAME": PROJECT_NAME,
     "ROOT_URLCONF": "entry.routes",
     "INSTALLED_APPS": [],
-    "DATABASE": {
-        "CONNECTIONS": {
-            "default": {
-                "ENGINE": "tortoise.backends.mysql",
-                "CREDENTIALS": {
-                    "HOST": "mysql",
-                    "PORT": 3306,
-                    "USER": "root",
-                    "PASSWORD": "app",
-                    "DATABASE": "app",
-                },
-            }
-        }
-    },
+    # "DATABASE": {
+    #     "CONNECTIONS": {
+    #         "default": {
+    #             "ENGINE": "tortoise.backends.mysql",
+    #             "CREDENTIALS": {
+    #                 "HOST": "mysql",
+    #                 "PORT": 3306,
+    #                 "USER": "root",
+    #                 "PASSWORD": "app",
+    #                 "DATABASE": "app",
+    #             },
+    #         }
+    #     }
+    # },
     # "CACHE": {
     #     "default": {
     #         "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",

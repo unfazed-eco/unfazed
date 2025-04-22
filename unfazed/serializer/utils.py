@@ -211,9 +211,24 @@ def create_model_from_tortoise(
         params[field] = (python_type, pydantic_field)
 
     # handle config
-    params["model_config"] = ConfigDict(from_attributes=True)
+    # params["model_config"] = ConfigDict(from_attributes=True)
+    if base:
+        base.model_config = ConfigDict(from_attributes=True)
 
-    return create_model(cls_name, __base__=base, __module__=module, **params)
+        model_cls = create_model(
+            cls_name,
+            __base__=base,
+            __module__=module,
+            **params,
+        )
+    else:
+        model_cls = create_model(
+            cls_name,
+            __module__=module,
+            __config__=ConfigDict(from_attributes=True),
+            **params,
+        )
+    return model_cls
 
 
 def prepare_meta_config(cls_name: str, meta: t.Any) -> None:
