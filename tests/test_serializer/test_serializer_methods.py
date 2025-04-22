@@ -162,6 +162,25 @@ async def test_serializer_methods() -> None:
     assert ret3.count == 4
     assert len(ret3.data) == 2
 
+    # order by
+    ret31 = await CarSerializer.list_from_ctx(
+        {"version__gt": 5}, page=1, size=2, order_by="-version"
+    )
+    assert ret31.data[0].version == 9
+
+    ret32 = await CarSerializer.list_from_ctx(
+        {"version__gt": 5}, page=1, size=2, order_by=["-version"]
+    )
+    assert ret32.data[0].version == 9
+
+    with pytest.raises(ValueError):
+        await CarSerializer.list_from_ctx(
+            {"version__gt": 5},
+            page=1,
+            size=2,
+            order_by=1,  # type: ignore
+        )
+
     # list from queryset
     queryset = Car.filter(version__gt=5)
     ret4 = await CarSerializer.list_from_queryset(queryset, page=1, size=2)
