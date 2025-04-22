@@ -18,7 +18,7 @@ docker-compose up -d
 docker-compose exec backend bash
 
 # run command inside container
-python manage.py runserver --host 0.0.0.0 --port 9527
+uvicorn asgi:application --host 0.0.0.0 --port 9527
 
 # or
 make run
@@ -38,7 +38,7 @@ pip install uv
 uv sync
 
 # run command inside container
-python manage.py runserver --host 0.0.0.0 --port 9527
+uvicorn asgi:application --host 0.0.0.0 --port 9527
 
 # or
 make run

@@ -1,4 +1,5 @@
 import os
+import typing as t
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +11,7 @@ from unfazed.core import Unfazed
 
 
 @pytest.fixture(autouse=True)
-def setup_cli_env() -> None:
+def setup_cli_env() -> t.Generator[None, None, None]:
     settings.clear()
 
     yield

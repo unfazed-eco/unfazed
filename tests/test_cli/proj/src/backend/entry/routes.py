@@ -1,4 +1,3 @@
-
 """
 
 example:
@@ -12,5 +11,8 @@ patterns = [
 
 """
 
+import typing as t
 
-patterns = []
+from unfazed.route import Route
+
+patterns: t.List[Route] = []

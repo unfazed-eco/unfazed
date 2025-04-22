@@ -2,8 +2,10 @@ import os
 import sys
 import warnings
 
+from unfazed.core import Unfazed
 
-def get_application() -> None:
+
+def get_application() -> Unfazed:
     root_path = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(root_path)
     os.environ.setdefault("UNFAZED_SETTINGS_MODULE", "entry.settings")

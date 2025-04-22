@@ -72,7 +72,7 @@ docker-compose exec unfazed bash
 ```shell
 
 # add app to project
-python manage.py startapp -n myapp
+unfazed-cli startapp -n myapp
 
 ```
 
@@ -81,11 +81,11 @@ python manage.py startapp -n myapp
 
 ```shell
 
-python manage.py runserver --host 0.0.0.0 --port 9527
+uvicorn asgi:application --host 0.0.0.0 --port 9527
 
 ```
 
-4. follow toturial
+4. follow tutorial
 
 [unfazed-tutorial](https://unfazed-eco.github.io/)
 

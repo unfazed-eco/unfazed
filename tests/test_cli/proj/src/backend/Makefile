@@ -14,4 +14,4 @@ format:
 	mypy $(app_list)
 
 run:
-	python manage.py runserver --host 0.0.0.0 --port 9527
+	uvicorn asgi:application --host 0.0.0.0 --port 9527

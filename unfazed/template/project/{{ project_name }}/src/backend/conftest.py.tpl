@@ -19,7 +19,7 @@ def pytest_collection_modifyitems(items: t.List[Item]) -> None:
 # create a global unfazed
 # use this fixture in your test functions
 @pytest.fixture(autouse=True)
-async def unfazed() -> t.AsyncGenerator[None, None]:
+async def unfazed() -> t.AsyncGenerator[Unfazed, None]:
     root_path = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(root_path)
     os.environ.setdefault("UNFAZED_SETTINGS_MODULE", "entry.settings")

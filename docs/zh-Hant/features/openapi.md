@@ -80,7 +80,7 @@ patterns = [
 
 ```bash
 
->>> python manage.py runserver --host 0.0.0.0 --port 9527
+>>> unfazed-cli runserver --host 0.0.0.0 --port 9527
 
 ```
 

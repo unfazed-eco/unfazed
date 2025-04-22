@@ -13,9 +13,17 @@ def import_unfazed(current_path: str) -> t.Optional[Unfazed]:
         return None
 
     # import asgi.py as a module, and get the application object
+    # already checked the file exists
     spec = importlib.util.spec_from_file_location("asgi", asgi_location)
 
+    # use assert to skip mypy check
+    assert spec is not None
+    assert spec.loader is not None
+
     module = importlib.util.module_from_spec(spec)
+
+    # use assert to skip mypy check
+    assert module is not None
     spec.loader.exec_module(module)
 
     return module.application

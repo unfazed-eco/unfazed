@@ -111,7 +111,7 @@ uv sync
 make run
 
 # 否则
-python manage.py runserver --host 127.0.0.1 --port 9527
+uvicorn asgi:application --host 127.0.0.1 --port 9527
 
 ```
 
@@ -120,11 +120,11 @@ python manage.py runserver --host 127.0.0.1 --port 9527
 
 ```bash
 
-python manage.py runserver --host 0.0.0.0 --port 9527
-INFO:     Uvicorn running on http://0.0.0.0:9527 (Press CTRL+C to quit)
-INFO:     Started server process [5912]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
+    uvicorn asgi:application --host 0.0.0.0 --port 9527
+    INFO:     Uvicorn running on http://0.0.0.0:9527 (Press CTRL+C to quit)
+    INFO:     Started server process [5912]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
 
 ```
 

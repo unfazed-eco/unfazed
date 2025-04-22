@@ -55,7 +55,7 @@ class Command(BaseCommand):
 
 ```shell
 
->>> python manage.py hello --name unfazed
+>>> unfazed-cli hello --name unfazed
 # hello unfazed
 
 ```
@@ -71,7 +71,7 @@ Unfazed 内置了一些命令，用于快速开发。
 
 ```shell
 
->>> python manage.py startapp -n myapp
+>>> unfazed-cli startapp -n myapp
 
 ```
 
@@ -84,7 +84,7 @@ Unfazed 内置了一些命令，用于快速开发。
 ```shell
 
 
->>> python manage.py runserver --host 0.0.0.0 --port 9527
+>>> unfazed-cli runserver --host 0.0.0.0 --port 9527
 
 ```
 
@@ -107,12 +107,12 @@ aerich 是一个 tortoise-orm 配套的数据库迁移工具，用于管理数�
 
 ```shell
 
->>> python manage.py init-db  # 初始化数据库
->>> python manage.py migrate  # 生成迁移文件
->>> python manage.py upgrade  # 执行迁移
->>> python manage.py downgrade  # 回滚迁移
->>> python manage.py history  # 查看迁移历史
->>> python manage.py heads   # 查看迁移头
->>> python manage.py inspectdb  # 生成模型文件
+>>> unfazed-cli init-db  # 初始化数据库
+>>> unfazed-cli migrate  # 生成迁移文件
+>>> unfazed-cli upgrade  # 执行迁移
+>>> unfazed-cli downgrade  # 回滚迁移
+>>> unfazed-cli history  # 查看迁移历史
+>>> unfazed-cli heads   # 查看迁移头
+>>> unfazed-cli inspectdb  # 生成模型文件
 
 ```
