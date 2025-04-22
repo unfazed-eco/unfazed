@@ -1,0 +1,77 @@
+[project]
+name = "proj"
+version = "0.0.1"
+description = "A proj project."
+authors = []
+dependencies = [
+    "unfazed>=0.0.4",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+testpaths = [
+    "entry",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "# pragma: no cover",
+    "if TYPE_CHECKING:"
+]
+
+[tool.ruff.lint]
+ignore = [
+    "B006",
+    "B007",
+    "B009",
+    "B010",
+    "B026",
+    "B904",
+    "B905",
+    "C408",
+    "C901",
+    "E501",
+    "E714",
+]
+select = ["B", "C", "E", "F", "W", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+python_version = "3.12"
+pretty = true
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_return_any = false
+warn_no_return = false
+warn_unreachable = false
+warn_unused_configs = true
+allow_redefinition = true
+strict_equality = true
+show_error_context = true
+
+[dependency-groups]
+dev = [
+    "asyncmy>=0.2.10",
+    "mkdocs>=1.6.1",
+    "mypy>=1.14.1",
+    "pymysql>=1.1.1",
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.4",
+    "types-pymysql>=1.1.0.20241103",
+]

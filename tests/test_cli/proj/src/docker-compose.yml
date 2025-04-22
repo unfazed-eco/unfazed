@@ -1,0 +1,11 @@
+services:
+  unfazed:
+    build: .
+    ports:
+      - "127.0.0.1:9527:9527"
+    depends_on:
+      - redis
+      - mysql
+    command: python manage.py runserver --host 0.0.0.0 --port 9527
+    volumes:
+      - .:/src

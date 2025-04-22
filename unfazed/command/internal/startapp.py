@@ -21,10 +21,10 @@ class Command(BaseCommand):
     Usage:
 
     # Create a simple app
-    >>> python manage.py startapp -n myapp
+    >>> unfazed-cli startapp -n myapp
 
     # Create a standard app
-    >>> python manage.py startapp -n myapp -t standard
+    >>> unfazed-cli startapp -n myapp -t standard
 
     """
 
