@@ -1,3 +1,4 @@
+import sys
 import typing as t
 
 from starlette.concurrency import run_in_threadpool
@@ -130,11 +131,29 @@ class Unfazed:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if not self.ready:
-            await self.setup()
+            await self.setup_at_startup(scope, receive, send)
         scope["app"] = self
         if self.middleware_stack is None:
             self.middleware_stack = self.build_middleware_stack()
         await self.middleware_stack(scope, receive, send)
+
+    async def setup_at_startup(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:
+        """
+        Setup unfazed at startup
+
+        This is to ensure that unfazed is ready to use before the first request comes in.
+        """
+
+        if scope["type"] == "lifespan":
+            try:
+                await self.setup()
+            except Exception as e:
+                sys.stderr.write(f"Unfazed setup failed: {e}\n")
+                sys.exit(1)
+        else:
+            raise RuntimeError("Unfazed is not ready")
 
     async def migrate(self) -> None:
         await self.model_center.migrate()

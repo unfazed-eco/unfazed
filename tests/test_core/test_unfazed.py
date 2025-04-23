@@ -69,7 +69,10 @@ _Setting = {
     "VERSION": "0.1.0",
 }
 
+_Setting2 = {"DEBUG": True, "PROJECT_NAME": "test_app_setup"}
+
 Setting = UnfazedSettings.model_validate(_Setting)
+Setting2 = UnfazedSettings.model_validate(_Setting2)
 
 
 async def test_app_launch() -> None:
@@ -133,3 +136,35 @@ async def test_execute_command() -> None:
         main.return_value = None
         await unfazed.execute_command_from_argv()
         assert main.call_count == 1
+
+
+async def receive(*args: t.Any, **kwargs: t.Any) -> t.Any:
+    pass
+
+
+async def send(*args: t.Any, **kwargs: t.Any) -> t.Any:
+    pass
+
+
+async def test_setup_at_startup() -> None:
+    # success setup
+    unfazed = Unfazed(settings=Setting2)
+    await unfazed.setup_at_startup(
+        scope={"type": "lifespan"}, receive=receive, send=send
+    )
+    assert unfazed.ready is True
+
+    # failed setup
+    unfazed = Unfazed(settings=Setting2)
+    with patch.object(unfazed, "setup", side_effect=RuntimeError("test")):
+        with pytest.raises(SystemExit):
+            await unfazed.setup_at_startup(
+                scope={"type": "lifespan"}, receive=receive, send=send
+            )
+
+    # failed scope
+    unfazed = Unfazed(settings=Setting2)
+    with pytest.raises(RuntimeError):
+        await unfazed.setup_at_startup(
+            scope={"type": "http"}, receive=receive, send=send
+        )
