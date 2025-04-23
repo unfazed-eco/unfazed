@@ -1,3 +1,11 @@
+v0.0.9
+======
+
+- [issue #28](https://github.com/unfazed-eco/unfazed/issues/28) sys.exit when unfazed setup failed
+- [issue #27](https://github.com/unfazed-eco/unfazed/issues/27) fix `t.Annotated[int, p.Query(default=0)]` bug
+- change publish workflow name from build to publish
+- change all unfazed log level to debug and display unfazed setup summary
+
 v0.0.8
 ======
 

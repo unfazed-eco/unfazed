@@ -153,7 +153,7 @@ class EndpointHandler:
             annotation, fieldinfo = definition
 
             # create default value
-            if fieldinfo.default:
+            if fieldinfo.default is not None:
                 ret[name] = fieldinfo.default
 
             # override default value if request has value
@@ -439,7 +439,7 @@ class EndPointDefinition(BaseModel):
 
         fields: t.List[str] = []
         bases: t.List[t.Type[BaseModel]] = []
-        field_difinitions: t.Dict[str, t.Annotated[t.Any, "p.Parms or ConfigDict"]] = {}
+        field_difinitions: t.Dict[str, t.Annotated[t.Any, "p.Parms"]] = {}
 
         for name, define in params.items():
             annotation: t.Type

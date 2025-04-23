@@ -55,7 +55,7 @@ UNFAZED_SETTINGS = {
             "default": {
                 "level": "INFO",
                 "formatter": "standard",
-                "class": "unfazed.logging.handlers.UnfazedRotatingFileHandler",
+                "class": "logging.handlers.RotatingFileHandler",
                 "filename": LOG_FILE,
             },
         },
@@ -65,6 +65,10 @@ UNFAZED_SETTINGS = {
                 "level": "INFO",
             },
         },
+        #"unfazed": {
+        #    "handlers": ["default"],
+        #    "level": "INFO",
+        #},
     },
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local dev"}],
