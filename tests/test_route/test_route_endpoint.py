@@ -161,6 +161,7 @@ async def endpoint2(
     qry2: t.Annotated[Qry2, p.Query()],
     query5: t.Annotated[str, p.Query(default="foo")],
     query6: str,
+    query7: t.Annotated[str, p.Query(default="")],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=RespE2)]:
     r = RespE2(
         query1=qry1.query1,
