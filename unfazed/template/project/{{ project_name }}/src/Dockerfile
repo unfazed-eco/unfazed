@@ -4,5 +4,5 @@ COPY . /src
 WORKDIR /src/backend
 
 RUN pip3 install uv
-RUN poetry config virtualenvs.create false
+ENV UV_PROJECT_ENVIRONMENT="/usr/local"
 RUN uv sync
