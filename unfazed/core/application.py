@@ -227,6 +227,33 @@ class Unfazed:
         await self.command_center.setup()
         self.setup_lifespan()
         self.setup_openapi()
+        self.log_setup_info()
+
+    def log_setup_info(self) -> None:
+        import logging
+
+        logger = logging.getLogger("unfazed")
+
+        logger.debug("\n")
+        logger.debug("-" * 40 + " Unfazed Setup Summary " + "-" * 40)
+        logger.debug("APP LIST:")
+        for app in self.app_center.installed_apps:
+            logger.debug(f"    {app}")
+
+        logger.debug("ROUTES:")
+        for route in self.routes:
+            methods = ", ".join(route.methods) if route.methods else "NOT SET"
+            logger.debug(f"    {methods} | {route.path}")
+
+        logger.debug("LIFESPAN LIST:")
+        for name in self.settings.LIFESPAN or []:
+            logger.debug(f"    {name}")
+
+        logger.debug("AVAILABLE COMMANDS:")
+        for command in self.command_center.commands:
+            logger.debug(f"    {command}")
+
+        logger.debug("-" * 103 + "\n")
 
     @unfazed_locker
     async def setup_cli(self) -> None:

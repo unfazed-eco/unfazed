@@ -25,14 +25,14 @@ class ModelCenter:
     async def setup(self) -> None:
         """Setup the database driver with the given configuration."""
         if not self.conf:
-            logger.info("No database configuration provided, skipping setup")
+            logger.debug("No database configuration provided, skipping setup")
             return
 
         driver_cls = import_string(self.conf.driver)
         driver: DataBaseDriver = driver_cls(self.unfazed, self.conf)
         await driver.setup()
         self.driver = driver
-        logger.info("Database driver setup completed successfully")
+        logger.debug("Database driver setup completed successfully")
 
     async def migrate(self) -> None:
         """

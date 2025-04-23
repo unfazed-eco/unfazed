@@ -65,7 +65,7 @@ class Base(Group):
         cmd = cls(self.unfazed, escaped_name, command.label)
 
         self.add_command(cmd)
-        logger.info(
+        logger.debug(
             f"Successfully loaded command '{escaped_name}' from '{command.path}'"
         )
 
@@ -98,7 +98,7 @@ class CommandCenter(Base):
         """
         super().__init__(unfazed=unfazed, name=name)
         self.app_center = app_center
-        logger.info(f"Initialized CommandCenter '{name}'")
+        logger.debug(f"Initialized CommandCenter '{name}'")
 
     async def setup(self) -> None:
         """
@@ -107,11 +107,11 @@ class CommandCenter(Base):
         This method loads commands from both the internal command directory
         and from each application in the app center.
         """
-        logger.info("Setting up CommandCenter")
+        logger.debug("Setting up CommandCenter")
 
         # Load all the commands from the unfazed internal
         internal_commands = self.list_internal_command()
-        logger.info(f"Found {len(internal_commands)} internal commands")
+        logger.debug(f"Found {len(internal_commands)} internal commands")
         for command in internal_commands:
             self.load_command(command)
 
@@ -120,11 +120,11 @@ class CommandCenter(Base):
         for app_name, app in self.app_center:
             app_commands = app.list_command()
             app_commands_count += len(app_commands)
-            logger.info(f"Found {len(app_commands)} commands in app '{app_name}'")
+            logger.debug(f"Found {len(app_commands)} commands in app '{app_name}'")
             for command in app_commands:
                 self.load_command(command)
 
-        logger.info(
+        logger.debug(
             f"CommandCenter setup complete. Total commands loaded: {len(internal_commands) + app_commands_count}"
         )
 
@@ -182,20 +182,20 @@ class CliCommandCenter(Base):
         """
         super().__init__(unfazed=unfazed, name="unfazed-cli")
         self.cli_command = ["startproject"]
-        logger.info("Initialized CliCommandCenter")
+        logger.debug("Initialized CliCommandCenter")
 
     def setup(self) -> None:
         """
         Set up the CLI command center by loading the startproject command.
         """
-        logger.info("Setting up CliCommandCenter")
+        logger.debug("Setting up CliCommandCenter")
         cli_commands = self.list_cli_command()
-        logger.info(f"Found {len(cli_commands)} CLI commands")
+        logger.debug(f"Found {len(cli_commands)} CLI commands")
 
         for command in cli_commands:
             self.load_command(command)
 
-        logger.info("CliCommandCenter setup complete")
+        logger.debug("CliCommandCenter setup complete")
 
     def list_cli_command(self) -> t.List[Command]:
         """
