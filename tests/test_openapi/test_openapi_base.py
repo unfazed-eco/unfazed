@@ -60,6 +60,7 @@ def test_openapi_create() -> None:
         summary="endpoint1 summary",
         description="endpoint1 description",
         externalDocs={"url": "http://example.com", "description": "example"},
+        operation_id="endpoint1_operation",
     )
     route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
 
@@ -113,6 +114,7 @@ def test_openapi_create() -> None:
 
     assert pathitem.post is not None
     assert pathitem.get is None
+    assert pathitem.post.operationId == "endpoint1_operation"
 
     # parameters
     parameters = pathitem.post.parameters

@@ -58,6 +58,7 @@ def path(
     description: str | None = None,
     externalDocs: t.Dict | None = None,
     deprecated: bool = False,
+    operation_id: str | None = None,
 ) -> Route: ...
 
 
@@ -76,6 +77,7 @@ def path(
     description: str | None = None,
     externalDocs: t.Dict | None = None,
     deprecated: bool = False,
+    operation_id: str | None = None,
 ) -> t.List[Route]: ...
 
 
@@ -94,6 +96,7 @@ def path(
     description: str | None = None,
     externalDocs: t.Dict | None = None,
     deprecated: bool | None = None,
+    operation_id: str | None = None,
 ) -> Route | t.List[Route]:
     """
 
@@ -135,6 +138,7 @@ def path(
                 description=description,
                 externalDocs=externalDocs,
                 deprecated=deprecated,
+                operation_id=operation_id,
             )
 
         else:
@@ -176,6 +180,7 @@ def static(
     description: str | None = None,
     externalDocs: t.Dict | None = None,
     deprecated: bool = False,
+    operation_id: str | None = None,
 ) -> Static:
     return Static(
         path=path,
@@ -189,4 +194,5 @@ def static(
         description=description,
         externalDocs=externalDocs,
         deprecated=deprecated,
+        operation_id=operation_id,
     )
