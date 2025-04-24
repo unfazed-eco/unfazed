@@ -10,7 +10,7 @@ unfazed 提供 `RequestFactory` 用于测试。
 
 ```python
 
-from unfazed.http.request import RequestFactory
+from unfazed.http.request import Requestfactory
 from unfazed.core import Unfazed
 
 
@@ -19,7 +19,7 @@ async def test_request():
     unfazed = Unfazed()
     await unfazed.setup()
 
-    request = RequestFactory(app=unfazed)
+    request = Requestfactory(app=unfazed)
 
     resp = await request.get('/')
 
@@ -28,11 +28,11 @@ async def test_request():
 ```
 
 
-RequestFactory 也支持对 lifespan 的测试。
+Requestfactory 也支持对 lifespan 的测试。
 
 ```python
 
-from unfazed.http.request import RequestFactory
+from unfazed.http.request import Requestfactory
 from unfazed.core import Unfazed
 
 async def test_request():
@@ -40,7 +40,7 @@ async def test_request():
     unfazed = Unfazed()
     await unfazed.setup()
 
-    async with RequestFactory(app=unfazed) as request:
+    async with Requestfactory(app=unfazed) as request:
 
         resp = await request.get('/')
 
