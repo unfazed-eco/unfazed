@@ -266,6 +266,6 @@ class OpenApi:
         openapi_setting: OpenAPISettingModel | None = None,
     ) -> t.Dict:
         ret = cls.create_openapi_model(routes, openapi_setting)
-        cls.schema = ret.model_dump(by_alias=True, exclude_none=True)
+        cls.schema = ret.model_dump(by_alias=True, exclude_none=True, mode="json")
 
         return cls.schema

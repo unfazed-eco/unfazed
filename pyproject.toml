@@ -116,4 +116,5 @@ dev = [
     "pytest-cov>=6.0.0",
     "ruff>=0.8.4",
     "types-pymysql>=1.1.0.20241103",
+    "types-pyyaml>=6.0.12.20250402",
 ]
