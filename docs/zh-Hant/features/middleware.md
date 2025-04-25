@@ -162,7 +162,9 @@ TrustedHostMiddleware 用于检查请求的 host 是否在 ALLOWED_HOSTS 中，�
 ```python
 
 UNFAZED_SETTINGS = {
-    "ALLOWED_HOSTS": ["*"],
+    "TRUSTED_HOST": {
+        "ALLOWED_HOSTS": ["*"],
+    },
 }
 
 ```
