@@ -1,6 +1,6 @@
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from unfazed.type import Domain
 
@@ -54,3 +54,9 @@ class OpenAPI(BaseModel):
     json_route: str = "/openapi/openapi.json"
     swagger_ui: SwaggerUI = SwaggerUI()
     redoc: Redoc = Redoc()
+
+    # open to network
+    allow_public: bool = Field(
+        default=True,
+        description="allow public access, set to False when deploy to production",
+    )

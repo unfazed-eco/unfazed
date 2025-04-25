@@ -31,6 +31,7 @@ class Route(StartletteRoute):
         description: str | None = None,
         externalDocs: t.Dict | None = None,
         deprecated: bool | None = None,
+        operation_id: str | None = None,
         response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
@@ -47,6 +48,7 @@ class Route(StartletteRoute):
         self.description = description
         self.externalDocs = externalDocs
         self.deprecated = deprecated
+        self.operation_id = operation_id
 
         if methods is None:
             methods_set = {"GET", "HEAD"}
@@ -74,6 +76,9 @@ class Route(StartletteRoute):
             response_models=response_models,
         )
 
+        if operation_id:
+            self.endpoint_definition.operation_id = operation_id
+
         self.app = EndpointHandler(self.endpoint_definition)
 
         self.load_middlewares(middlewares or [])
@@ -96,6 +101,9 @@ class Route(StartletteRoute):
             path_parm_names=self.param_convertors.keys(),
             response_models=self.response_models,
         )
+
+        if self.operation_id:
+            self.endpoint_definition.operation_id = self.operation_id
 
     def update_label(self, app_label: str) -> None:
         self.app_label = app_label
@@ -120,6 +128,7 @@ class Static(Route):
         description: str | None = None,
         externalDocs: t.Dict | None = None,
         deprecated: bool | None = None,
+        operation_id: str | None = None,
         response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
@@ -152,6 +161,7 @@ class Static(Route):
         self.externalDocs = externalDocs
         self.deprecated = deprecated
         self.response_models = response_models
+        self.operation_id = operation_id
 
     @t.override
     def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:

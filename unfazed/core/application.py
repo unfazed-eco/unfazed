@@ -203,6 +203,10 @@ class Unfazed:
         if not self.settings.OPENAPI:
             return
 
+        # set allow_public to False when deploy to production
+        if not self.settings.OPENAPI.allow_public:
+            return
+
         OpenApi.create_schema(
             t.cast(t.List[Route], self.router.routes),
             self.settings.OPENAPI,

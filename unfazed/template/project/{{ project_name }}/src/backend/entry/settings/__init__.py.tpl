@@ -77,5 +77,6 @@ UNFAZED_SETTINGS = {
             "version": "1.0.0",
             "description": f"API for {PROJECT_NAME}",
         },
+        "allow_public": True if DEPLOY != "prod" else False,
     },
 }

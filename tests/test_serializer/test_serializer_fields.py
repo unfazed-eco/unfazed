@@ -222,10 +222,11 @@ def test_create_common_fields() -> None:
     assert MaxLen(max_length=255) in f12_field.metadata
 
 
-def test_create_relational_fields() -> None:
+def test_create_relational_fields_with_enable_relations() -> None:
     class StudenSerializer(Serializer):
         class Meta:
             model = Student
+            enable_relations = True
 
     # db fields
     assert "id" in StudenSerializer.model_fields
@@ -273,6 +274,7 @@ def test_create_relational_fields() -> None:
     class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
+            enable_relations = True
 
     assert "id" in ProfileSerializer.model_fields
     assert "nickname" in ProfileSerializer.model_fields
@@ -293,6 +295,7 @@ def test_create_relational_fields() -> None:
     class BagSerializer(Serializer):
         class Meta:
             model = Bag
+            enable_relations = True
 
     assert "id" in BagSerializer.model_fields
     assert "name" in BagSerializer.model_fields
@@ -310,6 +313,7 @@ def test_create_relational_fields() -> None:
     class CourseSerializer(Serializer):
         class Meta:
             model = Course
+            enable_relations = True
 
     assert "id" in CourseSerializer.model_fields
     assert "name" in CourseSerializer.model_fields
@@ -326,7 +330,24 @@ def test_create_relational_fields() -> None:
     assert course.name == "course1"
     assert len(course.students) == 2
 
-    # test no model
+
+def test_create_relational_fields_without_enable_relations() -> None:
+    class StudenSerializer(Serializer):
+        class Meta:
+            model = Student
+
+    # db fields
+    assert "id" in StudenSerializer.model_fields
+    assert "name" in StudenSerializer.model_fields
+    assert "age" in StudenSerializer.model_fields
+
+    # m2m fields
+    assert "courses" not in StudenSerializer.model_fields
+
+    # fk fields
+    assert "bags" not in StudenSerializer.model_fields
+    # one to one fieldss
+    assert "profile" not in StudenSerializer.model_fields
 
 
 def test_meta() -> None:

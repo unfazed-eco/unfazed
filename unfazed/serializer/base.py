@@ -61,6 +61,7 @@ class MetaClass(pydantic._internal._model_construction.ModelMetaclass):
             base=cls,
             module=cls.__module__,
             exclude=meta.exclude,
+            enable_relations=meta.enable_relations,
         )
 
 
@@ -176,6 +177,7 @@ class Serializer(BaseModel, metaclass=MetaClass):
         model: t.Type[Model]
         include: t.List[str] = []
         exclude: t.List[str] = []
+        enable_relations: bool = False
 
     @t.final
     @classmethod

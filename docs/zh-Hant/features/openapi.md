@@ -94,6 +94,7 @@ OpenAPI 完成配置项见 [OpenAPIConfig](https://github.com/unfazed-eco/unfaze
 
 swagger 和 redoc 相关的静态资源支持配置，当前使用 jsdelivr 作为默认的 CDN 服务，国内用户可以自行配置。
 
+另外建议生产环境中在 `settings.py` 中配置 `OPENAPI` 项时，设置 `allow_public` 为 `False`，以避免 OpenAPI 文档被公开访问。
 
 ## route 配置
 

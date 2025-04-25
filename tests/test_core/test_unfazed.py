@@ -9,6 +9,7 @@ from unfazed.app import AppCenter
 from unfazed.conf import UnfazedSettings
 from unfazed.core import Unfazed
 from unfazed.lifespan import lifespan_handler
+from unfazed.route import Route
 from unfazed.test import Requestfactory
 
 HOST = os.getenv("REDIS_HOST", "redis")
@@ -168,3 +169,23 @@ async def test_setup_at_startup() -> None:
         await unfazed.setup_at_startup(
             scope={"type": "http"}, receive=receive, send=send
         )
+
+
+async def test_openapi_allow_public() -> None:
+    unfazed = Unfazed(settings=Setting)
+
+    assert unfazed.settings.OPENAPI is not None
+    assert unfazed.settings.OPENAPI.allow_public is True
+
+    new_settings = Setting.model_copy()
+
+    assert new_settings.OPENAPI is not None
+    new_settings.OPENAPI.allow_public = False
+    unfazed = Unfazed(settings=new_settings)
+    assert unfazed.settings.OPENAPI is not None
+    assert unfazed.settings.OPENAPI.allow_public is False
+
+    paths = [r.path for r in t.cast(t.List[Route], unfazed.router.routes)]
+    assert "/openapi/openapi.json" not in paths
+    assert "/openapi/docs" not in paths
+    assert "/openapi/redoc" not in paths

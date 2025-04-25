@@ -136,6 +136,7 @@ def test_route() -> None:
         tags=["foo", "bar"],
         name="foo",
         app_label="test_route",
+        operation_id="foo_operation",
     )
 
     assert route.path == "/foo"
@@ -146,7 +147,7 @@ def test_route() -> None:
     assert route.include_in_schema is True
     assert route.tags == ["foo", "bar"]
     assert route.path_format == "/foo"
-
+    assert route.operation_id == "foo_operation"
     route.update_path("/foo/bar")
 
     assert route.path == "/foo/bar"

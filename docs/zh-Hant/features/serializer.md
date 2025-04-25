@@ -72,6 +72,23 @@ StudentSerializer.find_relation(CourseSerializer)
 
 ## 高级
 
+### 关系字段初始化
+
+在涉及到关系字段时，`Serializer` 默认不会初始化关系字段，如果需要初始化关系字段，可以通过 `enable_relations` 选项来配置。
+
+```python
+
+class StudentSerializer(Serializer):
+    class Meta:
+        model = Student
+        enable_relations = True
+
+```
+
+但即使配置了 `enable_relations = True`，在初始化时，如果 `tortoise. Tortoise._inited` 还未初始化，`Serializer` 也不会初始化关系字段。
+
+> 参考：https://tortoise.github.io/contrib/pydantic.html
+
 ### 参数覆盖
 
 Serializer 支持参数覆盖与新增。
@@ -111,10 +128,9 @@ class StudentSerializer(Serializer):
 
 ```
 
+目前 `Serializer` 支持的 Meta 选项如下：
 
-### 与 tortoise-orm 配合
+- `include`: 包含的字段
+- `exclude`: 排除的字段
+- `enable_relations`: 是否启用关系字段
 
-在涉及到关系字段时，需要特别注意 tortoise-orm 初始化时间
-
-> 参考 https://github.com/tortoise/tortoise-orm/blob/develop/examples/pydantic/early_init.py
-> serializer 的初始化一定要放在 tortoise-orm 初始化之后

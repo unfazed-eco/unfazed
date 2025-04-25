@@ -1,3 +1,13 @@
+v0.0.10
+======
+
+- [issue #30](https://github.com/unfazed-eco/unfazed/issues/30) add `export_openapi` command
+- [issue #31](https://github.com/unfazed-eco/unfazed/issues/31) add `OperationId` in path function
+- [issue #32](https://github.com/unfazed-eco/unfazed/issues/32) add `enable_relations` to Serializer Meta class, default is `False`
+- [issue #33](https://github.com/unfazed-eco/unfazed/issues/33) opt  TestClient Doc
+- [issue #34](https://github.com/unfazed-eco/unfazed/issues/34) add `allow_public` to OpenAPI settings
+- [issue #35](https://github.com/unfazed-eco/unfazed/issues/35) add more docs for `CORS`/`GZIP`/`TRUSTED_HOSTS`/`SESSION`
+
 v0.0.9
 ======
 
