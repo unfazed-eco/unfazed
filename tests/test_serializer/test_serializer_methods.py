@@ -269,6 +269,7 @@ async def test_relations() -> None:
     class StudenSerializer(Serializer):
         class Meta:
             model = Student
+            enable_relations = True
 
     student = await Student.filter(id=s1.id).first()
     assert student is not None
@@ -295,6 +296,7 @@ async def test_relations() -> None:
     class CourseSerializer(Serializer):
         class Meta:
             model = Course
+            enable_relations = True
 
     course = await Course.filter(id=c1.id).first()
     assert course is not None
@@ -307,6 +309,7 @@ async def test_relations() -> None:
     class BagSerializer(Serializer):
         class Meta:
             model = Bag
+            enable_relations = True
 
     bag = await Bag.filter(student=s1).first()
 
@@ -319,6 +322,7 @@ async def test_relations() -> None:
     class ProfileSerializer(Serializer):
         class Meta:
             model = Profile
+            enable_relations = True
 
     profile = await Profile.filter(student=s1).first()
 

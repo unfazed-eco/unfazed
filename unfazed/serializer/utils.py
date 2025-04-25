@@ -1,8 +1,10 @@
 import typing as t
+import warnings
 from datetime import time, timedelta
 
 from pydantic import BaseModel, ConfigDict, create_model
 from pydantic.fields import FieldInfo
+from tortoise import Tortoise
 from tortoise.fields import TimeDeltaField, TimeField
 from tortoise.fields.relational import (
     BackwardFKRelation,
@@ -164,14 +166,24 @@ def create_model_from_tortoise(
     base: t.Type | None = None,
     module: str | None = None,
     exclude: t.List[str] | None = None,
+    enable_relations: bool = False,
 ) -> t.Type[BaseModel]:
     namespace = namespace or {}
     annotations = namespace.get("__annotations__", {})
     params: t.Dict[str, t.Any] = {}
     exclude = exclude or []
-    module = module or ""
 
-    relation_created_fields = []
+    if (not Tortoise._inited) and enable_relations:
+        warnings.warn(
+            "enable_relations is True, but Tortoise is not initialized, "
+            "relations will not be initialized",
+            UserWarning,
+            stacklevel=2,
+        )
+
+        enable_relations = False
+
+    module = module or ""
 
     for name, field in model._meta.fields_map.items():
         if name in exclude:
@@ -179,29 +191,31 @@ def create_model_from_tortoise(
 
         if name in model._meta.db_fields:
             params[name] = create_common_field(field)
-
-        elif name in model._meta.m2m_fields:
-            params[name] = create_m2m_field(t.cast(ManyToManyFieldInstance, field))
-
-        elif name in model._meta.fk_fields:
-            params[name] = create_fk_field(t.cast(ForeignKeyFieldInstance, field))
-            relation_created_fields.append(field.source_field)
-
-        elif name in model._meta.backward_fk_fields:
-            params[name] = create_bk_fk_field(t.cast(BackwardFKRelation, field))
-
-        elif name in model._meta.o2o_fields:
-            params[name] = create_o2o_field(t.cast(OneToOneFieldInstance, field))
-            relation_created_fields.append(field.source_field)
-
         else:
-            # backward_o2o_fields
-            params[name] = create_bk_o2o_field(t.cast(BackwardOneToOneRelation, field))
+            if enable_relations:
+                if name in model._meta.m2m_fields:
+                    params[name] = create_m2m_field(
+                        t.cast(ManyToManyFieldInstance, field)
+                    )
 
-    # delete fields created by relation
-    # for field_name in relation_created_fields:
-    #     if field_name in params:
-    #         del params[field_name]
+                elif name in model._meta.fk_fields:
+                    params[name] = create_fk_field(
+                        t.cast(ForeignKeyFieldInstance, field)
+                    )
+
+                elif name in model._meta.backward_fk_fields:
+                    params[name] = create_bk_fk_field(t.cast(BackwardFKRelation, field))
+
+                elif name in model._meta.o2o_fields:
+                    params[name] = create_o2o_field(
+                        t.cast(OneToOneFieldInstance, field)
+                    )
+
+                else:
+                    # backward_o2o_fields
+                    params[name] = create_bk_o2o_field(
+                        t.cast(BackwardOneToOneRelation, field)
+                    )
 
     for field in annotations:
         python_type = annotations[field]
@@ -210,8 +224,6 @@ def create_model_from_tortoise(
             pydantic_field = namespace[field]
         params[field] = (python_type, pydantic_field)
 
-    # handle config
-    # params["model_config"] = ConfigDict(from_attributes=True)
     if base:
         base.model_config = ConfigDict(from_attributes=True)
 
@@ -239,6 +251,19 @@ def prepare_meta_config(cls_name: str, meta: t.Any) -> None:
 
     include: t.List = getattr(meta, "include", [])
     exclude: t.List = getattr(meta, "exclude", [])
+    enable_relations: bool = getattr(meta, "enable_relations", False)
+
+    if enable_relations:
+        warning_text = """
+            Should be very carefully to use `enable_relations`,
+            despite enable_relations = True, when the Serializer class inited
+            before `Tortoise.init`, unfazed.Serializer won't init relations to avoid crash.
+
+            refer: https://tortoise.github.io/contrib/pydantic.html
+        """
+        warnings.warn(warning_text, UserWarning, stacklevel=2)
+
+    meta.enable_relations = enable_relations
 
     if include and exclude:
         raise ValueError(
