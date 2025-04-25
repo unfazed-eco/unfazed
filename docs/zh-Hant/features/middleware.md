@@ -110,6 +110,20 @@ Unfazed 内置了一些中间件，用于处理请求和响应。
 
 
 跨域请求处理中间件，继承 [starlette.corsmiddleware](https://github.com/encode/starlette/blob/master/starlette/middleware/cors.py)。
+引入之后需要进行配置 `CORS` 项，具体配置信息可见 [cors settings](https://github.com/unfazed-eco/unfazed/blob/main/unfazed/schema/middleware.py)
+
+
+例子：
+
+```python
+
+UNFAZED_SETTINGS = {
+    "CORS": {
+        "ALLOW_ORIGINS": ["*"],
+    }
+}
+
+```
 
 
 ### GZipMiddleware
@@ -118,6 +132,21 @@ Unfazed 内置了一些中间件，用于处理请求和响应。
 
 gzip 压缩中间件，继承 [starlette.gzipmiddleware](https://github.com/encode/starlette/blob/master/starlette/middleware/gzip.py)
 
+引入之后需要进行配置 `GZIP` 项，具体配置信息可见 [gzip settings](https://github.com/unfazed-eco/unfazed/blob/main/unfazed/schema/middleware.py)
+
+
+例子：
+
+```python
+
+UNFAZED_SETTINGS = {
+    "GZIP": {
+        "MINIMUM_SIZE": 1024,
+    }
+}
+
+```
+
 
 ### TrustedHostMiddleware
 
@@ -125,9 +154,36 @@ gzip 压缩中间件，继承 [starlette.gzipmiddleware](https://github.com/enco
 
 TrustedHostMiddleware 用于检查请求的 host 是否在 ALLOWED_HOSTS 中，如果不在，则返回 400 错误，继承 [starlette.TrustedHostMiddleware](https://github.com/encode/starlette/blob/master/starlette/middleware/trustedhost.py)。
 
+引入之后需要进行配置 `TRUSTED_HOSTS` 项，具体配置信息可见 [trustedhost settings](https://github.com/unfazed-eco/unfazed/blob/main/unfazed/schema/middleware.py)
+
+
+例子：
+
+```python
+
+UNFAZED_SETTINGS = {
+    "ALLOWED_HOSTS": ["*"],
+}
+
+```
+
+
+
 
 ### SessionMiddleware
 
 > 引入方式: "unfazed.contrib.session.middleware.SessionMiddleware"
 
 SessionMiddleware 用于处理 session，当前支持 siging 和 redis 两种 engine。配置信息可见 [session settings](https://github.com/unfazed-eco/unfazed/blob/main/unfazed/contrib/session/settings.py)
+
+
+
+例子：
+
+```python
+
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
+    "SECRET": "secret",
+}
+
+```
