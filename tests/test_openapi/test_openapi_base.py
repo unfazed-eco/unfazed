@@ -85,7 +85,7 @@ def test_openapi_create() -> None:
     )
 
     # version
-    assert ret.openapi == "3.1.0"
+    assert ret.openapi == "3.0.4"
 
     # info
     assert ret.info.title == "myproject"
@@ -132,10 +132,10 @@ def test_openapi_create() -> None:
     assert "application/json" in request_body.content  # type: ignore
     media = request_body.content["application/json"]  # type: ignore
 
-    assert media.schema_ is not None
-    assert media.schema_.ref is not None
+    assert media.media_type_schema is not None
+    assert media.media_type_schema.ref is not None
 
-    request_ref = media.schema_.ref
+    request_ref = media.media_type_schema.ref
     request_component = request_ref.split("/")[-1]
 
     # responses
@@ -147,10 +147,10 @@ def test_openapi_create() -> None:
     assert response.content is not None
     content = response.content["application/json"]
 
-    assert content.schema_ is not None
-    assert content.schema_.ref is not None
+    assert content.media_type_schema is not None
+    assert content.media_type_schema.ref is not None
 
-    response_200_ref = content.schema_.ref
+    response_200_ref = content.media_type_schema.ref
     response_200_component = response_200_ref.split("/")[-1]
 
     # components
@@ -166,7 +166,11 @@ def test_openapi_create() -> None:
         openapi_setting=OpenAPI.model_validate(
             {
                 "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-                "info": {"title": "myproject"},
+                "info": {
+                    "title": "myproject",
+                    "version": "1.0.0",
+                    "description": "desc",
+                },
             }
         ),
     )
@@ -188,7 +192,11 @@ def test_openapi_create() -> None:
         openapi_setting=OpenAPI.model_validate(
             {
                 "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-                "info": {"title": "myproject"},
+                "info": {
+                    "title": "myproject",
+                    "version": "1.0.0",
+                    "description": "desc",
+                },
             }
         ),
     )

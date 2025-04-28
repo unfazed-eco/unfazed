@@ -3,7 +3,7 @@ from .cache import Cache, LocOptions, RedisOptions
 from .command import Command
 from .logging import LogConfig
 from .middleware import Cors, GZip, TrustedHost
-from .openapi import OpenAPI, Server
+from .openapi import OpenAPI
 from .orm import AppModels, Database
 from .serializer import Relation, Result
 
@@ -21,7 +21,6 @@ __all__ = [
     "Relation",
     "AdminRoute",
     "RouteMeta",
-    "Server",
     "Cors",
     "TrustedHost",
     "GZip",

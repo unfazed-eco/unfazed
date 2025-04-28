@@ -1,12 +1,13 @@
 import typing as t
 
+from openapi_pydantic.v3 import v3_0 as v3_0_spec
 from pydantic import BaseModel
 
 from unfazed.route import Route
 from unfazed.route.params import Param, ResponseSpec
 from unfazed.schema import OpenAPI as OpenAPISettingModel
 
-from . import spec as s
+s = v3_0_spec
 
 REF = "#/components/schemas/"
 
@@ -59,9 +60,9 @@ class OpenApi:
                 example = json_schema_extra_dict.get("example")
                 examples = json_schema_extra_dict.get("examples")
                 deprecated = json_schema_extra_dict.get("deprecated", False)
-                allowEmptyValue = json_schema_extra_dict.get("allowEmptyValue", None)
+                allowEmptyValue = json_schema_extra_dict.get("allowEmptyValue", False)
                 explode = json_schema_extra_dict.get("explode", None)
-                allowReserved = json_schema_extra_dict.get("allowReserved", None)
+                allowReserved = json_schema_extra_dict.get("allowReserved", False)
 
                 item = s.Parameter.model_validate(
                     {
@@ -223,18 +224,18 @@ class OpenApi:
         cls,
         routes: t.List[Route],
         openapi_setting: OpenAPISettingModel | None = None,
-    ) -> s.OpenAPI:
+    ) -> t.Union[s.OpenAPI]:
         if not openapi_setting:
             raise ValueError("OpenAPI settings not found")
 
-        info = openapi_setting.info
-        ret = s.OpenAPI(
-            info=s.Info.model_validate(info.model_dump()),
-            servers=[
-                s.Server.model_validate(i.model_dump()) for i in openapi_setting.servers
-            ],
-            jsonSchemaDialect=openapi_setting.jsonSchemaDialect,
-        )
+        openapi_basic_fields = {
+            "paths": {},
+            **openapi_setting.model_dump(
+                exclude=["allow_public", "json_route", "swagger_ui", "redoc"]
+            ),
+        }
+
+        ret = s.OpenAPI.model_validate(openapi_basic_fields)
 
         paths: t.Dict[str, t.Any] = {}
         schemas: t.Dict[str, t.Any] = {}

@@ -13,7 +13,7 @@ def test_service() -> None:
     openapi_setting = OpenAPI.model_validate(
         {
             "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-            "info": {"title": "myproject"},
+            "info": {"title": "myproject", "version": "1.0.0", "description": "desc"},
         }
     )
     docs = OpenApiService._get_docs(

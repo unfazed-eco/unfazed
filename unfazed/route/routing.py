@@ -47,7 +47,7 @@ class Route(StartletteRoute):
         self.summary = summary
         self.description = description
         self.externalDocs = externalDocs
-        self.deprecated = deprecated
+        self.deprecated = deprecated or False
         self.operation_id = operation_id
 
         if methods is None:
