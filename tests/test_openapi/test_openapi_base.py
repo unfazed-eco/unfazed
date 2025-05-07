@@ -1,6 +1,7 @@
 import typing as t
 
 import pytest
+from openapi_pydantic.v3 import v3_0 as s
 from pydantic import BaseModel
 
 from unfazed.http import HttpRequest, JsonResponse
@@ -69,7 +70,6 @@ def test_openapi_create() -> None:
             "servers": [{"url": "http://localhost:8000", "description": "dev"}],
             "info": {
                 "title": "myproject",
-                "summary": "summary",
                 "description": "desc",
                 "termsOfService": "terms",
                 "contact": {"name": "contact"},
@@ -91,7 +91,6 @@ def test_openapi_create() -> None:
     assert ret.info.title == "myproject"
     assert ret.info.version == "1.0.0"
     assert ret.info.description == "desc"
-    assert ret.info.summary == "summary"
     assert ret.info.termsOfService == "terms"
     assert ret.info.contact is not None
     assert ret.info.contact.name == "contact"
@@ -133,6 +132,7 @@ def test_openapi_create() -> None:
     media = request_body.content["application/json"]  # type: ignore
 
     assert media.media_type_schema is not None
+    assert isinstance(media.media_type_schema, s.Reference)
     assert media.media_type_schema.ref is not None
 
     request_ref = media.media_type_schema.ref
@@ -144,10 +144,13 @@ def test_openapi_create() -> None:
     assert "200" in responses
 
     response = responses["200"]
+    assert isinstance(response, s.Response)
     assert response.content is not None
     content = response.content["application/json"]
 
     assert content.media_type_schema is not None
+    assert isinstance(content.media_type_schema, s.Reference)
+
     assert content.media_type_schema.ref is not None
 
     response_200_ref = content.media_type_schema.ref

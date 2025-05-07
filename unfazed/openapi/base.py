@@ -107,7 +107,7 @@ class OpenApi:
             examples = bd_json_schema.get("examples")
             request_model_name = cls.get_reponse_schema_name(route, bd_model.__name__)
             media_type = s.MediaType(
-                schema=s.Reference(ref=REF + request_model_name),
+                schema=s.Reference.model_validate({"$ref": REF + request_model_name}),
                 examples=examples,  # type: ignore
                 example=example,
             )
@@ -120,7 +120,7 @@ class OpenApi:
         )
 
         # handle responses
-        responses: t.Dict[str, s.Response] = {}
+        responses: t.Dict[str, t.Union[s.Response, s.Reference]] = {}
         response: ResponseSpec
         response_models = definition.response_models or []
         for response in response_models:
@@ -133,7 +133,7 @@ class OpenApi:
             examples = rm_json_schema.get("examples")
 
             media_type = s.MediaType(
-                schema=s.Reference(ref=REF + resp_model_name),
+                schema=s.Reference.model_validate({"$ref": REF + resp_model_name}),
                 example=example,
                 examples=examples,  # type: ignore
             )
@@ -231,7 +231,7 @@ class OpenApi:
         openapi_basic_fields = {
             "paths": {},
             **openapi_setting.model_dump(
-                exclude=["allow_public", "json_route", "swagger_ui", "redoc"]
+                exclude={"allow_public", "json_route", "swagger_ui", "redoc"}
             ),
         }
 
