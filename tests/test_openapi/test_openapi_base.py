@@ -1,8 +1,10 @@
 import typing as t
 
 import pytest
-from pydantic import BaseModel
+from openapi_pydantic.v3 import v3_0 as s
+from pydantic import BaseModel, Field
 
+from unfazed.file import UploadFile
 from unfazed.http import HttpRequest, JsonResponse
 from unfazed.openapi import OpenApi
 from unfazed.route import Route, params
@@ -25,6 +27,9 @@ class Hdr(BaseModel):
     token: str
     token2: str
     token3: str
+
+    # issue 42
+    email: str = Field(..., description="email", alias="email-alias")
 
 
 class Body1(BaseModel):
@@ -51,6 +56,31 @@ async def endpoint2(
     return JsonResponse(data)
 
 
+class CtxFile(BaseModel):
+    name: str
+    age: int
+
+
+class RespFile(BaseModel):
+    name: str
+    age: int
+    file_name: str | None
+
+
+async def endpoint3(
+    request: HttpRequest,
+    file1: t.Annotated[UploadFile, params.File()],
+    ctx: t.Annotated[CtxFile, params.Form()],
+) -> JsonResponse:
+    return JsonResponse(
+        RespFile(
+            name=ctx.name,
+            age=ctx.age,
+            file_name=file1.filename,
+        )
+    )
+
+
 def test_openapi_create() -> None:
     route = Route(
         "/endpoint1",
@@ -64,12 +94,19 @@ def test_openapi_create() -> None:
     )
     route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
 
+    route3 = Route(
+        "/endpoint3",
+        endpoint=endpoint3,
+        tags=["tag1"],
+        methods=["POST"],
+        summary="endpoint3 summary",
+    )
+
     openapi_setting = OpenAPI.model_validate(
         {
             "servers": [{"url": "http://localhost:8000", "description": "dev"}],
             "info": {
                 "title": "myproject",
-                "summary": "summary",
                 "description": "desc",
                 "termsOfService": "terms",
                 "contact": {"name": "contact"},
@@ -80,18 +117,17 @@ def test_openapi_create() -> None:
     )
 
     ret = OpenApi.create_openapi_model(
-        [route, route2],
+        [route, route2, route3],
         openapi_setting=openapi_setting,
     )
 
     # version
-    assert ret.openapi == "3.1.0"
+    assert ret.openapi == "3.0.4"
 
     # info
     assert ret.info.title == "myproject"
     assert ret.info.version == "1.0.0"
     assert ret.info.description == "desc"
-    assert ret.info.summary == "summary"
     assert ret.info.termsOfService == "terms"
     assert ret.info.contact is not None
     assert ret.info.contact.name == "contact"
@@ -106,7 +142,7 @@ def test_openapi_create() -> None:
 
     # paths
     assert ret.paths is not None
-    assert len(ret.paths) == 2
+    assert len(ret.paths) == 3
 
     # endpoint1
     assert "/endpoint1" in ret.paths
@@ -132,10 +168,11 @@ def test_openapi_create() -> None:
     assert "application/json" in request_body.content  # type: ignore
     media = request_body.content["application/json"]  # type: ignore
 
-    assert media.schema_ is not None
-    assert media.schema_.ref is not None
+    assert media.media_type_schema is not None
+    assert isinstance(media.media_type_schema, s.Reference)
+    assert media.media_type_schema.ref is not None
 
-    request_ref = media.schema_.ref
+    request_ref = media.media_type_schema.ref
     request_component = request_ref.split("/")[-1]
 
     # responses
@@ -144,13 +181,16 @@ def test_openapi_create() -> None:
     assert "200" in responses
 
     response = responses["200"]
+    assert isinstance(response, s.Response)
     assert response.content is not None
     content = response.content["application/json"]
 
-    assert content.schema_ is not None
-    assert content.schema_.ref is not None
+    assert content.media_type_schema is not None
+    assert isinstance(content.media_type_schema, s.Reference)
 
-    response_200_ref = content.schema_.ref
+    assert content.media_type_schema.ref is not None
+
+    response_200_ref = content.media_type_schema.ref
     response_200_component = response_200_ref.split("/")[-1]
 
     # components
@@ -166,7 +206,11 @@ def test_openapi_create() -> None:
         openapi_setting=OpenAPI.model_validate(
             {
                 "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-                "info": {"title": "myproject"},
+                "info": {
+                    "title": "myproject",
+                    "version": "1.0.0",
+                    "description": "desc",
+                },
             }
         ),
     )
@@ -188,7 +232,11 @@ def test_openapi_create() -> None:
         openapi_setting=OpenAPI.model_validate(
             {
                 "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-                "info": {"title": "myproject"},
+                "info": {
+                    "title": "myproject",
+                    "version": "1.0.0",
+                    "description": "desc",
+                },
             }
         ),
     )

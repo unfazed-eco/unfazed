@@ -1,5 +1,6 @@
+import logging
 import typing as t
-from traceback import format_exception
+from traceback import format_exc, format_exception
 
 import orjson as json
 from jinja2 import Template
@@ -9,6 +10,8 @@ from unfazed.core import Unfazed
 from unfazed.http import HtmlResponse, HttpResponse
 from unfazed.middleware import BaseMiddleware
 from unfazed.type import ASGIApp, Receive, Scope, Send
+
+logger = logging.getLogger("unfazed.middleware")
 
 TEMPLATE = """
 
@@ -92,6 +95,8 @@ class CommonMiddleware(BaseMiddleware):
         try:
             await self.app(scope, receive, send)
         except Exception as e:
+            error_message = format_exc()
+            logger.error(error_message)
             unfazed = t.cast(Unfazed, scope.get("app"))
 
             response: HttpResponse

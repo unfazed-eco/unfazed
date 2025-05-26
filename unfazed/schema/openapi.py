@@ -1,35 +1,9 @@
 import typing as t
 
+from openapi_pydantic.v3.v3_0 import ExternalDocumentation
+from openapi_pydantic.v3.v3_0 import Info as InfoV30
+from openapi_pydantic.v3.v3_0 import Server as ServerV30
 from pydantic import BaseModel, Field
-
-from unfazed.type import Domain
-
-
-class Contact(BaseModel):
-    name: t.Optional[str] = None
-    url: t.Optional[str] = None
-    email: t.Optional[str] = None
-
-
-class License(BaseModel):
-    name: str
-    identifier: t.Optional[str] = None
-    url: t.Optional[str] = None
-
-
-class Info(BaseModel):
-    title: str
-    summary: t.Optional[str] = None
-    description: t.Optional[str] = None
-    termsOfService: t.Optional[str] = None
-    contact: t.Optional[Contact] = None
-    license: t.Optional[License] = None
-    version: str | None = None
-
-
-class Server(BaseModel):
-    url: Domain
-    description: str | None
 
 
 class SwaggerUI(BaseModel):
@@ -46,9 +20,10 @@ class Redoc(BaseModel):
 
 class OpenAPI(BaseModel):
     # openapi schema config
-    servers: t.List[Server]
-    info: Info
-    jsonSchemaDialect: str | None = None
+    openapi: t.Literal["3.0.0", "3.0.1", "3.0.2", "3.0.3", "3.0.4"] = "3.0.4"
+    servers: t.List[ServerV30] = [ServerV30(url="/")]
+    info: InfoV30
+    externalDocs: ExternalDocumentation | None = None
 
     # openapi ui config
     json_route: str = "/openapi/openapi.json"

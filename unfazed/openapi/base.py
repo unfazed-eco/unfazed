@@ -1,12 +1,13 @@
 import typing as t
 
+from openapi_pydantic.v3 import v3_0 as v3_0_spec
 from pydantic import BaseModel
 
 from unfazed.route import Route
 from unfazed.route.params import Param, ResponseSpec
 from unfazed.schema import OpenAPI as OpenAPISettingModel
 
-from . import spec as s
+s = v3_0_spec
 
 REF = "#/components/schemas/"
 
@@ -47,6 +48,11 @@ class OpenApi:
             json_schema = model.model_json_schema()
             for name in model.model_fields:
                 fieldinfo: Param = t.cast(Param, model.model_fields[name])
+
+                if fieldinfo.alias:
+                    schema_name = fieldinfo.alias
+                else:
+                    schema_name = name
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra_dict = model.model_config.get("json_schema_extra")
@@ -59,9 +65,9 @@ class OpenApi:
                 example = json_schema_extra_dict.get("example")
                 examples = json_schema_extra_dict.get("examples")
                 deprecated = json_schema_extra_dict.get("deprecated", False)
-                allowEmptyValue = json_schema_extra_dict.get("allowEmptyValue", None)
+                allowEmptyValue = json_schema_extra_dict.get("allowEmptyValue", False)
                 explode = json_schema_extra_dict.get("explode", None)
-                allowReserved = json_schema_extra_dict.get("allowReserved", None)
+                allowReserved = json_schema_extra_dict.get("allowReserved", False)
 
                 item = s.Parameter.model_validate(
                     {
@@ -70,7 +76,7 @@ class OpenApi:
                         "style": json_schema_extra_dict["style_"],
                         "required": fieldinfo.is_required(),
                         "schema": s.Schema.model_validate(
-                            json_schema["properties"][name]
+                            json_schema["properties"][schema_name]
                         ),
                         "description": fieldinfo.description,
                         "example": example,
@@ -106,7 +112,7 @@ class OpenApi:
             examples = bd_json_schema.get("examples")
             request_model_name = cls.get_reponse_schema_name(route, bd_model.__name__)
             media_type = s.MediaType(
-                schema=s.Reference(ref=REF + request_model_name),
+                schema=s.Reference.model_validate({"$ref": REF + request_model_name}),
                 examples=examples,  # type: ignore
                 example=example,
             )
@@ -119,7 +125,7 @@ class OpenApi:
         )
 
         # handle responses
-        responses: t.Dict[str, s.Response] = {}
+        responses: t.Dict[str, t.Union[s.Response, s.Reference]] = {}
         response: ResponseSpec
         response_models = definition.response_models or []
         for response in response_models:
@@ -132,7 +138,7 @@ class OpenApi:
             examples = rm_json_schema.get("examples")
 
             media_type = s.MediaType(
-                schema=s.Reference(ref=REF + resp_model_name),
+                schema=s.Reference.model_validate({"$ref": REF + resp_model_name}),
                 example=example,
                 examples=examples,  # type: ignore
             )
@@ -227,14 +233,14 @@ class OpenApi:
         if not openapi_setting:
             raise ValueError("OpenAPI settings not found")
 
-        info = openapi_setting.info
-        ret = s.OpenAPI(
-            info=s.Info.model_validate(info.model_dump()),
-            servers=[
-                s.Server.model_validate(i.model_dump()) for i in openapi_setting.servers
-            ],
-            jsonSchemaDialect=openapi_setting.jsonSchemaDialect,
-        )
+        openapi_basic_fields = {
+            "paths": {},
+            **openapi_setting.model_dump(
+                exclude={"allow_public", "json_route", "swagger_ui", "redoc"}
+            ),
+        }
+
+        ret = s.OpenAPI.model_validate(openapi_basic_fields)
 
         paths: t.Dict[str, t.Any] = {}
         schemas: t.Dict[str, t.Any] = {}

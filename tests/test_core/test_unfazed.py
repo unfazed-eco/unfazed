@@ -65,7 +65,7 @@ _Setting = {
     "LIFESPAN": ["tests.apps.core.lifespan.set_count.SetCount"],
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local"}],
-        "info": {"title": "Test App"},
+        "info": {"title": "Test App", "version": "0.1.0"},
     },
     "VERSION": "0.1.0",
 }
@@ -181,7 +181,9 @@ async def test_openapi_allow_public() -> None:
 
     assert new_settings.OPENAPI is not None
     new_settings.OPENAPI.allow_public = False
+    new_settings.LIFESPAN = []
     unfazed = Unfazed(settings=new_settings)
+    await unfazed.setup()
     assert unfazed.settings.OPENAPI is not None
     assert unfazed.settings.OPENAPI.allow_public is False
 
