@@ -1,7 +1,7 @@
 import inspect
 import typing as t
 
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema, create_model
 from starlette.concurrency import run_in_threadpool
 
 from unfazed.exception import ParameterError, TypeHintRequired
@@ -446,6 +446,15 @@ class EndPointDefinition(BaseModel):
             fieldinfo: p.Param
 
             annotation, fieldinfo = define
+
+            # Uploadfile need special json schema
+            if issubclass(annotation, UploadFile):
+                new_json_schema_extra = {"type": "string", "format": "binary"}
+                old_annotation = t.cast(UploadFile, annotation)
+                annotation = t.Annotated[  # type: ignore
+                    old_annotation, WithJsonSchema(new_json_schema_extra)
+                ]
+
             if hasattr(fieldinfo, "media_type"):
                 json_schema_extra["media_type"] = fieldinfo.media_type
 

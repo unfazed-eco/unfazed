@@ -4,6 +4,7 @@ import pytest
 from openapi_pydantic.v3 import v3_0 as s
 from pydantic import BaseModel
 
+from unfazed.file import UploadFile
 from unfazed.http import HttpRequest, JsonResponse
 from unfazed.openapi import OpenApi
 from unfazed.route import Route, params
@@ -52,6 +53,31 @@ async def endpoint2(
     return JsonResponse(data)
 
 
+class CtxFile(BaseModel):
+    name: str
+    age: int
+
+
+class RespFile(BaseModel):
+    name: str
+    age: int
+    file_name: str | None
+
+
+async def endpoint3(
+    request: HttpRequest,
+    file1: t.Annotated[UploadFile, params.File()],
+    ctx: t.Annotated[CtxFile, params.Form()],
+) -> JsonResponse:
+    return JsonResponse(
+        RespFile(
+            name=ctx.name,
+            age=ctx.age,
+            file_name=file1.filename,
+        )
+    )
+
+
 def test_openapi_create() -> None:
     route = Route(
         "/endpoint1",
@@ -64,6 +90,14 @@ def test_openapi_create() -> None:
         operation_id="endpoint1_operation",
     )
     route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
+
+    route3 = Route(
+        "/endpoint3",
+        endpoint=endpoint3,
+        tags=["tag1"],
+        methods=["POST"],
+        summary="endpoint3 summary",
+    )
 
     openapi_setting = OpenAPI.model_validate(
         {
@@ -80,7 +114,7 @@ def test_openapi_create() -> None:
     )
 
     ret = OpenApi.create_openapi_model(
-        [route, route2],
+        [route, route2, route3],
         openapi_setting=openapi_setting,
     )
 
@@ -105,7 +139,7 @@ def test_openapi_create() -> None:
 
     # paths
     assert ret.paths is not None
-    assert len(ret.paths) == 2
+    assert len(ret.paths) == 3
 
     # endpoint1
     assert "/endpoint1" in ret.paths

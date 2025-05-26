@@ -224,7 +224,7 @@ class OpenApi:
         cls,
         routes: t.List[Route],
         openapi_setting: OpenAPISettingModel | None = None,
-    ) -> t.Union[s.OpenAPI]:
+    ) -> s.OpenAPI:
         if not openapi_setting:
             raise ValueError("OpenAPI settings not found")
 

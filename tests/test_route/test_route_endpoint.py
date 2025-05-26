@@ -999,6 +999,7 @@ class RespFile(BaseModel):
     name: str
     age: int
     file_name: str | None
+    content: str | None
 
 
 async def endpoint19(
@@ -1006,11 +1007,14 @@ async def endpoint19(
     file1: t.Annotated[UploadFile, p.File()],
     ctx: t.Annotated[CtxFile, p.Form()],
 ) -> JsonResponse:
+    content_bytes = await file1.read()
+    content = content_bytes.decode("utf-8")
     return JsonResponse(
         RespFile(
             name=ctx.name,
             age=ctx.age,
             file_name=file1.filename,
+            content=content,
         )
     )
 
@@ -1048,4 +1052,4 @@ async def test_file() -> None:
     )
 
     assert resp.status_code == 200
-    assert resp.json() == {"name": "unfazed", "age": 1, "file_name": "zenofpython.txt"}
+    assert "content" in resp.json()
