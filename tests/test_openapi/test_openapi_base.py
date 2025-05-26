@@ -2,7 +2,7 @@ import typing as t
 
 import pytest
 from openapi_pydantic.v3 import v3_0 as s
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from unfazed.file import UploadFile
 from unfazed.http import HttpRequest, JsonResponse
@@ -27,6 +27,9 @@ class Hdr(BaseModel):
     token: str
     token2: str
     token3: str
+
+    # issue 42
+    email: str = Field(..., description="email", alias="email-alias")
 
 
 class Body1(BaseModel):
