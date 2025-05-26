@@ -1,3 +1,12 @@
+v0.0.11
+======
+
+- [issue #37](https://github.com/unfazed-eco/unfazed/issues/37) downgrade openapi to 3.0.x
+- [issue #38](https://github.com/unfazed-eco/unfazed/issues/38) add more logs when met error
+- [issue #41](https://github.com/unfazed-eco/unfazed/issues/41) fix UploadFile in OpenAPI
+- [issue #42](https://github.com/unfazed-eco/unfazed/issues/42) support `alias` in OpenAPI
+
+
 v0.0.10
 ======
 
