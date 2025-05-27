@@ -149,8 +149,11 @@ class Unfazed:
         if scope["type"] == "lifespan":
             try:
                 await self.setup()
-            except Exception as e:
-                sys.stderr.write(f"Unfazed setup failed: {e}\n")
+            except Exception:
+                import traceback
+
+                sys.stderr.write(traceback.format_exc())
+                sys.stderr.write("Unfazed setup failed")
                 sys.exit(1)
         else:
             raise RuntimeError("Unfazed is not ready")

@@ -1,7 +1,7 @@
 import typing as t
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from unfazed.http import HttpRequest, JsonResponse
 from unfazed.openapi import OpenApi
@@ -25,6 +25,8 @@ class Hdr(BaseModel):
     token: str
     token2: str
     token3: str
+
+    email: str = Field(default="test@example.com", alias="email_address")
 
 
 class Body1(BaseModel):

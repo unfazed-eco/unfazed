@@ -47,6 +47,12 @@ class OpenApi:
             json_schema = model.model_json_schema()
             for name in model.model_fields:
                 fieldinfo: Param = t.cast(Param, model.model_fields[name])
+
+                if fieldinfo.alias:
+                    schema_name = fieldinfo.alias
+                else:
+                    schema_name = name
+
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra_dict = model.model_config.get("json_schema_extra")
@@ -70,7 +76,7 @@ class OpenApi:
                         "style": json_schema_extra_dict["style_"],
                         "required": fieldinfo.is_required(),
                         "schema": s.Schema.model_validate(
-                            json_schema["properties"][name]
+                            json_schema["properties"][schema_name]
                         ),
                         "description": fieldinfo.description,
                         "example": example,
