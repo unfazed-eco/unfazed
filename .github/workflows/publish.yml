@@ -2,7 +2,7 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"  # 更精确的版本号匹配
+      - "v[0-9]+.[0-9]+.[0-9]+\.?[a-z]+"  # 更精确的版本号匹配 match version like v0.0.12b1
 
 jobs:
   publish:
