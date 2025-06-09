@@ -1,3 +1,4 @@
+import logging
 import sys
 import typing as t
 
@@ -19,7 +20,9 @@ from unfazed.openapi.routes import patterns
 from unfazed.route import Route, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.type import ASGIApp, Receive, Scope, Send
-from unfazed.utils import import_string, unfazed_locker
+from unfazed.utils import Timer, import_string, unfazed_locker
+
+logger = logging.getLogger("unfazed.core.application")
 
 
 class Unfazed:
@@ -222,16 +225,26 @@ class Unfazed:
     @unfazed_locker
     async def setup(self) -> None:
         """Setup application components in order"""
-        self.setup_logging()
-        self.setup_cache()
-        await self.app_center.setup()
-        await self.model_center.setup()
-        self.setup_routes()
-        self.setup_middleware()
-        await self.command_center.setup()
-        self.setup_lifespan()
-        self.setup_openapi()
-        self.log_setup_info()
+        with Timer("setup_unfazed"):
+            with Timer("setup_logging"):
+                self.setup_logging()
+            with Timer("setup_cache"):
+                self.setup_cache()
+            with Timer("setup_app_center"):
+                await self.app_center.setup()
+            with Timer("setup_model_center"):
+                await self.model_center.setup()
+            with Timer("setup_routes"):
+                self.setup_routes()
+            with Timer("setup_middleware"):
+                self.setup_middleware()
+            with Timer("setup_command_center"):
+                await self.command_center.setup()
+            with Timer("setup_lifespan"):
+                self.setup_lifespan()
+            with Timer("setup_openapi"):
+                self.setup_openapi()
+            self.log_setup_info()
 
     def log_setup_info(self) -> None:
         import logging

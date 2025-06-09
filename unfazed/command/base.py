@@ -129,8 +129,6 @@ class BaseCommand(ClickCommand, ABC):
             deprecated,
         )
 
-        logger.debug(f"Initialized command '{name}' for app '{app_label}'")
-
     def _callback(self, **options: t.Optional[t.Any]) -> None:
         """
         Internal callback that handles the execution of the async handle method.
