@@ -138,9 +138,4 @@ def test_openapi_create() -> None:
         openapi_setting=openapi_setting,
     )
 
-    schema = ret.model_dump(by_alias=True, exclude_none=True, mode="json")
-    import json
-
-    print(json.dumps(schema, indent=2))
-
-    raise Exception("stop")
+    ret.model_dump(by_alias=True, exclude_none=True, mode="json")
