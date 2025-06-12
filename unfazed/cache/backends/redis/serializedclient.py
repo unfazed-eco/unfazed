@@ -4,8 +4,6 @@ from types import TracebackType
 
 from redis.asyncio import Redis
 from redis.asyncio.connection import parse_url
-from redis.asyncio.retry import Retry
-from redis.backoff import ConstantBackoff
 from unfazed.schema import RedisOptions
 from unfazed.utils import import_string
 
@@ -57,10 +55,7 @@ class SerializerBackend:
             options = {}
 
         options_model = RedisOptions(**options)
-        if options_model.retry:
-            retry_cls = Retry(ConstantBackoff(0.5), 1)
-        else:
-            retry_cls = None
+        retry_cls = options_model.retry or None
 
         if options_model.serializer:
             serializer = import_string(options_model.serializer)()
