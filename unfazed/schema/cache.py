@@ -19,7 +19,7 @@ class LocOptions(BaseModel):
 
 
 class RedisOptions(BaseModel):
-    retry: bool = True
+    retry: t.Any = None
 
     socket_timeout: int | None = None
     socket_connect_timeout: int | None = None
