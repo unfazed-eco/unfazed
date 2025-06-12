@@ -56,9 +56,9 @@ UNFAZED_SETTINGS = {
 
 ```shell
 
->>>unfazed_pid12345_ts1630000000.log
->>>unfazed_pid12346_ts1630000000.log
->>>unfazed_pid12347_ts1630000000.log
+>>>unfazed_hostname_pid12345_ts1630000000.log
+>>>unfazed_hostname_pid12346_ts1630000000.log
+>>>unfazed_hostname_pid12347_ts1630000000.log
 
 ```
 
