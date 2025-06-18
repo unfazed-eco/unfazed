@@ -1,13 +1,13 @@
 import typing as t
 
-from openapi_pydantic.v3 import v3_0 as v3_0_spec
+from openapi_pydantic.v3 import v3_1 as v3_1_spec
 from pydantic import BaseModel
 
 from unfazed.route import Route
 from unfazed.route.params import Param, ResponseSpec
 from unfazed.schema import OpenAPI as OpenAPISettingModel
 
-s = v3_0_spec
+s = v3_1_spec
 
 REF = "#/components/schemas/"
 
@@ -252,11 +252,15 @@ class OpenApi:
 
             cls.create_tags_from_route(route, tags)
             temp_resp_schemas = cls.create_schema_from_route_resp_model(route)
+            print(f"temp_resp_schemas: {temp_resp_schemas}")
             temp_req_schemas = cls.create_schema_from_route_request_model(route)
+            print(f"temp_req_schemas: {temp_req_schemas}")
             pathitem = cls.create_pathitem_from_route(route)
             paths[route.path] = pathitem
             schemas.update(temp_resp_schemas)
             schemas.update(temp_req_schemas)
+
+        print(f"schemas: {schemas}")
 
         components: s.Components = s.Components(schemas=schemas)
         ret.components = components

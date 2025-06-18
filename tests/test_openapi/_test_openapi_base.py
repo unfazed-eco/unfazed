@@ -1,7 +1,7 @@
 import typing as t
 
 import pytest
-from openapi_pydantic.v3 import v3_0 as s
+from openapi_pydantic.v3 import v3_1 as s
 from pydantic import BaseModel, Field
 
 from unfazed.file import UploadFile
@@ -122,7 +122,7 @@ def test_openapi_create() -> None:
     )
 
     # version
-    assert ret.openapi == "3.0.4"
+    assert ret.openapi == "3.1.0"
 
     # info
     assert ret.info.title == "myproject"
