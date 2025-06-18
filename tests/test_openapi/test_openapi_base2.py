@@ -1,3 +1,4 @@
+import time
 import typing as t
 
 from pydantic import BaseModel, Field
@@ -8,6 +9,28 @@ from unfazed.openapi import OpenApi
 from unfazed.route import Route, params
 from unfazed.route.params import ResponseSpec
 from unfazed.schema import OpenAPI
+
+
+class IdRequest(BaseModel):
+    id: int = Field(..., description="ID")
+
+
+class DeploymentCreateRequest(BaseModel):
+    pipeline: IdRequest = Field(..., description="Pipeline ID")
+    version: str = Field(..., description="Deployment Version")
+    image_tag: str = Field(default=None, description="harbor image tag")
+    values: t.Optional[str] = Field(default=None, description="Deployment Values")
+    deploy_targets: t.List[IdRequest] = Field(..., description="Deployment Targets")
+    deployed_by: t.Optional[str] = Field(
+        default=None, description="Deployment By, extract from header"
+    )
+    name: t.Optional[str] = Field(
+        default=None, description="Deployment Name, auto generated"
+    )
+    deployed_at: t.Optional[int] = Field(
+        default_factory=lambda: int(time.time()),
+        description="Deployment At",
+    )
 
 
 class Pth(BaseModel):
@@ -88,6 +111,13 @@ async def endpoint4(
     return JsonResponse(Resp2(resp=Resp(message="hello"), code=200))
 
 
+async def endpoint5(
+    request: HttpRequest,
+    jsn2: t.Annotated[DeploymentCreateRequest, params.Json()],
+) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp2)]:
+    return JsonResponse(Resp2(resp=Resp(message="hello"), code=200))
+
+
 def test_openapi_create() -> None:
     route = Route(
         "/endpoint1",
@@ -119,6 +149,14 @@ def test_openapi_create() -> None:
         summary="endpoint4 summary",
     )
 
+    route5 = Route(
+        "/endpoint5",
+        endpoint=endpoint5,
+        tags=["tag1"],
+        methods=["POST"],
+        summary="endpoint5 summary",
+    )
+
     openapi_setting = OpenAPI.model_validate(
         {
             "servers": [{"url": "http://localhost:8000", "description": "dev"}],
@@ -134,7 +172,7 @@ def test_openapi_create() -> None:
     )
 
     ret = OpenApi.create_openapi_model(
-        [route, route2, route3, route4],
+        [route, route2, route3, route4, route5],
         openapi_setting=openapi_setting,
     )
 
