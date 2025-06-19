@@ -49,10 +49,8 @@ class OpenApi:
             for name in model.model_fields:
                 fieldinfo: Param = t.cast(Param, model.model_fields[name])
 
-                if fieldinfo.alias:
-                    schema_name = fieldinfo.alias
-                else:
-                    schema_name = name
+                schema_name = fieldinfo.alias or name
+
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra_dict = model.model_config.get("json_schema_extra")
@@ -252,15 +250,11 @@ class OpenApi:
 
             cls.create_tags_from_route(route, tags)
             temp_resp_schemas = cls.create_schema_from_route_resp_model(route)
-            print(f"temp_resp_schemas: {temp_resp_schemas}")
             temp_req_schemas = cls.create_schema_from_route_request_model(route)
-            print(f"temp_req_schemas: {temp_req_schemas}")
             pathitem = cls.create_pathitem_from_route(route)
             paths[route.path] = pathitem
             schemas.update(temp_resp_schemas)
             schemas.update(temp_req_schemas)
-
-        print(f"schemas: {schemas}")
 
         components: s.Components = s.Components(schemas=schemas)
         ret.components = components

@@ -1,6 +1,8 @@
 import typing as t
 from enum import StrEnum
 
+import pytest
+from openapi_pydantic.v3 import v3_1 as s
 from pydantic import BaseModel, Field
 
 from unfazed.file import UploadFile
@@ -177,30 +179,129 @@ def test_openapi_create() -> None:
 
     # endpoint1
     assert "/endpoint1" in ret.paths
-    pathitem = ret.paths["/endpoint1"]
+    pathitem: s.PathItem = ret.paths["/endpoint1"]
 
     assert pathitem.get is not None
     assert pathitem.post is None
     assert pathitem.get.operationId == "endpoint1_operation"
 
     # parameters
-    parameters = pathitem.get.parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.get.parameters
+    )
     assert parameters is not None
 
-    params = [p.name for p in parameters]  # type: ignore
+    params = [p.name for p in parameters]
     assert "pth1" in params
     assert "pth2" in params
 
+    # responses
+    responses: s.Responses = t.cast(s.Responses, pathitem.get.responses)
+
+    assert responses is not None
+    assert "200" in responses
+
+    response: s.Response = t.cast(s.Response, responses["200"])
+
+    content: t.Dict[str, s.MediaType] = t.cast(
+        t.Dict[str, s.MediaType], response.content
+    )
+    assert "application/json" in content
+
+    media: s.MediaType = t.cast(s.MediaType, content["application/json"])  # type: ignore
+
+    assert media.media_type_schema is not None
+    assert isinstance(media.media_type_schema, s.Reference)
+    assert media.media_type_schema.ref is not None
+
+    # endpoint2
+    assert "/endpoint2" in ret.paths
+    pathitem: s.PathItem = ret.paths["/endpoint2"]
+
+    assert pathitem.post is not None
+    assert pathitem.get is None
+
+    # parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.post.parameters
+    )
+    assert parameters is not None
+
+    # check cookie and header
+    assert len(parameters) == 5
+    params = [p.name for p in parameters]  # type: ignore
+    assert "hdr1" in params
+    assert "hdr2" in params
+    assert "hdr3-alias" in params
+    assert "ckie1" in params
+    assert "ckie2" in params
+
     # request body
-    # request_body = pathitem.post.requestBody
+    request_body: s.RequestBody = t.cast(s.RequestBody, pathitem.post.requestBody)
+    assert request_body is not None
+    assert "application/json" in request_body.content
+    media: s.MediaType = request_body.content["application/json"]
+    assert media.media_type_schema is not None
 
-    # assert request_body is not None
-    # assert "application/json" in request_body.content  # type: ignore
-    # media = request_body.content["application/json"]  # type: ignore
+    # endpoint3
+    pathitem = ret.paths["/endpoint3"]
 
-    # assert media.media_type_schema is not None
-    # assert isinstance(media.media_type_schema, s.Reference)
-    # assert media.media_type_schema.ref is not None
+    assert pathitem.post is not None
+    assert pathitem.get is None
 
-    # request_ref = media.media_type_schema.ref
-    # request_component = request_ref.split("/")[-1]
+    # parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.post.parameters
+    )
+    assert parameters == []
+
+    # request body
+    request_body: s.RequestBody = t.cast(s.RequestBody, pathitem.post.requestBody)
+    assert request_body is not None
+    assert "multipart/form-data" in request_body.content
+    media: s.MediaType = request_body.content["multipart/form-data"]
+
+    assert media.media_type_schema is not None
+
+    # endpoint4
+    pathitem4 = ret.paths["/endpoint4"]
+    assert pathitem4.post is not None
+
+    # response body
+
+    responses: s.Responses = t.cast(s.Responses, pathitem4.post.responses)
+    assert responses is not None
+    assert "200" in responses
+
+    response: s.Response = t.cast(s.Response, responses["200"])
+    assert response.content is not None
+    assert "application/json" in response.content
+    media: s.MediaType = response.content["application/json"]
+    assert media.media_type_schema is not None
+
+    # no openapi settings
+    with pytest.raises(ValueError):
+        OpenApi.create_openapi_model(
+            [route, route2],
+        )
+
+    # include_in_schema
+    route3 = Route(
+        "/endpoint3", endpoint=endpoint1, tags=["tag1"], include_in_schema=False
+    )
+    ret = OpenApi.create_openapi_model(
+        [route3],
+        openapi_setting=OpenAPI.model_validate(
+            {
+                "servers": [{"url": "http://localhost:8000", "description": "dev"}],
+                "info": {
+                    "title": "myproject",
+                    "version": "1.0.0",
+                    "description": "desc",
+                },
+            }
+        ),
+    )
+
+    assert ret.paths is not None
+    assert len(ret.paths.keys()) == 0
