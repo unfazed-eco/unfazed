@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 import typing as t
 from logging import LogRecord
@@ -69,16 +70,16 @@ class UnfazedRotatingFileHandler(BaseRotatingHandler):
 
     def create_process_safe_name(self, filename: str) -> str:
         """
-        Create a process-safe filename by appending PID and timestamp.
+        Create a process-safe filename by appending hostname, PID and timestamp.
 
         Args:
             filename (str): The base filename.
 
         Returns:
-            str: A process-safe filename with format: {name}_pid{pid}_ts{timestamp}.log
+            str: A process-safe filename with format: {name}_{hostname}_pid{pid}_ts{timestamp}.log
         """
         name, suffix = filename.rsplit(".", 1)
-        return f"{name}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
+        return f"{name}_{socket.gethostname()}_pid{os.getpid()}_ts{int(time.time())}.{suffix}"
 
     @t.override
     def namer(self, filename: str) -> str:  # type: ignore
