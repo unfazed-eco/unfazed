@@ -1,3 +1,13 @@
+v0.0.12
+======
+
+- [issue #39](https://github.com/unfazed-eco/unfazed/issues/39) 增加 `middleware` 在启动时的打印日志
+- [issue #44](https://github.com/unfazed-eco/unfazed/issues/44) log 文件名添加 hostname 标识
+- [issue #45](https://github.com/unfazed-eco/unfazed/issues/45)  Redis 连接支持连接池相关参数
+- [issue #49](https://github.com/unfazed-eco/unfazed/issues/49) 放弃支持 3.0.x，只支持 3.1.x
+- [issue #50](https://github.com/unfazed-eco/unfazed/issues/50) Add timer for unfazed setup
+- [issue #51](https://github.com/unfazed-eco/unfazed/issues/51) delete useless logs in command
+
 v0.0.11
 ======
 
