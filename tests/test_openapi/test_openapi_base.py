@@ -1,7 +1,8 @@
 import typing as t
+from enum import StrEnum
 
 import pytest
-from openapi_pydantic.v3 import v3_0 as s
+from openapi_pydantic.v3 import v3_1 as s
 from pydantic import BaseModel, Field
 
 from unfazed.file import UploadFile
@@ -12,73 +13,95 @@ from unfazed.route.params import ResponseSpec
 from unfazed.schema import OpenAPI
 
 
-class Fixed(BaseModel):
-    foo: str
+class IdRequest(BaseModel):
+    id: int = Field(..., description="ID")
 
 
-class Ctx(BaseModel):
-    page: int
-    size: int
-    search: str
-    fixed: Fixed = Fixed(foo="bar")
+class Enum1(StrEnum):
+    A = "a"
+    B = "b"
+    C = "c"
+
+
+class Pth(BaseModel):
+    pth1: str
+    pth2: str = Field(..., description="pth2")
+
+
+class Qry(BaseModel):
+    qry1: str
+    qry2: str = Field(..., description="qry2")
+
+
+class Jsn(BaseModel):
+    jsn1: str
+    jsn2: str = Field(..., description="jsn2")
 
 
 class Hdr(BaseModel):
-    token: str
-    token2: str
-    token3: str
+    hdr1: str
+    hdr2: str = Field(..., description="hdr2")
 
     # issue 42
-    email: str = Field(..., description="email", alias="email-alias")
+    hdr3: str = Field(..., description="hdr3", alias="hdr3-alias")
 
 
-class Body1(BaseModel):
-    name: str
-    age: int
+class Ckie(BaseModel):
+    ckie1: str
+    ckie2: str = Field(..., description="ckie2")
+
+
+class Frm(BaseModel):
+    frm1: str
+    frm2: str = Field(..., description="frm2")
+
+
+class Jsn2(BaseModel):
+    jsn21: Jsn
+    jsn22: str = Field(..., description="jsn22")
+    jsn23: Enum1 = Field(..., description="jsn23")
+    jsn24: t.Optional[str] = Field(default=None, description="jsn24")
+    jsn25: t.Optional[IdRequest] = Field(default=None, description="jsn25")
 
 
 class Resp(BaseModel):
     message: str
-    ctx: Ctx = Ctx(page=1, size=10, search="hello")
+
+
+class Resp2(BaseModel):
+    resp: Resp
+    code: int
 
 
 async def endpoint1(
-    request: HttpRequest, ctx: Ctx, hdr: t.Annotated[Hdr, params.Header()]
+    request: HttpRequest,
+    pth: t.Annotated[Pth, params.Path()],
 ) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp)]:
-    data = Resp(message="Hello, World!")
-    return JsonResponse(data)
+    return JsonResponse(Resp(message="hello"))
 
 
 async def endpoint2(
-    request: HttpRequest, ctx: Body1
+    request: HttpRequest,
+    hdr: t.Annotated[Hdr, params.Header()],
+    ckie: t.Annotated[Ckie, params.Cookie()],
+    jsn: t.Annotated[Jsn, params.Json()],
 ) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp)]:
-    data = Resp(message="Hello, World!")
-    return JsonResponse(data)
-
-
-class CtxFile(BaseModel):
-    name: str
-    age: int
-
-
-class RespFile(BaseModel):
-    name: str
-    age: int
-    file_name: str | None
+    return JsonResponse(Resp(message="hello"))
 
 
 async def endpoint3(
     request: HttpRequest,
+    frm: t.Annotated[Frm, params.Form()],
     file1: t.Annotated[UploadFile, params.File()],
-    ctx: t.Annotated[CtxFile, params.Form()],
-) -> JsonResponse:
-    return JsonResponse(
-        RespFile(
-            name=ctx.name,
-            age=ctx.age,
-            file_name=file1.filename,
-        )
-    )
+) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp)]:
+    return JsonResponse(Resp(message="hello"))
+
+
+async def endpoint4(
+    request: HttpRequest,
+    jsn2: t.Annotated[Jsn2, params.Json()],
+) -> t.Annotated[JsonResponse, ResponseSpec(model=Resp2)]:
+    return JsonResponse(Resp2(resp=Resp(message="hello"), code=200))
 
 
 def test_openapi_create() -> None:
@@ -86,13 +109,15 @@ def test_openapi_create() -> None:
         "/endpoint1",
         endpoint=endpoint1,
         tags=["tag1"],
-        methods=["POST"],
+        methods=["GET"],
         summary="endpoint1 summary",
         description="endpoint1 description",
         externalDocs={"url": "http://example.com", "description": "example"},
         operation_id="endpoint1_operation",
     )
-    route2 = Route("/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"])
+    route2 = Route(
+        "/endpoint2", endpoint=endpoint2, tags=["tag1", "tag2"], methods=["POST"]
+    )
 
     route3 = Route(
         "/endpoint3",
@@ -100,6 +125,14 @@ def test_openapi_create() -> None:
         tags=["tag1"],
         methods=["POST"],
         summary="endpoint3 summary",
+    )
+
+    route4 = Route(
+        "/endpoint4",
+        endpoint=endpoint4,
+        tags=["tag1"],
+        methods=["POST"],
+        summary="endpoint4 summary",
     )
 
     openapi_setting = OpenAPI.model_validate(
@@ -117,12 +150,12 @@ def test_openapi_create() -> None:
     )
 
     ret = OpenApi.create_openapi_model(
-        [route, route2, route3],
+        [route, route2, route3, route4],
         openapi_setting=openapi_setting,
     )
 
     # version
-    assert ret.openapi == "3.0.4"
+    assert ret.openapi == "3.1.1"
 
     # info
     assert ret.info.title == "myproject"
@@ -142,80 +175,109 @@ def test_openapi_create() -> None:
 
     # paths
     assert ret.paths is not None
-    assert len(ret.paths) == 3
+    assert len(ret.paths) == 4
 
     # endpoint1
     assert "/endpoint1" in ret.paths
-    pathitem = ret.paths["/endpoint1"]
+    pathitem: s.PathItem = ret.paths["/endpoint1"]
 
-    assert pathitem.post is not None
-    assert pathitem.get is None
-    assert pathitem.post.operationId == "endpoint1_operation"
+    assert pathitem.get is not None
+    assert pathitem.post is None
+    assert pathitem.get.operationId == "endpoint1_operation"
 
     # parameters
-    parameters = pathitem.post.parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.get.parameters
+    )
     assert parameters is not None
 
-    params = [p.name for p in parameters]  # type: ignore
-    assert "token" in params
-    assert "token2" in params
-    assert "token3" in params
+    params = [p.name for p in parameters]
+    assert "pth1" in params
+    assert "pth2" in params
 
-    # request body
-    request_body = pathitem.post.requestBody
+    # responses
+    responses: s.Responses = t.cast(s.Responses, pathitem.get.responses)
 
-    assert request_body is not None
-    assert "application/json" in request_body.content  # type: ignore
-    media = request_body.content["application/json"]  # type: ignore
+    assert responses is not None
+    assert "200" in responses
+
+    response: s.Response = t.cast(s.Response, responses["200"])
+
+    content: t.Dict[str, s.MediaType] = t.cast(
+        t.Dict[str, s.MediaType], response.content
+    )
+    assert "application/json" in content
+
+    media: s.MediaType = t.cast(s.MediaType, content["application/json"])  # type: ignore
 
     assert media.media_type_schema is not None
     assert isinstance(media.media_type_schema, s.Reference)
     assert media.media_type_schema.ref is not None
 
-    request_ref = media.media_type_schema.ref
-    request_component = request_ref.split("/")[-1]
+    # endpoint2
+    assert "/endpoint2" in ret.paths
+    pathitem: s.PathItem = ret.paths["/endpoint2"]
 
-    # responses
-    responses = pathitem.post.responses
+    assert pathitem.post is not None
+    assert pathitem.get is None
 
+    # parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.post.parameters
+    )
+    assert parameters is not None
+
+    # check cookie and header
+    assert len(parameters) == 5
+    params = [p.name for p in parameters]  # type: ignore
+    assert "hdr1" in params
+    assert "hdr2" in params
+    assert "hdr3-alias" in params
+    assert "ckie1" in params
+    assert "ckie2" in params
+
+    # request body
+    request_body: s.RequestBody = t.cast(s.RequestBody, pathitem.post.requestBody)
+    assert request_body is not None
+    assert "application/json" in request_body.content
+    media: s.MediaType = request_body.content["application/json"]
+    assert media.media_type_schema is not None
+
+    # endpoint3
+    pathitem = ret.paths["/endpoint3"]
+
+    assert pathitem.post is not None
+    assert pathitem.get is None
+
+    # parameters
+    parameters: t.List[s.Parameter] = t.cast(
+        t.List[s.Parameter], pathitem.post.parameters
+    )
+    assert parameters == []
+
+    # request body
+    request_body: s.RequestBody = t.cast(s.RequestBody, pathitem.post.requestBody)
+    assert request_body is not None
+    assert "multipart/form-data" in request_body.content
+    media: s.MediaType = request_body.content["multipart/form-data"]
+
+    assert media.media_type_schema is not None
+
+    # endpoint4
+    pathitem4 = ret.paths["/endpoint4"]
+    assert pathitem4.post is not None
+
+    # response body
+
+    responses: s.Responses = t.cast(s.Responses, pathitem4.post.responses)
+    assert responses is not None
     assert "200" in responses
 
-    response = responses["200"]
-    assert isinstance(response, s.Response)
+    response: s.Response = t.cast(s.Response, responses["200"])
     assert response.content is not None
-    content = response.content["application/json"]
-
-    assert content.media_type_schema is not None
-    assert isinstance(content.media_type_schema, s.Reference)
-
-    assert content.media_type_schema.ref is not None
-
-    response_200_ref = content.media_type_schema.ref
-    response_200_component = response_200_ref.split("/")[-1]
-
-    # components
-    assert ret.components is not None
-    assert ret.components.schemas is not None
-
-    assert request_component in ret.components.schemas
-    assert response_200_component in ret.components.schemas
-
-    # test create schema result type
-    schema = OpenApi.create_schema(
-        [route, route2],
-        openapi_setting=OpenAPI.model_validate(
-            {
-                "servers": [{"url": "http://localhost:8000", "description": "dev"}],
-                "info": {
-                    "title": "myproject",
-                    "version": "1.0.0",
-                    "description": "desc",
-                },
-            }
-        ),
-    )
-
-    assert isinstance(schema, dict)
+    assert "application/json" in response.content
+    media: s.MediaType = response.content["application/json"]
+    assert media.media_type_schema is not None
 
     # no openapi settings
     with pytest.raises(ValueError):

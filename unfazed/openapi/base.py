@@ -1,13 +1,13 @@
 import typing as t
 
-from openapi_pydantic.v3 import v3_0 as v3_0_spec
+from openapi_pydantic.v3 import v3_1 as v3_1_spec
 from pydantic import BaseModel
 
 from unfazed.route import Route
 from unfazed.route.params import Param, ResponseSpec
 from unfazed.schema import OpenAPI as OpenAPISettingModel
 
-s = v3_0_spec
+s = v3_1_spec
 
 REF = "#/components/schemas/"
 
@@ -49,10 +49,8 @@ class OpenApi:
             for name in model.model_fields:
                 fieldinfo: Param = t.cast(Param, model.model_fields[name])
 
-                if fieldinfo.alias:
-                    schema_name = fieldinfo.alias
-                else:
-                    schema_name = name
+                schema_name = fieldinfo.alias or name
+
                 # in / style / name
                 # provided by EndPointDefinition._create_param_model
                 json_schema_extra_dict = model.model_config.get("json_schema_extra")

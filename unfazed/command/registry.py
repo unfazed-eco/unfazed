@@ -39,7 +39,6 @@ class Base(Group):
         """
         super().__init__(name=name)
         self.unfazed = unfazed
-        logger.debug(f"Initialized command group '{name}'")
 
     def load_command(self, command: Command) -> None:
         """
@@ -53,7 +52,6 @@ class Base(Group):
             ImportError: If the command class cannot be imported
         """
 
-        logger.debug(f"Loading command from path: {command.path}")
         cls = import_string(command.path)
 
         if not issubclass(cls, BaseCommand):
@@ -65,9 +63,6 @@ class Base(Group):
         cmd = cls(self.unfazed, escaped_name, command.label)
 
         self.add_command(cmd)
-        logger.debug(
-            f"Successfully loaded command '{escaped_name}' from '{command.path}'"
-        )
 
 
 class CommandCenter(Base):
@@ -98,7 +93,6 @@ class CommandCenter(Base):
         """
         super().__init__(unfazed=unfazed, name=name)
         self.app_center = app_center
-        logger.debug(f"Initialized CommandCenter '{name}'")
 
     async def setup(self) -> None:
         """
@@ -107,11 +101,9 @@ class CommandCenter(Base):
         This method loads commands from both the internal command directory
         and from each application in the app center.
         """
-        logger.debug("Setting up CommandCenter")
 
         # Load all the commands from the unfazed internal
         internal_commands = self.list_internal_command()
-        logger.debug(f"Found {len(internal_commands)} internal commands")
         for command in internal_commands:
             self.load_command(command)
 
@@ -120,7 +112,6 @@ class CommandCenter(Base):
         for app_name, app in self.app_center:
             app_commands = app.list_command()
             app_commands_count += len(app_commands)
-            logger.debug(f"Found {len(app_commands)} commands in app '{app_name}'")
             for command in app_commands:
                 self.load_command(command)
 
@@ -156,7 +147,6 @@ class CommandCenter(Base):
             )
 
             ret.append(command)
-            logger.debug(f"Found internal command: {command_name}")
 
         return ret
 
@@ -182,20 +172,15 @@ class CliCommandCenter(Base):
         """
         super().__init__(unfazed=unfazed, name="unfazed-cli")
         self.cli_command = ["startproject"]
-        logger.debug("Initialized CliCommandCenter")
 
     def setup(self) -> None:
         """
         Set up the CLI command center by loading the startproject command.
         """
-        logger.debug("Setting up CliCommandCenter")
         cli_commands = self.list_cli_command()
-        logger.debug(f"Found {len(cli_commands)} CLI commands")
 
         for command in cli_commands:
             self.load_command(command)
-
-        logger.debug("CliCommandCenter setup complete")
 
     def list_cli_command(self) -> t.List[Command]:
         """
@@ -220,6 +205,5 @@ class CliCommandCenter(Base):
                 )
 
                 ret.append(command)
-                logger.debug(f"Found CLI command: {command_name}")
 
         return ret
