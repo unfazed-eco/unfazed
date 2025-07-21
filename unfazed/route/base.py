@@ -2,10 +2,10 @@ import inspect
 import typing as t
 from importlib import import_module
 
-from unfazed.type import CanBeImported, HttpMethod
+from unfazed.type import ASGIApp, CanBeImported, HttpMethod
 
 from .registry import _flatten_patterns
-from .routing import Route, Static
+from .routing import Mount, Route, Static
 
 
 def include(route_path: str) -> t.List[Route]:
@@ -195,4 +195,35 @@ def static(
         externalDocs=externalDocs,
         deprecated=deprecated,
         operation_id=operation_id,
+    )
+
+
+def mount(
+    path: str,
+    app: ASGIApp | None = None,
+    routes: t.List[Route] | None = None,
+    *,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
+) -> Mount:
+    """
+    Create a Mount.
+
+    Usage:
+
+    ```python
+    from unfazed.route import mount
+
+    app = Starlette()
+
+    routes = [
+        mount("/foo", app=app),
+        mount("/bar", routes=subpaths),
+    ]
+
+    ```
+    """
+    return Mount(
+        path, app, routes, name=name, app_label=app_label, middlewares=middlewares
     )

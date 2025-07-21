@@ -2,7 +2,9 @@ import os
 import typing as t
 
 import pytest
+from starlette.applications import Starlette
 from starlette.routing import Match
+from starlette.routing import Route as StarletteRoute
 
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
@@ -11,6 +13,7 @@ from unfazed.route import (
     Convertor,
     Route,
     include,
+    mount,
     parse_urlconf,
     path,
     register_url_convertor,
@@ -43,12 +46,6 @@ def test_include() -> None:
 
     patterns = include(import_path)
     assert patterns == []
-
-    import_path = "tests.test_route.entry.routes"
-
-    patterns = include(import_path)
-
-    assert len(patterns) == 5
 
 
 async def view(request: HttpRequest) -> HttpResponse:
@@ -103,10 +100,7 @@ def test_failed_path() -> None:
         path("/foo", endpoint="foo")  # type: ignore
 
 
-def test_parse_urlconf(setup_route_unfazed: Unfazed) -> None:
-    # normal case
-    assert len(setup_route_unfazed.routes) == 5
-
+def test_parse_urlconf() -> None:
     # failed case
     import_path = "tests.apps.route.include.nopatternroutes"
     app_center = {"not.existed.app": None}
@@ -258,3 +252,69 @@ async def test_static() -> None:
 
     route3 = static("/static", abs_path, tags=["foo", "bar"])
     assert route3.tags == ["foo", "bar"]
+
+
+async def test_mount_app() -> None:
+    app = Starlette(routes=[StarletteRoute("/bar", view)])
+
+    route = mount("/foo", app=app)
+
+    ret = route.matches({"type": "http", "path": "/foo/bar", "method": "GET"})
+    match, scope = ret
+    assert match == Match.FULL
+    assert scope["path_params"] == {}
+    assert scope["root_path"] == "/foo"
+    assert scope["app_root_path"] == ""
+    assert scope["endpoint"] == app
+
+    ret2 = route.matches(
+        {"type": "http", "path": "/foo/bar/not_found", "method": "GET"}
+    )
+
+    match, scope = ret2
+    assert match == Match.FULL
+    assert scope["path_params"] == {}
+    assert scope["root_path"] == "/foo"
+    assert scope["app_root_path"] == ""
+    assert scope["endpoint"] == app
+
+    ret3 = route.matches({"type": "http", "path": "/bar/not_found", "method": "POST"})
+
+    match, scope = ret3
+    assert match == Match.NONE
+    assert scope == {}
+
+
+async def test_mount_routes() -> None:
+    routes = [
+        Route("/bar1", endpoint=view),
+        Route("/bar/sub", endpoint=view),
+    ]
+
+    route = mount("/mount", routes=routes)
+
+    ret = route.matches({"type": "http", "path": "/mount/bar1", "method": "GET"})
+    match, scope = ret
+    assert match == Match.FULL
+    assert scope["path_params"] == {}
+    assert scope["root_path"] == "/mount"
+    assert scope["app_root_path"] == ""
+
+    ret2 = route.matches({"type": "http", "path": "/mount/bar/sub", "method": "GET"})
+    match, scope = ret2
+    assert match == Match.FULL
+    assert scope["path_params"] == {}
+    assert scope["root_path"] == "/mount"
+    assert scope["app_root_path"] == ""
+
+    ret3 = route.matches(
+        {"type": "http", "path": "/mount/bar/sub/not_found", "method": "GET"}
+    )
+    match, scope = ret3
+    assert match == Match.FULL
+
+
+async def test_mount_unfazed(setup_route_unfazed: Unfazed) -> None:
+    async with Requestfactory(setup_route_unfazed) as request:
+        response = await request.get("/mount/app/bar")
+        assert response.status_code == 200

@@ -1,12 +1,12 @@
 import inspect
 import typing as t
 
-from starlette.routing import Match, URLPath, compile_path, get_route_path
+from starlette.routing import Match, Router, URLPath, compile_path, get_route_path
 from starlette.routing import Route as StartletteRoute
 
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.static import StaticFiles
-from unfazed.type import CanBeImported, HttpMethod, Receive, Scope, Send
+from unfazed.type import ASGIApp, CanBeImported, HttpMethod, Receive, Scope, Send
 from unfazed.utils import import_string
 
 from . import params as p
@@ -199,3 +199,94 @@ class Static(Route):
     @property
     def routes(self) -> t.List[Route]:
         return []
+
+
+class Mount(Route):
+    @t.override
+    def __init__(
+        self,
+        path: str,
+        app: ASGIApp | None = None,
+        routes: t.List[Route] | None = None,
+        *,
+        name: str | None = None,
+        app_label: str | None = None,
+        middlewares: t.List[CanBeImported] | None = None,
+    ) -> None:
+        if not path.startswith("/"):
+            raise ValueError(f"route `{path}` must start with '/'")
+
+        self.path = path.rstrip("/")
+
+        need_setup = False
+
+        if app is not None:
+            self.app = app
+            from unfazed.core import Unfazed
+
+            if isinstance(app, Unfazed):
+                need_setup = True
+        elif routes is not None:
+            self.app = Router(routes)
+        else:
+            raise ValueError("Mount must have either an app or routes")
+
+        self.need_setup = need_setup
+
+        self.load_middlewares(middlewares or [])
+        self.app_label = app_label
+
+        self.name = name
+        self.path_regex, self.path_format, self.param_convertors = compile_path(
+            self.path + "/{path:path}"
+        )
+
+    @property
+    def routes(self) -> t.List[Route]:
+        return getattr(self.app, "routes", [])
+
+    @t.override
+    def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
+        raise NotImplementedError("Mount routes not support yet")
+
+    @t.override
+    def matches(self, scope: Scope) -> t.Tuple[Match, Scope]:
+        # from starlette.routing.Mount.matches
+        path_params: t.Dict[str, t.Any]
+        if scope["type"] in ("http", "websocket"):
+            root_path = scope.get("root_path", "")
+            route_path = get_route_path(scope)
+            match = self.path_regex.match(route_path)
+            if match:
+                matched_params = match.groupdict()
+                for key, value in matched_params.items():
+                    matched_params[key] = self.param_convertors[key].convert(value)
+                remaining_path = "/" + matched_params.pop("path")
+                matched_path = route_path[: -len(remaining_path)]
+                path_params = dict(scope.get("path_params", {}))
+                path_params.update(matched_params)
+                child_scope = {
+                    "path_params": path_params,
+                    "app_root_path": scope.get("app_root_path", root_path),
+                    "root_path": root_path + matched_path,
+                    "endpoint": self.app,
+                }
+                return Match.FULL, child_scope
+        return Match.NONE, {}
+
+    @t.override
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self.need_setup:
+            await self.app.setup()
+            self.need_setup = False
+        return await self.app(scope, receive, send)
+
+    def __eq__(self, other: t.Self) -> bool:
+        return self.path == other.path and self.app == other.app
+
+    def __repr__(self) -> str:
+        name = self.name or ""
+        return f"Mount(path={self.path!r}, name={name!r}, app={self.app!r})"
+
+    def update_label(self, app_label: str) -> None:
+        self.app_label = app_label

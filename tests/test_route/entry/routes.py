@@ -1,10 +1,11 @@
 import os
 
+from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
-from unfazed.route import include, path, static
+from unfazed.route import Route, include, mount, path, static
 
 
-async def foo(request: HttpRequest) -> HttpResponse:
+async def hello(request: HttpRequest) -> HttpResponse:
     return HttpResponse("hello, world")
 
 
@@ -14,7 +15,11 @@ def get_static_dir() -> str:
 
 
 patterns = [
-    path("/api/success", routes=include("route_common.routes")),
-    path("/api/mainapp/foo", endpoint=foo),
+    path("/path", routes=include("route_common.routes")),
     static("/static", get_static_dir()),
+    mount(
+        "/mount/app",
+        app=Unfazed(routes=[Route("/bar", endpoint=hello)]),
+    ),
+    mount("/mount/route", routes=[Route("/bar", endpoint=hello)]),
 ]
