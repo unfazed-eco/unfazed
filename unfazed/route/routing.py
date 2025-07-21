@@ -122,14 +122,6 @@ class Static(Route):
         middlewares: t.List[CanBeImported] | None = None,
         html: bool = False,
         app_label: str | None = None,
-        tags: t.List[str] | None = None,
-        include_in_schema: bool = True,
-        summary: str | None = None,
-        description: str | None = None,
-        externalDocs: t.Dict | None = None,
-        deprecated: bool | None = None,
-        operation_id: str | None = None,
-        response_models: t.List[p.ResponseSpec] | None = None,
     ) -> None:
         if not path.startswith("/"):
             raise ValueError(f"route `{path}` must start with '/'")
@@ -150,22 +142,11 @@ class Static(Route):
 
         self.app_label = app_label
 
-        if tags:
-            self.tags = tags
-        else:
-            self.tags = [app_label] if app_label else []
-
-        self.include_in_schema = include_in_schema
-        self.summary = summary
-        self.description = description
-        self.externalDocs = externalDocs
-        self.deprecated = deprecated or False
-        self.response_models = response_models
-        self.operation_id = operation_id
+        self.include_in_schema = False
 
     @t.override
     def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
-        raise NotImplementedError("Static routes not support yet")
+        raise NotImplementedError("Static routes not support yet")  # type: ignore
 
     @t.override
     def matches(self, scope: Scope) -> t.Tuple[Match, Scope]:
@@ -199,6 +180,9 @@ class Static(Route):
     @property
     def routes(self) -> t.List[Route]:
         return []
+
+    def update_label(self, app_label: str) -> None:
+        self.app_label = app_label
 
 
 class Mount(Route):
@@ -241,13 +225,15 @@ class Mount(Route):
             self.path + "/{path:path}"
         )
 
+        self.include_in_schema = False
+
     @property
     def routes(self) -> t.List[Route]:
         return getattr(self.app, "routes", [])
 
     @t.override
     def url_path_for(self, name: str, /, **path_params: t.Any) -> URLPath:
-        raise NotImplementedError("Mount routes not support yet")
+        raise NotImplementedError("Mount routes not support yet")  # type: ignore
 
     @t.override
     def matches(self, scope: Scope) -> t.Tuple[Match, Scope]:

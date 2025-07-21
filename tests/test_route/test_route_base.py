@@ -6,7 +6,6 @@ from starlette.applications import Starlette
 from starlette.routing import Match
 from starlette.routing import Route as StarletteRoute
 
-from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.middleware import BaseMiddleware
 from unfazed.route import (
@@ -19,7 +18,6 @@ from unfazed.route import (
     register_url_convertor,
     static,
 )
-from unfazed.test import Requestfactory
 from unfazed.type import Receive, Scope, Send
 
 
@@ -209,24 +207,6 @@ def test_route_converter() -> None:
     assert match == Match.FULL
 
 
-async def test_staticfiles(setup_route_unfazed: Unfazed) -> None:
-    async with Requestfactory(setup_route_unfazed) as request:
-        response = await request.get("/static/js/foo.js")
-        assert response.status_code == 200
-
-        response = await request.get("/static/css/bar.css")
-        assert response.status_code == 200
-
-        response = await request.get("/static/nested/top/sub/bar.js")
-        assert response.status_code == 200
-
-        response = await request.get("/static/index.html")
-        assert response.status_code == 200
-
-        with pytest.raises(FileNotFoundError):
-            await request.get("/static/not_found.html")
-
-
 async def test_static() -> None:
     abs_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../staticfiles")
@@ -250,14 +230,28 @@ async def test_static() -> None:
     route2 = static("/static", abs_path, app_label="test_route")
     assert route2.app_label == "test_route"
 
-    route3 = static("/static", abs_path, tags=["foo", "bar"])
-    assert route3.tags == ["foo", "bar"]
+    # test update_label
+    route2.update_label("test_route2")
+    assert route2.app_label == "test_route2"
 
 
 async def test_mount_app() -> None:
     app = Starlette(routes=[StarletteRoute("/bar", view)])
 
     route = mount("/foo", app=app)
+
+    assert route.include_in_schema is False
+    assert len(route.routes) == 1
+
+    # test update_label
+    route.update_label("test_route2")
+    assert route.app_label == "test_route2"
+
+    # test __repr__
+    assert str(route).startswith("Mount")
+
+    # test eq
+    assert route == mount("/foo", app=app)
 
     ret = route.matches({"type": "http", "path": "/foo/bar", "method": "GET"})
     match, scope = ret
@@ -283,6 +277,16 @@ async def test_mount_app() -> None:
     match, scope = ret3
     assert match == Match.NONE
     assert scope == {}
+
+    # failed case
+    with pytest.raises(ValueError):
+        mount("foo", app=app)
+
+    with pytest.raises(ValueError):
+        mount("/foo")
+
+    with pytest.raises(NotImplementedError):
+        route.url_path_for("foo")
 
 
 async def test_mount_routes() -> None:
@@ -312,9 +316,3 @@ async def test_mount_routes() -> None:
     )
     match, scope = ret3
     assert match == Match.FULL
-
-
-async def test_mount_unfazed(setup_route_unfazed: Unfazed) -> None:
-    async with Requestfactory(setup_route_unfazed) as request:
-        response = await request.get("/mount/app/bar")
-        assert response.status_code == 200

@@ -174,13 +174,6 @@ def static(
     name: str | None = None,
     app_label: str | None = None,
     html: bool = False,
-    include_in_schema: bool = True,
-    tags: t.List[str] | None = None,
-    summary: str | None = None,
-    description: str | None = None,
-    externalDocs: t.Dict | None = None,
-    deprecated: bool = False,
-    operation_id: str | None = None,
 ) -> Static:
     return Static(
         path=path,
@@ -188,13 +181,6 @@ def static(
         name=name,
         html=html,
         app_label=app_label,
-        include_in_schema=include_in_schema,
-        tags=tags,
-        summary=summary,
-        description=description,
-        externalDocs=externalDocs,
-        deprecated=deprecated,
-        operation_id=operation_id,
     )
 
 
@@ -225,5 +211,10 @@ def mount(
     ```
     """
     return Mount(
-        path, app, routes, name=name, app_label=app_label, middlewares=middlewares
+        path,
+        app,
+        routes,
+        name=name,
+        app_label=app_label,
+        middlewares=middlewares,
     )
