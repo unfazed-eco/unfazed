@@ -115,6 +115,25 @@ async def test_failed_startapp(tmp_path: Path) -> None:
             app_name="existedapp", location=str(project_path), template="simple"
         )
 
+    with pytest.raises(ValueError):
+        await cmd.handle(
+            app_name="random", location=str(project_path), template="simple"
+        )
+
+    with pytest.raises(ValueError):
+        await cmd.handle(
+            app_name="should.not.contain.dots",
+            location=str(project_path),
+            template="simple",
+        )
+
+    with pytest.raises(ValueError):
+        await cmd.handle(
+            app_name="SHOULD_NOT_BE_UPPERCASE",
+            location=str(project_path),
+            template="simple",
+        )
+
 
 async def test_failed_startprj(tmp_path: Path) -> None:
     unfazed = Unfazed()

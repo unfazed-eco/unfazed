@@ -1,3 +1,5 @@
+import importlib
+import re
 import typing as t
 from pathlib import Path
 
@@ -54,10 +56,30 @@ class Command(BaseCommand):
             ),
         ]
 
+    def check_app_name(self, app_name: str) -> None:
+        # the app_name should not be a python package name
+        # the app_name should only contain lowercase letters, numbers, and underscores
+        if not re.match(r"^[a-z0-9_]+$", app_name):
+            raise ValueError(
+                "App name should only contain letters, numbers, and underscores"
+            )
+
+        try:
+            importlib.import_module(app_name)
+        except ImportError:
+            pass
+        else:
+            raise ValueError(
+                f"App name {app_name} is a python package, change the app name"
+            )
+
     async def handle(self, **options: t.Any) -> None:
         app_name = options["app_name"]
         location = options["location"]
         template = options["template"]
+
+        self.check_app_name(app_name)
+
         if template == TemplateType.SIMPLE:
             template_path = Path(unfazed.__path__[0], "template/app/simple")
         elif template == TemplateType.STANDARD:
