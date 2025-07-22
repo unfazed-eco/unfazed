@@ -258,9 +258,11 @@ class Unfazed:
 
         logger.debug("ROUTES:")
         for route in self.routes:
-            methods = (
-                ", ".join(route.methods) if hasattr(route, "methods") else "NOT SET"
-            )
+            if not hasattr(route, "methods"):
+                continue
+
+            method_list = list(t.cast(t.Sequence[str], route.methods))
+            methods = ", ".join(method_list)
             logger.debug(f"    {methods} | {route.path}")
 
         logger.debug("LIFESPAN LIST:")

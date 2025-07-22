@@ -13,6 +13,9 @@ from . import params as p
 from . import utils as u
 from .endpoint import EndPointDefinition, EndpointHandler
 
+if t.TYPE_CHECKING:
+    from unfazed.core import Unfazed  # pragma: no cover
+
 
 class Route(StartletteRoute):
     @t.override
@@ -220,7 +223,7 @@ class Mount(Route):
         self.load_middlewares(middlewares or [])
         self.app_label = app_label
 
-        self.name = name
+        self.name = name or ""
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             self.path + "/{path:path}"
         )
@@ -263,12 +266,17 @@ class Mount(Route):
     @t.override
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         if self.need_setup:
-            await self.app.setup()
+            unfazed_app = t.cast("Unfazed", self.app)
+            await unfazed_app.setup()
             self.need_setup = False
         return await self.app(scope, receive, send)
 
-    def __eq__(self, other: t.Self) -> bool:
-        return self.path == other.path and self.app == other.app
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Mount)
+            and self.path == other.path
+            and self.app == other.app
+        )
 
     def __repr__(self) -> str:
         name = self.name or ""
