@@ -1,3 +1,11 @@
+v0.0.13
+======
+- [issue 57](https://github.com/unfazed-eco/unfazed/issues/57) 使用 ipython 实现 shell
+- [issue 56](https://github.com/unfazed-eco/unfazed/issues/56) 支持 mount 路由
+- [issue 55](https://github.com/unfazed-eco/unfazed/issues/55) 当 app name 与 pkg name 不一致时报错
+- [issue 54](https://github.com/unfazed-eco/unfazed/issues/54) 解决 static 路由被 openapi 组件报错的问题
+
+
 v0.0.12
 ======
 

@@ -131,19 +131,23 @@ class BaseCommand(ClickCommand, ABC):
 
     def _callback(self, **options: t.Optional[t.Any]) -> None:
         """
-        Internal callback that handles the execution of the async handle method.
+        Internal callback that handles the execution of the handle method.
+
+        Supports both synchronous and asynchronous handle methods:
+        - If handle is a coroutine function, runs it with asyncio.run()
+        - If handle is a regular function, calls it directly
 
         Args:
             **options: Command options passed from Click
         """
 
         if asyncio.iscoroutinefunction(self.handle):
-            asyncio.run(self.handle(**options))
+            # Handle async method
+            loop = asyncio.get_event_loop()
+            loop.call_soon(self.handle(**options))
         else:
-            # This branch should never be reached as handle must be a coroutine
-            raise NotImplementedError(
-                "handle method must be a coroutine"
-            )  # pragma: no cover
+            # Handle sync method
+            self.handle(**options)
 
     def add_arguments(self) -> t.List[Option]:
         """
@@ -158,15 +162,30 @@ class BaseCommand(ClickCommand, ABC):
         return []
 
     @abstractmethod
-    async def handle(self, **options: t.Any) -> None:
+    def handle(self, **options: t.Any) -> t.Any:
         """
         Handle the command execution.
 
         This method must be implemented by all command subclasses.
-        It contains the main command logic and is executed asynchronously.
+        It contains the main command logic and can be either synchronous or asynchronous.
+
+        For async commands:
+        ```python
+        async def handle(self, **options: t.Any) -> None:
+            await some_async_operation()
+        ```
+
+        For sync commands:
+        ```python
+        def handle(self, **options: t.Any) -> None:
+            some_sync_operation()
+        ```
 
         Args:
             **options: Command options passed from Click
+
+        Returns:
+            Any: Optional return value from the command
 
         Raises:
             NotImplementedError: If not implemented by subclass

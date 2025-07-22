@@ -1,6 +1,6 @@
 from starlette.convertors import Convertor, register_url_convertor
 
-from .base import include, path, static
+from .base import include, mount, path, static
 from .registry import parse_urlconf
 from .routing import Route
 
@@ -12,4 +12,5 @@ __all__ = [
     "Convertor",
     "register_url_convertor",
     "static",
+    "mount",
 ]

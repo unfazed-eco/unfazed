@@ -13,6 +13,13 @@ except ImportError:  # pragma: no cover
 
 
 class Command(BaseCommand):
+    help_text = """
+    Export the OpenAPI schema to a file
+
+    Usage:
+    >>> unfazed-cli export-openapi --location ./openapi.yaml
+    """
+
     def add_arguments(self) -> t.List[Option]:
         return [
             Option(

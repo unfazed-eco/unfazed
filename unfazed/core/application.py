@@ -2,7 +2,6 @@ import logging
 import sys
 import typing as t
 
-from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import State
 from starlette.routing import Router
 
@@ -259,7 +258,11 @@ class Unfazed:
 
         logger.debug("ROUTES:")
         for route in self.routes:
-            methods = ", ".join(route.methods) if route.methods else "NOT SET"
+            if not hasattr(route, "methods"):
+                continue
+
+            method_list = list(t.cast(t.Sequence[str], route.methods))
+            methods = ", ".join(method_list)
             logger.debug(f"    {methods} | {route.path}")
 
         logger.debug("LIFESPAN LIST:")
@@ -276,8 +279,8 @@ class Unfazed:
     async def setup_cli(self) -> None:
         self.cli_command_center.setup()
 
-    async def execute_command_from_argv(self) -> None:
-        await run_in_threadpool(self.command_center.main)
+    def execute_command_from_argv(self) -> None:
+        self.command_center.main()
 
-    async def execute_command_from_cli(self) -> None:
-        await run_in_threadpool(self.cli_command_center.main)
+    def execute_command_from_cli(self) -> None:
+        self.cli_command_center.main()

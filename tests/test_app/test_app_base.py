@@ -25,7 +25,7 @@ def test_app_base() -> None:
 
     # list commands
     app_command = BaseAppConfig.from_entry("tests.apps.cmd.common", unfazed)
-    assert len(app_command.list_command()) == 1
+    assert len(app_command.list_command()) == 2
 
     # with init file
     app_withinit = BaseAppConfig.from_entry("tests.apps.app.withinit", unfazed)
