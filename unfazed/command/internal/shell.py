@@ -1,5 +1,6 @@
-import code
 import typing as t
+
+from IPython import start_ipython
 
 from unfazed.command import BaseCommand
 
@@ -12,16 +13,24 @@ class Command(BaseCommand):
 
     """
 
-    help_text = """
-
-    Run the unfazed Shell
+    help_text = """Run the unfazed Shell use ipython
 
     Usage:
 
     >>> unfazed-cli shell
     """
 
-    async def handle(self, **options: t.Any) -> None:
-        code.interact(local=locals())
+    def handle(self, **options: t.Any) -> None:
+        user_ns = {
+            "unfazed": self.unfazed,
+        }
+        startup_code = [
+            "import asyncio",
+            "print('🚀 Unfazed Shell - Asyncio enabled!')",
+            "print('💡 You can use await directly in the shell')",
+            "print(f'Unfazed APP: {unfazed}')",
+            "print(f'💡 You can use `unfazed` instance directly in the shell')",
+        ]
+        start_ipython(argv=[], user_ns=user_ns, exec_lines=startup_code)
 
         return None

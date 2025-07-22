@@ -130,12 +130,12 @@ async def test_execute_command() -> None:
 
     with patch("unfazed.command.CliCommandCenter.main") as main:
         main.return_value = None
-        await unfazed.execute_command_from_cli()
+        unfazed.execute_command_from_cli()
         assert main.call_count == 1
 
     with patch("unfazed.command.CommandCenter.main") as main:
         main.return_value = None
-        await unfazed.execute_command_from_argv()
+        unfazed.execute_command_from_argv()
         assert main.call_count == 1
 
 

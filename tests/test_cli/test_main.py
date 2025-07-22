@@ -3,7 +3,6 @@ import typing as t
 from unittest.mock import patch
 
 import pytest
-from starlette.concurrency import run_in_threadpool
 
 from unfazed.cli import import_unfazed, main
 from unfazed.conf import settings
@@ -20,7 +19,7 @@ def setup_cli_env() -> t.Generator[None, None, None]:
 async def test_main() -> None:
     with patch("unfazed.command.CliCommandCenter.main") as main_func:
         main_func.return_value = None
-        await run_in_threadpool(main)
+        main()
         assert main_func.call_count == 1
 
     with patch("os.getcwd") as getcwd_func:
@@ -29,7 +28,7 @@ async def test_main() -> None:
         )
         with patch("unfazed.command.CommandCenter.main") as main_func:
             main_func.return_value = None
-            await run_in_threadpool(main)
+            main()
             assert main_func.call_count == 1
 
 

@@ -104,6 +104,7 @@ class CommandCenter(Base):
 
         # Load all the commands from the unfazed internal
         internal_commands = self.list_internal_command()
+        print(f"internal commands = {internal_commands}")
         for command in internal_commands:
             self.load_command(command)
 

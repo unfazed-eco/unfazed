@@ -16,9 +16,7 @@ class TemplateType:
 
 
 class Command(BaseCommand):
-    help_text = """
-
-    Create a new app under the project
+    help_text = """Create a new app under the project
 
     Usage:
 

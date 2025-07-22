@@ -2,7 +2,6 @@ import logging
 import sys
 import typing as t
 
-from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import State
 from starlette.routing import Router
 
@@ -278,8 +277,8 @@ class Unfazed:
     async def setup_cli(self) -> None:
         self.cli_command_center.setup()
 
-    async def execute_command_from_argv(self) -> None:
-        await run_in_threadpool(self.command_center.main)
+    def execute_command_from_argv(self) -> None:
+        self.command_center.main()
 
-    async def execute_command_from_cli(self) -> None:
-        await run_in_threadpool(self.cli_command_center.main)
+    def execute_command_from_cli(self) -> None:
+        self.cli_command_center.main()

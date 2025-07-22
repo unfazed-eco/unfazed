@@ -1,7 +1,6 @@
 import typing as t
 
 import pytest
-from starlette.concurrency import run_in_threadpool
 
 from unfazed.command import BaseCommand
 from unfazed.conf import UnfazedSettings
@@ -26,9 +25,13 @@ async def test_command_center() -> None:
     command_center = unfazed.command_center
     assert "common" in command_center.commands
     assert "_ignore" not in command_center.commands
+    assert "sync-common" in command_center.commands
 
     cmd = t.cast(BaseCommand, command_center.commands["common"])
-    await run_in_threadpool(cmd._callback)
+    cmd._callback()
+
+    cmd = t.cast(BaseCommand, command_center.commands["sync-common"])
+    cmd._callback()
 
 
 async def test_cmd_failed() -> None:
