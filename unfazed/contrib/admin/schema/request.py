@@ -45,10 +45,15 @@ class Save(BaseModel):
         t.Dict[str, t.List[t.Dict[str, t.Any]]],
         Doc(
             description="relation model to `data`, use unfazed.contrib.auth.models.Group as example",
-            examples={
-                "groups": [{"name": "group1", "id": 1}, {"name": "group2", "id": 2}],
-                "roles": [{"name": "role1", "id": 1}, {"name": "role2", "id": 2}],
-            },
+            examples=[
+                {
+                    "groups": [
+                        {"name": "group1", "id": 1},
+                        {"name": "group2", "id": 2},
+                    ],
+                    "roles": [{"name": "role1", "id": 1}, {"name": "role2", "id": 2}],
+                }
+            ],
         ),
     ]
 

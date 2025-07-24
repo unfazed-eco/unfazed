@@ -13,6 +13,6 @@ async def test_export_openapi_cmd(
     unfazed = setup_openapi_unfazed
 
     cmd = Command(unfazed, "export_openapi", "internal")
-    await cmd.handle(location=tmp_dir)
+    cmd.handle(location=tmp_dir)
 
     assert Path(tmp_dir / "openapi.yaml").exists()

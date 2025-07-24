@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "A {{ project_name }} project."
 authors = []
 dependencies = [
-    "unfazed>=0.0.4",
+    "unfazed>=0.0.14",
 ]
 
 [tool.pytest.ini_options]

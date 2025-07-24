@@ -31,7 +31,7 @@ class Command(BaseCommand):
         ]
 
     @t.override
-    async def handle(self, **options: t.Any) -> None:
+    def handle(self, **options: t.Any) -> None:
         assert yaml is not None, "yaml is not installed"
         assert OpenApi.schema is not None, "OpenAPI schema is not found"
 

@@ -14,14 +14,14 @@ SETTINGS = {
 }
 
 
-async def test_command_center() -> None:
+def test_command_center() -> None:
     _SETTINGS = {
         **SETTINGS,
         "INSTALLED_APPS": ["tests.apps.cmd.common"],
     }
     unfazed = Unfazed(settings=UnfazedSettings.model_validate(_SETTINGS))
-
-    await unfazed.setup()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(unfazed.setup())
 
     command_center = unfazed.command_center
     assert "common" in command_center.commands
@@ -29,11 +29,11 @@ async def test_command_center() -> None:
     assert "sync-common" in command_center.commands
 
     cmd = t.cast(BaseCommand, command_center.commands["common"])
-    loop = asyncio.get_event_loop()
-    loop.call_soon(cmd.handle())
+
+    loop.call_soon(cmd._callback())
 
     cmd = t.cast(BaseCommand, command_center.commands["sync-common"])
-    loop.call_soon(cmd.handle())
+    loop.call_soon(cmd._callback())
 
 
 async def test_cmd_failed() -> None:

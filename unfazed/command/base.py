@@ -143,7 +143,8 @@ class BaseCommand(ClickCommand, ABC):
 
         if asyncio.iscoroutinefunction(self.handle):
             # Handle async method
-            asyncio.run(self.handle(**options))
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.handle(**options))
         else:
             # Handle sync method
             self.handle(**options)

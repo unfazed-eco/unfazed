@@ -29,15 +29,6 @@ def import_unfazed(current_path: str) -> t.Optional[Unfazed]:
     return module.application
 
 
-def run_in_loop(loop: asyncio.AbstractEventLoop, coro: t.Coroutine) -> None:
-    if loop.is_running():
-        # this line will take effect when run test
-        asyncio.ensure_future(coro, loop=loop)
-    else:
-        # this line will take effect using unfazed-cli shell
-        loop.run_until_complete(coro)  # pragma: no cover
-
-
 def _main() -> None:
     current_path = os.getcwd()
     maybeapp = import_unfazed(current_path)
@@ -46,11 +37,11 @@ def _main() -> None:
 
     if maybeapp is None:
         app = Unfazed()
-        run_in_loop(loop, app.setup_cli())
+        loop.run_until_complete(app.setup_cli())
         app.execute_command_from_cli()
     else:
         app = maybeapp
-        run_in_loop(loop, app.setup())
+        loop.run_until_complete(app.setup())
         app.execute_command_from_argv()
 
 
