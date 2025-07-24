@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 
 import pytest
@@ -28,10 +29,11 @@ async def test_command_center() -> None:
     assert "sync-common" in command_center.commands
 
     cmd = t.cast(BaseCommand, command_center.commands["common"])
-    cmd._callback()
+    loop = asyncio.get_event_loop()
+    loop.call_soon(cmd.handle())
 
     cmd = t.cast(BaseCommand, command_center.commands["sync-common"])
-    cmd._callback()
+    loop.call_soon(cmd.handle())
 
 
 async def test_cmd_failed() -> None:
