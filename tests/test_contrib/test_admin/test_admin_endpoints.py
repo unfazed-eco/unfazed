@@ -162,6 +162,10 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
 
         assert resp11.status_code == 200
 
+        # test openapi integration
+        resp12 = await request.get("/openapi/openapi.json")
+        assert resp12.status_code == 200
+
 
 async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None:
     with patch.object(HttpRequest, "user", UnkownUser()):

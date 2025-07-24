@@ -1,3 +1,16 @@
+v0.0.14
+======
+
+本次更新主要修复了 v0.0.13 带出的问题。
+
+1. 移除 run_in_loop 函数以及 loop.call_soon，使用 `loop.run_until_complete` 替代
+2. 增加 ipython 未安装的警告
+3. 更改模版中的 unfazed 版本号
+4. 修复的 admin 组件中 `Model_saveBodyModel` 的 bug
+5. 调整部份测试代码
+
+
+
 v0.0.13
 ======
 - [issue 57](https://github.com/unfazed-eco/unfazed/issues/57) 使用 ipython 实现 shell

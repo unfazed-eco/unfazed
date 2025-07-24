@@ -16,7 +16,7 @@ def setup_cli_env() -> t.Generator[None, None, None]:
     yield
 
 
-async def test_main() -> None:
+def test_main() -> None:
     with patch("unfazed.command.CliCommandCenter.main") as main_func:
         main_func.return_value = None
         main()

@@ -3,9 +3,10 @@ import warnings
 
 try:
     from IPython import start_ipython
+
     IPYTHON_AVAILABLE = True
-except ImportError:
-    IPYTHON_AVAILABLE = False
+except ImportError:  # pragma: no cover
+    IPYTHON_AVAILABLE = False  # pragma: no cover
 
 from unfazed.command import BaseCommand
 
@@ -40,7 +41,5 @@ class Command(BaseCommand):
             start_ipython(argv=[], user_ns=user_ns, exec_lines=startup_code)  # type: ignore
         else:
             warnings.warn(
-                "IPython is not installed.",
-                UserWarning,
-                stacklevel=2
-            )
+                "IPython is not installed.", UserWarning, stacklevel=2
+            )  # pragma: no cover
