@@ -6,11 +6,6 @@ try:
     IPYTHON_AVAILABLE = True
 except ImportError:
     IPYTHON_AVAILABLE = False
-    warnings.warn(
-        "IPython is not installed. Using standard Python shell instead. ",
-        UserWarning,
-        stacklevel=2
-    )
 
 from unfazed.command import BaseCommand
 
@@ -44,5 +39,8 @@ class Command(BaseCommand):
             ]
             start_ipython(argv=[], user_ns=user_ns, exec_lines=startup_code)  # type: ignore
         else:
-            import code
-            code.interact(local=locals())
+            warnings.warn(
+                "IPython is not installed.",
+                UserWarning,
+                stacklevel=2
+            )
