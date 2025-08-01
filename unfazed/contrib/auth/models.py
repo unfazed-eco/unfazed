@@ -1,30 +1,14 @@
 import typing as t
-from enum import Enum
 
 from tortoise import fields
 from tortoise.fields.relational import ManyToManyRelation
-from tortoise.models import Model
 
 from unfazed.conf import settings
+from unfazed.contrib.common.base_models import BaseModel
 from unfazed.type import Doc
 from unfazed.utils import import_string
 
 from .settings import UnfazedContribAuthSettings
-
-
-class Status(Enum):
-    ACTIVE = 1
-    INACTIVE = 0
-
-
-class BaseModel(Model):
-    class Meta:
-        abstract = True
-
-    id = fields.IntField(primary_key=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    is_active = fields.SmallIntField(default=Status.ACTIVE.value, choices=Status)
 
 
 class AbstractUser(BaseModel):

@@ -23,8 +23,8 @@ class Field:
         self.default = default
 
     def to_json(self) -> AdminField:
-        return AdminField(
-            **{
+        return AdminField.model_validate(
+            {
                 "name": self.name,
                 "readonly": self.readonly,
                 "show": self.show,

@@ -2,7 +2,7 @@ import typing as t
 
 from pydantic import BaseModel
 
-from unfazed.route import params
+from unfazed.contrib.common.schema import BaseResponse
 
 
 class LoginCtx(BaseModel):
@@ -10,29 +10,35 @@ class LoginCtx(BaseModel):
     password: str = ""
 
     # for most oauth login
-    token: str = ""
     platform: str = "default"
 
     extra: t.Dict[str, t.Any] = {}
 
 
+class Role(BaseModel):
+    id: int
+    name: str
+
+
+class Group(BaseModel):
+    id: int
+    name: str
+
+
 class LoginResponse(BaseModel):
+    account: str
+    email: str
+    roles: t.List[Role]
+    groups: t.List[Group]
     extra: t.Dict[str, t.Any] | None = None
 
 
-class LoginSucceed(BaseModel):
-    msg: str = ""
-    code: int = 0
-    data: LoginResponse | None = None
+class LoginSucceedResponse(BaseResponse[LoginResponse]):
+    pass
 
 
-class LogoutSucceed(BaseModel):
-    msg: str = ""
-    code: int = 0
-
-
-LOGIN_RESPONSE = [params.ResponseSpec(model=LoginSucceed)]
-LOUOUT_RESPONSE = [params.ResponseSpec(model=LogoutSucceed)]
+class LogoutSucceedResponse(BaseResponse[t.Dict]):
+    pass
 
 
 class RegisterCtx(BaseModel):
@@ -41,3 +47,7 @@ class RegisterCtx(BaseModel):
 
     platform: str = "default"
     extra: t.Dict[str, t.Any] = {}
+
+
+class RegisterSucceedResponse(BaseResponse[t.Dict]):
+    pass

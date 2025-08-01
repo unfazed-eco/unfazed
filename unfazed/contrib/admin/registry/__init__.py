@@ -9,6 +9,7 @@ from .models import (
     ToolAdmin,
     site,
 )
+from .schema import AdminSerializeModel
 from .utils import parse_cond
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "CacheAdmin",
     "ToolAdmin",
     "BaseModelAdmin",
+    "AdminSerializeModel",
 ]

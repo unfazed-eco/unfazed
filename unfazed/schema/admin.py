@@ -1,27 +1,60 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Condition(BaseModel):
-    field: str
-    eq: float | int | str | None = None
-    lt: float | int | None = None
-    lte: float | int | None = None
-    gt: float | int | None = None
-    gte: float | int | None = None
-    contains: str | None = None
-    icontains: str | None = None
+    field: str = Field(description="field name")
+    eq: float | int | str | None = Field(
+        default=None,
+        description="equal to this value",
+        examples=["age__eq=18", "name__eq=admin"],
+    )
+    lt: float | int | None = Field(
+        default=None, description="less than this value", examples=["age__lt=18"]
+    )
+    lte: float | int | None = Field(
+        default=None,
+        description="less than or equal to this value",
+        examples=["age__lte=18"],
+    )
+    gt: float | int | None = Field(
+        default=None, description="greater than this value", examples=["age__gt=18"]
+    )
+    gte: float | int | None = Field(
+        default=None,
+        description="greater than or equal to this value",
+        examples=["age__gte=18"],
+    )
+    contains: str | None = Field(
+        default=None,
+        description="contains this value",
+        examples=["name__contains=admin"],
+    )
+    icontains: str | None = Field(
+        default=None,
+        description="case insensitive contains this value",
+        examples=["name__icontains=admin"],
+    )
 
 
 class RouteMeta(BaseModel):
-    icon: str | None = None
-    hidden: bool = False
-    hidden_children: bool = False
+    icon: str | None = Field(
+        default=None,
+        description="icon for this route from cdn",
+        examples=[
+            "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/svgs/solid/user.svg"
+        ],
+    )
+    hidden: bool = Field(default=False, description="hide this route in frontend admin")
+    hidden_children: bool = Field(
+        default=False, description="hide children routes in frontend admin"
+    )
 
 
 class AdminRoute(BaseModel):
-    title: str
-    component: str | None = None
-    name: str
-    icon: str | None = None
-    children: list["AdminRoute"] = []
-    meta: RouteMeta
+    title: str = Field(description="title of this route")
+    component: str | None = Field(default=None, description="component of this route")
+    name: str = Field(description="name of this route")
+    children: list["AdminRoute"] = Field(
+        default_factory=list, description="children routes of this route"
+    )
+    meta: RouteMeta = Field(description="metadata of this route")

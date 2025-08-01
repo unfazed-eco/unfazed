@@ -1,7 +1,7 @@
 import os
 
 DEPLOY = os.getenv("DEPLOY", "dev")
-PROJECT_NAME = os.getenv("PROJECT_NAME", "{{project_name}}")
+PROJECT_NAME = os.getenv("PROJECT_NAME", "myprj")
 PROJECT_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
@@ -17,7 +17,7 @@ LOG_FILE = os.path.join(LOG_DIR, "unfazed.log")
 
 # SECRET
 # This is a secret key that will be used to sign cookies and other sensitive data.
-DEFAULT_SECRET = "{{secret}}"
+DEFAULT_SECRET = "0067aec02d6249b2bd512229a38a98e23200c7c1e57f46829526faa3c280f10f"
 SECRET = os.getenv("SECRET", DEFAULT_SECRET)
 
 UNFAZED_SETTINGS = {
@@ -25,7 +25,7 @@ UNFAZED_SETTINGS = {
     "DEPLOY": DEPLOY,
     "PROJECT_NAME": PROJECT_NAME,
     "ROOT_URLCONF": "entry.routes",
-    "INSTALLED_APPS": [],
+    "INSTALLED_APPS": ["unfazed.contrib.admin", "unfazed.contrib.auth"],
     # "DATABASE": {
     #     "CONNECTIONS": {
     #         "default": {
@@ -65,10 +65,10 @@ UNFAZED_SETTINGS = {
                 "level": "INFO",
             },
         },
-        #"unfazed": {
+        # "unfazed": {
         #    "handlers": ["default"],
         #    "level": "INFO",
-        #},
+        # },
     },
     "OPENAPI": {
         "servers": [{"url": "http://127.0.0.1:9527", "description": "Local dev"}],

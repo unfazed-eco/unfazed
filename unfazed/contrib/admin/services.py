@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from tortoise import Model as TModel
 
+from unfazed.contrib.admin.registry.schema import AdminSite
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
 from unfazed.schema import AdminRoute, Condition, Result, RouteMeta
@@ -12,6 +13,7 @@ from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
 from .registry import (
+    AdminSerializeModel,
     ModelAdmin,
     ModelInlineAdmin,
     ToolAdmin,
@@ -34,7 +36,7 @@ class InlineStatus:
 
 class AdminModelService:
     @classmethod
-    async def list_route(cls, request: HttpRequest) -> t.List[t.Dict]:
+    async def list_route(cls, request: HttpRequest) -> t.List[AdminRoute]:
         temp = {}
 
         admin_ins: t.Union[ModelAdmin, ModelInlineAdmin, ToolAdmin]
@@ -76,22 +78,24 @@ class AdminModelService:
 
         sub_route: BaseModel
         for _, sub_route in temp.items():
-            routes.append(sub_route.model_dump(exclude_none=True))
+            routes.append(sub_route)
 
         return routes
 
     @classmethod
-    def site_settings(cls) -> t.Dict:
-        return site.to_serialize().model_dump(exclude_none=True)
+    def site_settings(cls) -> AdminSite:
+        return site.to_serialize()
 
     @classmethod
-    async def model_desc(cls, admin_ins_name: str, request: HttpRequest) -> t.Dict:
+    async def model_desc(
+        cls, admin_ins_name: str, request: HttpRequest
+    ) -> AdminSerializeModel:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_view_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        return admin_ins.to_serialize().model_dump(exclude_none=True)
+        return admin_ins.to_serialize()
 
     @classmethod
     async def model_detail(
