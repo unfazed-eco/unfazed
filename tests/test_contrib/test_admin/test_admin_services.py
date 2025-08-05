@@ -591,14 +591,14 @@ async def test_routes() -> None:
 
     # TODO
     # need further test when connect to unfazed-admin
-    models_ret = [i for i in ret if i["name"] == "Models"][0]
-    tools_ret = [i for i in ret if i["name"] == "Tools"][0]
-    caches_ret = [i for i in ret if i["name"] == "Cache"][0]
+    models_ret = [i for i in ret if i.name == "Models"][0]
+    tools_ret = [i for i in ret if i.name == "Tools"][0]
+    caches_ret = [i for i in ret if i.name == "Cache"][0]
 
-    assert "O2OUserAdmin" in [i["name"] for i in models_ret["children"]]
-    assert "ExportToolAdmin" in [i["name"] for i in tools_ret["children"]]
-    assert "WithoutPermissionAdmin" not in [i["name"] for i in tools_ret["children"]]
-    assert "CacheUserAdmin" in [i["name"] for i in caches_ret["children"]]
+    assert "O2OUserAdmin" in [i.name for i in models_ret.children]
+    assert "ExportToolAdmin" in [i.name for i in tools_ret.children]
+    assert "WithoutPermissionAdmin" not in [i.name for i in tools_ret.children]
+    assert "CacheUserAdmin" in [i.name for i in caches_ret.children]
 
 
 def test_settings() -> None:
@@ -608,7 +608,7 @@ def test_settings() -> None:
 
     ret = AdminModelService.site_settings()
 
-    assert "title" in ret
+    assert ret.title == "Unfazed Admin"
 
 
 async def test_model_desc() -> None:
@@ -616,9 +616,9 @@ async def test_model_desc() -> None:
 
     ret = await AdminModelService.model_desc("ArticleAdmin", request)
 
-    assert "fields" in ret
-    assert "actions" in ret
-    assert "attrs" in ret
+    assert ret.fields
+    assert ret.actions
+    assert ret.attrs
 
     # assert "sync_method" in [i["name"] for i in ret["actions"]]
     # assert "async_method" in [i["name"] for i in ret["actions"]]

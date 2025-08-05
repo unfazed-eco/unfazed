@@ -1102,7 +1102,7 @@ wheels = [
 
 [[package]]
 name = "unfazed"
-version = "0.0.13"
+version = "0.0.15b6"
 source = { editable = "." }
 dependencies = [
     { name = "aerich" },

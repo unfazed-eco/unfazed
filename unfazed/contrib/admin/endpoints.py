@@ -1,7 +1,6 @@
 import typing as t
 
 from unfazed.contrib.auth.decorators import login_required
-from unfazed.contrib.common.utils import response_success
 from unfazed.http import HttpRequest, HttpResponse, JsonResponse
 from unfazed.route import params as p
 from unfazed.type import Doc
@@ -33,7 +32,7 @@ async def model_desc(
     request: HttpRequest, name: t.Annotated[str, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DescResp)]:
     ret = await AdminModelService.model_desc(name, request=request)
-    return response_success(data=ret)
+    return JsonResponse(s.DescResp(data=ret))
 
 
 @login_required
@@ -41,7 +40,7 @@ async def model_detail(
     request: HttpRequest, ctx: t.Annotated[s.Detail, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DetailResp)]:
     ret = await AdminModelService.model_detail(ctx.name, ctx.data, request=request)
-    return response_success(data=ret)
+    return JsonResponse(s.DetailResp(data=s.DetailData(inlines=ret)))
 
 
 @login_required
@@ -51,7 +50,7 @@ async def model_data(
     ret = await AdminModelService.model_data(
         ctx.name, ctx.cond, ctx.page, ctx.size, request=request
     )
-    return response_success(data=ret)
+    return JsonResponse(s.DataResp(data=ret))
 
 
 @login_required
@@ -75,7 +74,7 @@ async def model_save(
         ctx.name, ctx.data, ctx.inlines, request=request
     )
 
-    return response_success(data=ret)
+    return JsonResponse(s.SaveResp(data=ret))
 
 
 @login_required
@@ -84,4 +83,4 @@ async def model_delete(
     request: HttpRequest, ctx: t.Annotated[s.Delete, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DeleteResp)]:
     await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
-    return response_success()
+    return JsonResponse(s.DeleteResp(data={}))

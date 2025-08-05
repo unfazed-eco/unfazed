@@ -13,7 +13,9 @@ from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
 from .registry import (
+    AdminInlineSerializeModel,
     AdminSerializeModel,
+    AdminToolSerializeModel,
     ModelAdmin,
     ModelInlineAdmin,
     ToolAdmin,
@@ -89,7 +91,7 @@ class AdminModelService:
     @classmethod
     async def model_desc(
         cls, admin_ins_name: str, request: HttpRequest
-    ) -> AdminSerializeModel:
+    ) -> t.Union[AdminSerializeModel, AdminToolSerializeModel]:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_view_perm(request):
@@ -100,7 +102,7 @@ class AdminModelService:
     @classmethod
     async def model_detail(
         cls, admin_ins_name: str, data: t.Dict[str, t.Any], request: HttpRequest
-    ) -> t.Dict:
+    ) -> t.Dict[str, AdminInlineSerializeModel]:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_view_perm(request):

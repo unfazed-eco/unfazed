@@ -315,7 +315,7 @@ class ModelAdmin(BaseModelAdmin):
     # relations
     inlines: t.List[str] = []
 
-    def to_inlines(self) -> t.Dict:
+    def to_inlines(self) -> t.Dict[str, AdminInlineSerializeModel]:
         inlines = self.inlines
         if not inlines:
             return {}
@@ -323,7 +323,7 @@ class ModelAdmin(BaseModelAdmin):
         ret = {}
         self_serializer: t.Type[Serializer] = self.serializer
         for name in inlines:
-            inline = admin_collector[name]
+            inline: ModelInlineAdmin = admin_collector[name]
 
             inline_serializer: Serializer = inline.serializer
             relation = inline_serializer.find_relation(self_serializer)
@@ -344,7 +344,11 @@ class ModelAdmin(BaseModelAdmin):
                 )
 
             else:
-                ret[inline.name] = relation.model_dump()
+                admin_inline_serialize_model: AdminInlineSerializeModel = (
+                    inline.to_serialize()
+                )
+                admin_inline_serialize_model.relation = relation
+                ret[inline.name] = admin_inline_serialize_model
 
         return ret
 

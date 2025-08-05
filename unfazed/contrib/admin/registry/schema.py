@@ -2,101 +2,204 @@ import typing as t
 
 from pydantic import BaseModel, Field
 
+from unfazed.schema import Relation
+from unfazed.type import Doc
+
+ShowStr = t.Annotated[str, Doc(description="show in frontend admin")]
+ActualStr = t.Annotated[str, Doc(description="actual value")]
+
 
 class AdminField(BaseModel):
-    field_type: str = Field(..., alias="type")
-    readonly: bool = False
-    show: bool = False
-    blank: bool = True
-    choices: t.List[t.Tuple[t.Any, t.Any]] = []
-    help_text: str = ""
-    default: t.Any = None
-    name: str | None = None
+    field_type: t.Literal[
+        "CharField",
+        "IntegerField",
+        "BooleanField",
+        "FloatField",
+        "DateField",
+        "DatetimeField",
+        "TimeField",
+        "TextField",
+    ] = Field(
+        ...,
+        alias="type",
+        description="type of this field, different field types map to different frontend components",
+    )
+    readonly: bool = Field(
+        default=False,
+        description="readonly for this field, frontend admin will not allow user to edit this field",
+    )
+    show: bool = Field(default=True, description="show in frontend admin")
+    blank: bool = Field(
+        default=True,
+        description="frontend admin will not require this field if blank is True",
+    )
+    choices: t.List[t.Tuple[t.Any, t.Any]] = Field(
+        default_factory=list,
+        description="choices for this field, frontend admin will show the show value",
+    )
+    help_text: str = Field(
+        description="help text for this field, frontend admin will show the help text"
+    )
+    default: t.Any = Field(
+        default=None,
+        description="default value for this field, frontend admin will show the show value",
+    )
+    name: str | None = Field(default=None, description="name of this field")
 
 
 class AdminBaseAttrs(BaseModel):
-    help_text: t.List[str] = []
+    help_text: str = Field(
+        default=[],
+        description="help text for this attribute, frontend admin will show the help text",
+    )
 
     # search panel
-    can_search: bool = True
-    search_fields: t.List[str] = []
+    can_search: bool = Field(
+        default=True,
+        description="can search in frontend admin, the search will call the model_data endpoint",
+    )
+    search_fields: t.List[str] = Field(
+        default_factory=list, description="list of fields to search in frontend admin"
+    )
 
     # action related
-    can_add: bool = True
-    can_delete: bool = True
-    can_edit: bool = True
+    can_add: bool = Field(
+        default=True,
+        description="Will show a Add button in frontend admin if can_add is True",
+    )
+    can_delete: bool = Field(
+        default=True,
+        description="Will show a Delete button in frontend admin if can_delete is True",
+    )
+    can_edit: bool = Field(
+        default=True,
+        description="the data can be edited inlines",
+    )
 
     # list related
-    can_show_all: bool = True
-    list_per_page: int = 20
-    list_search: t.List[str] = []
-    list_filter: t.List[str] = []
-    list_sort: t.List[str] = []
-    list_order: t.List[str] = []
+    can_show_all: bool = Field(
+        default=True,
+        description="whether to show all items in frontend admin",
+    )
+    list_per_page: int = Field(
+        default=20, description="number of items to display per page in frontend admin"
+    )
+    list_search: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to search in frontend admin, frontend behavior",
+    )
+    list_filter: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to filter in frontend admin, frontend behavior",
+    )
+    list_sort: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to sort in frontend admin, frontend behavior",
+    )
+    list_order: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to order in frontend admin, frontend behavior",
+    )
 
 
 class AdminAttrs(AdminBaseAttrs):
     # detail related
-    editable: bool = True
-    detail_display: t.List[str] = []
+    editable: bool = Field(
+        default=True,
+        description="whether to edit the data in frontend admin",
+    )
+    detail_display: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to display in frontend admin, frontend behavior",
+    )
 
 
 class AdminInlineAttrs(AdminBaseAttrs):
     # list page control
-    max_num: int = 0
-    min_num: int = 0
-
-    can_copy: bool = False
+    max_num: int = Field(
+        default=0,
+        description="max number of items to edit in frontend admin",
+    )
+    min_num: int = Field(
+        default=0,
+        description="min number of items to edit in frontend admin",
+    )
 
 
 class AdminToolAttrs(BaseModel):
-    help_text: t.List[str] = []
-    output_field: str
+    help_text: str = Field(
+        description="help text for this tool, frontend admin will show the help text",
+    )
+    output_field: str = Field(
+        description="the field to show in frontend admin",
+    )
 
 
 class AdminAction(BaseModel):
-    name: str
-    raw_name: str
-    output: int
-    confirm: bool
-    description: str
-    batch: bool
-    extra: t.Dict[str, t.Any]
+    name: str = Field(description="name of this action")
+    raw_name: str = Field(description="raw name of this action")
+    output: int = Field(description="output of this action")
+    confirm: bool = Field(description="whether to confirm this action")
+    description: str = Field(description="description of this action")
+    batch: bool = Field(description="whether a batch action")
+    extra: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="extra data for this action",
+    )
 
 
 class BaseAdminSerializeModel(BaseModel):
-    fields: t.Dict[str, AdminField]
-    actions: t.Dict[str, AdminAction]
-    # attrs: t.Union[AdminAttrs, AdminInlineAttrs, AdminToolAttrs]
+    fields: t.Dict[str, AdminField] = Field(
+        description="fields of this model, frontend admin will show the fields",
+    )
+    actions: t.Dict[str, AdminAction] = Field(
+        description="actions of this model, frontend admin will show the actions",
+    )
 
 
 class AdminSerializeModel(BaseAdminSerializeModel):
-    attrs: AdminAttrs
+    attrs: AdminAttrs = Field(
+        description="attrs of this model, frontend admin will build the page according to the attrs",
+    )
 
 
 class AdminInlineSerializeModel(BaseAdminSerializeModel):
-    attrs: AdminInlineAttrs
+    attrs: AdminInlineAttrs = Field(
+        description="attrs of this model, frontend admin will build the page according to the attrs",
+    )
+    relation: t.Optional[Relation] = Field(
+        default=None,
+        description="relation of this model, frontend admin will show the relation",
+    )
 
 
 class AdminToolSerializeModel(BaseAdminSerializeModel):
-    attrs: AdminToolAttrs
+    attrs: AdminToolAttrs = Field(
+        description="attrs of this model, frontend admin will build the page according to the attrs",
+    )
 
 
 class AdminSite(BaseModel):
-    title: str
-    navTheme: str
-    colorPrimary: str
-    layout: str
-    contentWidth: str
-    fixedHeader: bool
-    colorWeak: bool
-    logo: str
-    pageSize: int
-    timeZone: str
-    apiPrefix: str
-    debug: bool
-    version: str
-    extra: t.Dict[str, t.Any]
+    title: str = Field(description="title of this admin site")
+    navTheme: str = Field(description="nav theme of this admin site")
+    colorPrimary: str = Field(description="color primary of this admin site")
+    layout: str = Field(description="layout of this admin site")
+    contentWidth: str = Field(description="content width of this admin site")
+    fixedHeader: bool = Field(description="fixed header of this admin site")
+    colorWeak: bool = Field(description="color weak of this admin site")
+    logo: str = Field(description="logo of this admin site")
+    pageSize: int = Field(description="page size of this admin site")
+    timeZone: str = Field(description="time zone of this admin site")
+    apiPrefix: str = Field(description="api prefix of this admin site")
+    debug: bool = Field(description="debug of this admin site")
+    version: str = Field(description="version of this admin site")
+    extra: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="extra data for this admin site",
+    )
     # TODO
     # Need to agree with the frontend on what type this is
-    authPlugins: t.List[t.Dict[str, t.Any]]
+    authPlugins: t.List[t.Dict[str, t.Any]] = Field(
+        default_factory=list,
+        description="auth plugins of this admin site",
+    )

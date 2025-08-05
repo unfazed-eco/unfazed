@@ -3,42 +3,58 @@ from unfazed.route import path
 from . import endpoints as e
 
 patterns = [
-    path("/route-list", endpoint=e.list_route, name="route-list"),
-    path("/settings", endpoint=e.settings, name="settings"),
+    path(
+        "/route-list",
+        endpoint=e.list_route,
+        name="route-list",
+        operation_id="listRoute",
+    ),
+    path(
+        "/settings",
+        endpoint=e.settings,
+        name="settings",
+        operation_id="adminSettings",
+    ),
     path(
         "/model-desc",
         endpoint=e.model_desc,
         name="model-desc",
         methods=["POST"],
+        operation_id="modelDesc",
     ),
     path(
         "/model-detail",
         endpoint=e.model_detail,
         name="model-detail",
         methods=["POST"],
+        operation_id="modelDetail",
     ),
     path(
         "/model-action",
         endpoint=e.model_action,
         name="model-action",
         methods=["POST"],
+        operation_id="modelAction",
     ),
     path(
         "/model-save",
         endpoint=e.model_save,
         name="model-save",
         methods=["POST"],
+        operation_id="modelSave",
     ),
     path(
         "/model-delete",
         endpoint=e.model_delete,
         name="model-delete",
         methods=["POST"],
+        operation_id="modelDelete",
     ),
     path(
         "/model-data",
         endpoint=e.model_data,
         name="model-data",
         methods=["POST"],
+        operation_id="modelData",
     ),
 ]
