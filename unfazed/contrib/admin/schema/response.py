@@ -1,7 +1,5 @@
 import typing as t
 
-from pydantic import BaseModel, Field
-
 from unfazed.contrib.admin.registry.schema import (
     AdminInlineSerializeModel,
     AdminSerializeModel,
@@ -28,13 +26,7 @@ class DescResp(BaseResponse[t.Union[AdminSerializeModel, AdminToolSerializeModel
     pass
 
 
-class DetailData(BaseModel):
-    inlines: t.Dict[str, AdminInlineSerializeModel] = Field(
-        description="inlines for this model"
-    )
-
-
-class DetailResp(BaseResponse[DetailData]):
+class InlinesResp(BaseResponse[t.Dict[str, AdminInlineSerializeModel]]):
     pass
 
 

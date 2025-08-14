@@ -3,7 +3,7 @@ from .response import (
     DataResp,
     DeleteResp,
     DescResp,
-    DetailResp,
+    InlinesResp,
     RouteResp,
     SaveResp,
     SiteSettingsResp,
@@ -11,7 +11,7 @@ from .response import (
 
 __all__ = [
     "DescResp",
-    "DetailResp",
+    "InlinesResp",
     "Detail",
     "Data",
     "DataResp",

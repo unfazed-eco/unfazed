@@ -36,7 +36,14 @@ class Condition(BaseModel):
     )
 
 
-class RouteMeta(BaseModel):
+class AdminRoute(BaseModel):
+    name: str = Field(description="name of this route")
+    label: str = Field(description="label of this route")
+    path: str = Field(description="path of this route")
+    component: str | None = Field(default=None, description="component of this route")
+    routes: list["AdminRoute"] = Field(
+        default_factory=list, description="children routes of this route"
+    )
     icon: str | None = Field(
         default=None,
         description="icon for this route from cdn",
@@ -44,17 +51,9 @@ class RouteMeta(BaseModel):
             "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/svgs/solid/user.svg"
         ],
     )
-    hidden: bool = Field(default=False, description="hide this route in frontend admin")
-    hidden_children: bool = Field(
+    hideInMenu: bool = Field(
+        default=False, description="hide this route in frontend admin"
+    )
+    hideChildrenInMenu: bool = Field(
         default=False, description="hide children routes in frontend admin"
     )
-
-
-class AdminRoute(BaseModel):
-    title: str = Field(description="title of this route")
-    component: str | None = Field(default=None, description="component of this route")
-    name: str = Field(description="name of this route")
-    children: list["AdminRoute"] = Field(
-        default_factory=list, description="children routes of this route"
-    )
-    meta: RouteMeta = Field(description="metadata of this route")

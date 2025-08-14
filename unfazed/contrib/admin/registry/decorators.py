@@ -5,18 +5,10 @@ from functools import wraps
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
-from .schema import AdminAction
+from .schema import ActionInput, ActionOutput, AdminAction
 
 if t.TYPE_CHECKING:
     from .models import BaseAdmin  # pragma: no cover
-
-
-class ActionOutput:
-    Download = 1
-    Refresh = 2
-    Toast = 3
-    Jump = 4
-    Table = 5
 
 
 def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
@@ -34,14 +26,47 @@ def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
 
 def action(
     name: str | None = None,
-    output: int = ActionOutput.Toast,
+    label: str | None = None,
+    output: ActionOutput = ActionOutput.Toast,
+    input: ActionInput = ActionInput.Empty,
     confirm: bool = False,
     description: str = "",
     batch: bool = False,
     *,
     extra: t.Dict[str, t.Any] = {},
 ) -> t.Callable:
+    """
+    Register an action for the admin.
+
+    Args:
+        name: The name of the action.
+        input: The input type of the action.
+        output: The output type of the action.
+        confirm: Whether to confirm the action.
+        description: The description of the action.
+        batch: Whether the action is a batch action.
+
+
+
+    """
+
     def wrapper(method: t.Callable) -> t.Callable:
+        # inspect the method
+        # assert the method has the following parameters:
+        # - cond_dict: t.Dict[str, t.Any]
+        # - extra: t.Dict[str, t.Any]
+        # - request: HttpRequest
+        sig = inspect.signature(method)
+        params = list(sig.parameters.keys())
+        if params and params[0] == "self":
+            params = params[1:]
+        required_params = ["cond_dict", "extra", "request", "kwargs", "args"]
+        for param in params:
+            if param not in required_params:
+                raise ValueError(
+                    f"Action method '{method.__name__}' parameter '{param}' is not allowed"
+                )
+
         @wraps(method)
         async def asyncinner(*args: t.Any, **kwargs: t.Any) -> t.Any:
             return await method(*args, **kwargs)
@@ -52,7 +77,7 @@ def action(
 
         attrs = AdminAction(
             name=name or method.__name__,
-            raw_name=method.__name__,
+            label=label or method.__name__,
             output=output,
             confirm=confirm,
             description=description,

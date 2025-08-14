@@ -23,11 +23,11 @@ patterns = [
         operation_id="modelDesc",
     ),
     path(
-        "/model-detail",
-        endpoint=e.model_detail,
-        name="model-detail",
+        "/model-inlines",
+        endpoint=e.model_inlines,
+        name="model-inlines",
         methods=["POST"],
-        operation_id="modelDetail",
+        operation_id="modelInlines",
     ),
     path(
         "/model-action",

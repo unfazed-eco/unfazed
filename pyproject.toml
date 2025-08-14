@@ -1,6 +1,6 @@
 [project]
 name = "unfazed"
-version = "0.0.15b9"
+version = "0.0.15b6"
 description = "Production ready async python web framework"
 readme = "README.md"
 requires-python = ">=3.12"

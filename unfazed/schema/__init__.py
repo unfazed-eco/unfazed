@@ -1,4 +1,4 @@
-from .admin import AdminRoute, Condition, RouteMeta
+from .admin import AdminRoute, Condition
 from .cache import Cache, LocOptions, RedisOptions
 from .command import Command
 from .logging import LogConfig
@@ -20,7 +20,6 @@ __all__ = [
     "Condition",
     "Relation",
     "AdminRoute",
-    "RouteMeta",
     "Cors",
     "TrustedHost",
     "GZip",

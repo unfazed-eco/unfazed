@@ -122,11 +122,15 @@ def setup_collector() -> t.Generator:
     @register(ArticleSerializer)
     class ArticleAdmin(ModelAdmin):
         @action(name="sync_method")
-        def sync_method(self, data: t.Dict, request: HttpRequest) -> str:
+        def sync_method(
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest
+        ) -> str:
             return "sync hello"
 
         @action(name="async_method")
-        async def async_method(self, data: t.Dict, request: HttpRequest) -> str:
+        async def async_method(
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest
+        ) -> str:
             return "async hello"
 
     # ========= cache ==========

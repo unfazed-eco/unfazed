@@ -860,7 +860,7 @@ wheels = [
 
 [[package]]
 name = "unfazed"
-version = "0.0.15b9"
+version = "0.0.15b6"
 source = { directory = "../../../../" }
 dependencies = [
     { name = "aerich" },

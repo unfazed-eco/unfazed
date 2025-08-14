@@ -36,11 +36,11 @@ async def model_desc(
 
 
 @login_required
-async def model_detail(
+async def model_inlines(
     request: HttpRequest, ctx: t.Annotated[s.Detail, p.Json()]
-) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DetailResp)]:
-    ret = await AdminModelService.model_detail(ctx.name, ctx.data, request=request)
-    return JsonResponse(s.DetailResp(data=s.DetailData(inlines=ret)))
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.InlinesResp)]:
+    ret = await AdminModelService.model_inlines(ctx.name, ctx.data, request=request)
+    return JsonResponse(s.InlinesResp(data=ret))
 
 
 @login_required
@@ -60,7 +60,9 @@ async def model_action(
 ) -> t.Annotated[
     HttpResponse, Doc(description="depends on the action implemetion, text/json/stream")
 ]:
-    ret = await AdminModelService.model_action(ctx.name, ctx.action, ctx.data, request)
+    ret = await AdminModelService.model_action(
+        ctx.name, ctx.action, ctx.cond, ctx.extra, request
+    )
 
     return generic_response(ret)
 
@@ -82,5 +84,7 @@ async def model_save(
 async def model_delete(
     request: HttpRequest, ctx: t.Annotated[s.Delete, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DeleteResp)]:
-    await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
+    await AdminModelService.model_delete(
+        ctx.name, ctx.data, ctx.strategy, request=request
+    )
     return JsonResponse(s.DeleteResp(data={}))

@@ -1,4 +1,5 @@
 import typing as t
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
@@ -9,16 +10,30 @@ ShowStr = t.Annotated[str, Doc(description="show in frontend admin")]
 ActualStr = t.Annotated[str, Doc(description="actual value")]
 
 
+class ActionOutput(StrEnum):
+    Download = "download"
+    Refresh = "refresh"
+    Toast = "toast"
+    Display = "display"
+
+
+class ActionInput(StrEnum):
+    Empty = "empty"
+    String = "string"
+    File = "file"
+
+
 class AdminField(BaseModel):
     field_type: t.Literal[
         "CharField",
         "IntegerField",
         "BooleanField",
         "FloatField",
-        "DateField",
         "DatetimeField",
         "TimeField",
         "TextField",
+        "EditorField",
+        "ImageField",
     ] = Field(
         ...,
         alias="type",
@@ -137,14 +152,19 @@ class AdminToolAttrs(BaseModel):
 
 class AdminAction(BaseModel):
     name: str = Field(description="name of this action")
-    raw_name: str = Field(description="raw name of this action")
-    output: int = Field(description="output of this action")
-    confirm: bool = Field(description="whether to confirm this action")
+    label: str = Field(description="label of this action, displayed in frontend admin")
+    output: ActionOutput = Field(
+        default=ActionOutput.Toast, description="output of this action"
+    )
+    input: ActionInput = Field(
+        default=ActionInput.Empty, description="input of this action"
+    )
+    confirm: bool = Field(default=False, description="whether to confirm this action")
     description: str = Field(description="description of this action")
     batch: bool = Field(description="whether a batch action")
     extra: t.Dict[str, t.Any] = Field(
         default_factory=dict,
-        description="extra data for this action",
+        description="extra data for this action, extention for future use",
     )
 
 
@@ -186,6 +206,9 @@ class AdminSite(BaseModel):
     layout: str = Field(description="layout of this admin site")
     contentWidth: str = Field(description="content width of this admin site")
     fixedHeader: bool = Field(description="fixed header of this admin site")
+    fixSiderbar: bool = Field(description="fix siderbar of this admin site")
+    pwa: bool = Field(description="pwa of this admin site")
+    iconfontUrl: str = Field(description="iconfont url of this admin site")
     colorWeak: bool = Field(description="color weak of this admin site")
     logo: str = Field(description="logo of this admin site")
     pageSize: int = Field(description="page size of this admin site")

@@ -44,13 +44,22 @@ class Data(BaseModel):
 class Action(BaseModel):
     name: str = Field(description="name of the model")
     action: str = Field(description="action of the action")
-    data: t.Dict[str, t.Any] = Field(
-        description="one line data of the model",
+    extra: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="extra data for the action",
+    )
+    cond: t.List[Condition] = Field(
+        default_factory=list,
+        description="conditions to filter the data",
         examples=[
             {
-                "id": 1,
-                "name": "admin",
-            }
+                "field": "name",
+                "eq": "admin",
+            },
+            {
+                "field": "age",
+                "gt": 18,
+            },
         ],
     )
 
@@ -72,21 +81,6 @@ class Save(BaseModel):
             ],
         ),
     ]
-    inlines: t.Annotated[
-        t.Dict[str, t.List[ModelLineDataT]],
-        Doc(
-            description="relation model to `data`, use unfazed.contrib.auth.models.Group as example",
-            examples=[
-                {
-                    "groups": [
-                        {"name": "group1", "id": 1},
-                        {"name": "group2", "id": 2},
-                    ],
-                    "roles": [{"name": "role1", "id": 1}, {"name": "role2", "id": 2}],
-                }
-            ],
-        ),
-    ]
 
 
 class Delete(BaseModel):
@@ -98,5 +92,14 @@ class Delete(BaseModel):
                 "id": 1,
                 "name": "admin",
             }
+        ],
+    )
+
+    strategy: t.Literal["set_null", "delete", "do_nothing"] = Field(
+        description="strategy to delete the related data",
+        examples=[
+            "set_null",
+            "delete",
+            "do_nothing",
         ],
     )

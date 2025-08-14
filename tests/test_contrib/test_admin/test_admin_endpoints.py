@@ -36,25 +36,25 @@ async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     class AuthorAdmin(ModelAdmin):
         @action(name="test_action1", confirm=True)
         async def test_action1(
-            self, data: t.Dict, request: HttpRequest | None = None
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
         ) -> str:
             return "test_action"
 
         @action(name="test_action2")
         async def test_action2(
-            self, data: t.Dict, request: HttpRequest | None = None
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
         ) -> t.Dict:
             return {"foo": "bar"}
 
         @action(name="test_action3")
         async def test_action3(
-            self, data: t.Dict, request: HttpRequest | None = None
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
         ) -> t.List:
             return [{"foo": "bar"}]
 
         @action(name="test_action4")
         async def test_action4(
-            self, data: t.Dict, request: HttpRequest | None = None
+            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
         ) -> HttpResponse:
             return HttpResponse("hello, unfazed")
 

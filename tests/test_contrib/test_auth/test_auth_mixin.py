@@ -26,11 +26,11 @@ async def setup_auth_mixin_env() -> t.AsyncGenerator:
     @register(PhoneSerializer)
     class PhoneAdmin(BaseModelAdmin, AuthMixin):
         @action(name="action1")
-        def action1(self) -> None:
+        def action1(self, **kwargs: t.Any) -> None:
             pass
 
         @action(name="action2")
-        def action2(self) -> None:
+        def action2(self, **kwargs: t.Any) -> None:
             pass
 
     yield

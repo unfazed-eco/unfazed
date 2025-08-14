@@ -1,3 +1,5 @@
+import typing as t
+
 from tortoise import Model, fields
 
 from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
@@ -21,11 +23,15 @@ async def test_decorator() -> None:
     @register(StudenSerializer)
     class StudentAdmin(ModelAdmin):
         @action(name="test_action", confirm=True)
-        def test_action(self, request: HttpRequest | None = None) -> str:
+        def test_action(
+            self, request: HttpRequest | None = None, **kwargs: t.Any
+        ) -> str:
             return "test_action"
 
         @action(name="test_action2", confirm=True)
-        async def test_action2(self, request: HttpRequest | None = None) -> str:
+        async def test_action2(
+            self, request: HttpRequest | None = None, **kwargs: t.Any
+        ) -> str:
             return "test_action2"
 
     assert "StudentAdmin" in admin_collector

@@ -8,7 +8,7 @@ from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
-from unfazed.schema import AdminRoute, RouteMeta
+from unfazed.schema import AdminRoute
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
@@ -42,8 +42,8 @@ class BaseAdmin:
     # route config
     component: str = ""
     icon: str = ""
-    hidden: bool = False
-    hidden_children: bool = False
+    hideInMenu: bool = False
+    hideChildrenInMenu: bool = False
 
     # register behavior
     override: bool = False
@@ -55,6 +55,14 @@ class BaseAdmin:
     @property
     def title(self) -> str:
         return self.__class__.__name__
+
+    @property
+    def path(self) -> str:
+        return f"/{self.name}"
+
+    @property
+    def label(self) -> str:
+        return self.name.capitalize()
 
     async def has_view_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
@@ -106,15 +114,14 @@ class BaseAdmin:
 
     def to_route(self) -> AdminRoute | None:
         return AdminRoute(
-            title=self.title,
             component=self.component,
+            path=self.path,
             name=self.name,
-            children=[],
-            meta=RouteMeta(
-                icon=self.icon,
-                hidden=self.hidden,
-                hidden_children=self.hidden_children,
-            ),
+            label=self.label,
+            routes=[],
+            icon=self.icon,
+            hideInMenu=self.hidden,
+            hideChildrenInMenu=self.hidden_children,
         )
 
 
@@ -133,6 +140,7 @@ class SiteSettings(BaseAdmin):
     iconfontUrl: str = ""
     pageSize: int = 20
     timeZone: str = "UTC"
+    pwa: bool = True
 
     # antd will call backend api use this prefix
     # for example, if apiPrefix is /api/contrib/admin
@@ -161,7 +169,9 @@ class SiteSettings(BaseAdmin):
                 "layout": self.layout,
                 "contentWidth": self.contentWidth,
                 "fixedHeader": self.fixedHeader,
+                "fixSiderbar": self.fixSiderbar,
                 "colorWeak": self.colorWeak,
+                "pwa": self.pwa,
                 "logo": self.logo,
                 "pageSize": self.pageSize,
                 "timeZone": self.timeZone,
@@ -170,6 +180,7 @@ class SiteSettings(BaseAdmin):
                 "version": unfazed_settings.VERSION or "0.0.1",
                 "authPlugins": self.authPlugins,
                 "extra": self.extra,
+                "iconfontUrl": self.iconfontUrl,
             }
         )
 
@@ -309,7 +320,7 @@ class ModelAdmin(BaseModelAdmin):
     # behaviors on detail page
     detail_display: t.List[str] = []
 
-    # have edit btn to detail page
+    # can access detail page
     editable: bool = True
 
     # relations
@@ -404,9 +415,6 @@ class ModelInlineAdmin(ModelAdmin):
     max_num: int = 0
     min_num: int = 0
 
-    # item control
-    can_copy: bool = False
-
     def to_route(self) -> None:
         return None
 
@@ -430,7 +438,6 @@ class ModelInlineAdmin(ModelAdmin):
                 "help_text": self.help_text,
                 "max_num": self.max_num,
                 "min_num": self.min_num,
-                "can_copy": self.can_copy,
                 "can_show_all": self.can_show_all,
                 "can_search": self.can_search,
                 "search_fields": self.search_fields or list_display,
@@ -491,19 +498,34 @@ class CacheAdmin(BaseAdmin):
     cache_client: t.Union["LocMemCache", "SerializerBackend"]
 
     @action(name="search")
-    async def search(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
+    async def search(
+        self,
+        cond_dict: t.Dict[str, t.Any],
+        extra: t.Dict[str, t.Any],
+        request: HttpRequest | None = None,
+    ) -> t.Any:
+        key = extra.get("key", None)
         return await self.cache_client.get(key)
 
     @action(name="set")
-    async def set(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
-        value = data.get("value", None)
+    async def set(
+        self,
+        cond_dict: t.Dict[str, t.Any],
+        extra: t.Dict[str, t.Any],
+        request: HttpRequest | None = None,
+    ) -> t.Any:
+        key = extra.get("key", None)
+        value = extra.get("value", None)
 
         return await self.cache_client.set(key, value)
 
     @action(name="delete")
-    async def delete(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
+    async def delete(
+        self,
+        cond_dict: t.Dict[str, t.Any],
+        extra: t.Dict[str, t.Any],
+        request: HttpRequest | None = None,
+    ) -> t.Any:
+        key = extra.get("key", None)
 
         return await self.cache_client.delete(key)
