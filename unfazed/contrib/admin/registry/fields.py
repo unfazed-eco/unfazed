@@ -61,7 +61,7 @@ class UploadField(Field):
     pass
 
 
-class BoolField(Field):
+class BooleanField(Field):
     pass
 
 
@@ -73,5 +73,5 @@ class JsonField(Field):
     pass
 
 
-class DateTimeField(Field):
+class DatetimeField(Field):
     pass

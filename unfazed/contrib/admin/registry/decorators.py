@@ -5,7 +5,7 @@ from functools import wraps
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
-from .schema import ActionInput, ActionOutput, AdminAction
+from .schema import ActionInput, ActionKwargs, ActionOutput, AdminAction
 
 if t.TYPE_CHECKING:
     from .models import BaseAdmin  # pragma: no cover
@@ -46,39 +46,30 @@ def action(
         description: The description of the action.
         batch: Whether the action is a batch action.
 
-
-
     """
 
     def wrapper(method: t.Callable) -> t.Callable:
-        # inspect the method
-        # assert the method has the following parameters:
-        # - cond_dict: t.Dict[str, t.Any]
-        # - extra: t.Dict[str, t.Any]
-        # - request: HttpRequest
         sig = inspect.signature(method)
         params = list(sig.parameters.keys())
-        if params and params[0] == "self":
-            params = params[1:]
-        required_params = ["cond_dict", "extra", "request", "kwargs", "args"]
-        for param in params:
-            if param not in required_params:
-                raise ValueError(
-                    f"Action method '{method.__name__}' parameter '{param}' is not allowed"
-                )
+
+        if len(params) != 2:
+            raise ValueError(
+                f"Action method '{method.__name__}' must have exactly 2 parameters, self and ctx: ActionKwargs"
+            )
 
         @wraps(method)
-        async def asyncinner(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            return await method(*args, **kwargs)
+        async def asyncinner(ctx: ActionKwargs) -> t.Any:
+            return await method(ctx)
 
         @wraps(method)
-        def inner(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            return method(*args, **kwargs)
+        def inner(ctx: ActionKwargs) -> t.Any:
+            return method(ctx)
 
         attrs = AdminAction(
             name=name or method.__name__,
             label=label or method.__name__,
             output=output,
+            input=input,
             confirm=confirm,
             description=description,
             batch=batch,

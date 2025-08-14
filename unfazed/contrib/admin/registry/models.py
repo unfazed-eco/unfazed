@@ -12,8 +12,6 @@ from unfazed.schema import AdminRoute
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
-from .decorators import action
-from .fields import CharField, TextField
 from .fields import Field as CustomField
 from .schema import (
     AdminAction,
@@ -29,14 +27,11 @@ from .schema import (
 from .utils import convert_field_type
 
 if t.TYPE_CHECKING:
-    from unfazed.cache.backends.locmem import LocMemCache  # pragma: no cover
-    from unfazed.cache.backends.redis.serializedclient import (
-        SerializerBackend,  # pragma: no cover
-    )
+    pass
 
 
 class BaseAdmin:
-    help_text: t.List[str] = []
+    help_text: str = ""
     route_label: str | None = None
 
     # route config
@@ -141,6 +136,7 @@ class SiteSettings(BaseAdmin):
     pageSize: int = 20
     timeZone: str = "UTC"
     pwa: bool = True
+    showWatermark: bool = True
 
     # antd will call backend api use this prefix
     # for example, if apiPrefix is /api/contrib/admin
@@ -181,6 +177,7 @@ class SiteSettings(BaseAdmin):
                 "authPlugins": self.authPlugins,
                 "extra": self.extra,
                 "iconfontUrl": self.iconfontUrl,
+                "showWatermark": self.showWatermark,
             }
         )
 
@@ -467,7 +464,6 @@ class ModelInlineAdmin(ModelAdmin):
 class ToolAdmin(BaseAdmin):
     fields_set: t.List[CustomField] = []
     route_label: str = "Tools"
-    output_field: str
 
     @t.override
     def to_serialize(self) -> AdminToolSerializeModel:
@@ -475,7 +471,7 @@ class ToolAdmin(BaseAdmin):
         for field in self.fields_set:
             fields_map[field.name] = field.to_json()
 
-        attrs = AdminToolAttrs(output_field=self.output_field, help_text=self.help_text)
+        attrs = AdminToolAttrs(help_text=self.help_text)
 
         actions = self.get_actions()
 
@@ -484,48 +480,3 @@ class ToolAdmin(BaseAdmin):
             actions=actions,
             attrs=attrs,
         )
-
-
-class CacheAdmin(BaseAdmin):
-    route_label: str = "Cache"
-    fields_set: t.List[CustomField] = [
-        CharField(name="key", help_text="cache key"),
-        TextField(name="value", help_text="cache value"),
-    ]
-
-    output_field: str = "value"
-
-    cache_client: t.Union["LocMemCache", "SerializerBackend"]
-
-    @action(name="search")
-    async def search(
-        self,
-        cond_dict: t.Dict[str, t.Any],
-        extra: t.Dict[str, t.Any],
-        request: HttpRequest | None = None,
-    ) -> t.Any:
-        key = extra.get("key", None)
-        return await self.cache_client.get(key)
-
-    @action(name="set")
-    async def set(
-        self,
-        cond_dict: t.Dict[str, t.Any],
-        extra: t.Dict[str, t.Any],
-        request: HttpRequest | None = None,
-    ) -> t.Any:
-        key = extra.get("key", None)
-        value = extra.get("value", None)
-
-        return await self.cache_client.set(key, value)
-
-    @action(name="delete")
-    async def delete(
-        self,
-        cond_dict: t.Dict[str, t.Any],
-        extra: t.Dict[str, t.Any],
-        request: HttpRequest | None = None,
-    ) -> t.Any:
-        key = extra.get("key", None)
-
-        return await self.cache_client.delete(key)

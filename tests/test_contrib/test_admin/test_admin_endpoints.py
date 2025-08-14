@@ -4,7 +4,13 @@ from unittest.mock import patch
 import pytest_asyncio
 
 from tests.apps.admin.article.models import Author
-from unfazed.contrib.admin.registry import ModelAdmin, action, admin_collector, register
+from unfazed.contrib.admin.registry import (
+    ActionKwargs,
+    ModelAdmin,
+    action,
+    admin_collector,
+    register,
+)
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse
 from unfazed.serializer import Serializer
@@ -35,27 +41,19 @@ async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     @register(AuthorSerializer)
     class AuthorAdmin(ModelAdmin):
         @action(name="test_action1", confirm=True)
-        async def test_action1(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
-        ) -> str:
+        async def test_action1(self, ctx: ActionKwargs) -> str:
             return "test_action"
 
         @action(name="test_action2")
-        async def test_action2(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
-        ) -> t.Dict:
+        async def test_action2(self, ctx: ActionKwargs) -> t.Dict:
             return {"foo": "bar"}
 
         @action(name="test_action3")
-        async def test_action3(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
-        ) -> t.List:
+        async def test_action3(self, ctx: ActionKwargs) -> t.List:
             return [{"foo": "bar"}]
 
         @action(name="test_action4")
-        async def test_action4(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest | None = None
-        ) -> HttpResponse:
+        async def test_action4(self, ctx: ActionKwargs) -> HttpResponse:
             return HttpResponse("hello, unfazed")
 
     yield

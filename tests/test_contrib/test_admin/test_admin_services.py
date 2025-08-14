@@ -5,10 +5,9 @@ import pytest_asyncio
 
 from tests.apps.admin.account.models import Book, Group, Profile, User
 from tests.apps.admin.article.models import Article
-from unfazed.cache.backends.locmem import LocMemCache
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.registry import (
-    CacheAdmin,
+    ActionKwargs,
     ModelAdmin,
     ModelInlineAdmin,
     ToolAdmin,
@@ -122,22 +121,12 @@ def setup_collector() -> t.Generator:
     @register(ArticleSerializer)
     class ArticleAdmin(ModelAdmin):
         @action(name="sync_method")
-        def sync_method(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest
-        ) -> str:
+        def sync_method(self, ctx: ActionKwargs) -> str:
             return "sync hello"
 
         @action(name="async_method")
-        async def async_method(
-            self, cond_dict: t.Dict, extra: t.Dict, request: HttpRequest
-        ) -> str:
+        async def async_method(self, ctx: ActionKwargs) -> str:
             return "async hello"
-
-    # ========= cache ==========
-
-    @register()
-    class CacheUserAdmin(CacheAdmin):
-        cache_client = LocMemCache("test_admin")
 
     # ========= tool ==========
 

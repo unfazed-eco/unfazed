@@ -1,8 +1,9 @@
 import typing as t
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from unfazed.http import HttpRequest
 from unfazed.schema import Relation
 from unfazed.type import Doc
 
@@ -29,11 +30,14 @@ class AdminField(BaseModel):
         "IntegerField",
         "BooleanField",
         "FloatField",
+        "DateField",
         "DatetimeField",
         "TimeField",
         "TextField",
         "EditorField",
         "ImageField",
+        "UploadField",
+        "JsonField",
     ] = Field(
         ...,
         alias="type",
@@ -64,7 +68,7 @@ class AdminField(BaseModel):
 
 class AdminBaseAttrs(BaseModel):
     help_text: str = Field(
-        default=[],
+        default="",
         description="help text for this attribute, frontend admin will show the help text",
     )
 
@@ -143,10 +147,8 @@ class AdminInlineAttrs(AdminBaseAttrs):
 
 class AdminToolAttrs(BaseModel):
     help_text: str = Field(
+        default="",
         description="help text for this tool, frontend admin will show the help text",
-    )
-    output_field: str = Field(
-        description="the field to show in frontend admin",
     )
 
 
@@ -216,6 +218,7 @@ class AdminSite(BaseModel):
     apiPrefix: str = Field(description="api prefix of this admin site")
     debug: bool = Field(description="debug of this admin site")
     version: str = Field(description="version of this admin site")
+    showWatermark: bool = Field(description="show watermark of this admin site")
     extra: t.Dict[str, t.Any] = Field(
         default_factory=dict,
         description="extra data for this admin site",
@@ -226,3 +229,26 @@ class AdminSite(BaseModel):
         default_factory=list,
         description="auth plugins of this admin site",
     )
+
+
+class ActionKwargs(BaseModel):
+    search_condition: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="search condition of this action",
+    )
+    form_data: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="form data of this action",
+    )
+
+    input_data: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="input data of this action",
+    )
+
+    request: HttpRequest | None = Field(
+        default=None,
+        description="request of this action",
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

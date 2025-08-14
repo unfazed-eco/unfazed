@@ -4,6 +4,7 @@ import pytest
 
 from tests.apps.auth.common.models import Phone, User
 from unfazed.contrib.admin.registry import (
+    ActionKwargs,
     BaseModelAdmin,
     action,
     admin_collector,
@@ -26,11 +27,11 @@ async def setup_auth_mixin_env() -> t.AsyncGenerator:
     @register(PhoneSerializer)
     class PhoneAdmin(BaseModelAdmin, AuthMixin):
         @action(name="action1")
-        def action1(self, **kwargs: t.Any) -> None:
+        def action1(self, ctx: ActionKwargs) -> None:
             pass
 
         @action(name="action2")
-        def action2(self, **kwargs: t.Any) -> None:
+        def action2(self, ctx: ActionKwargs) -> None:
             pass
 
     yield

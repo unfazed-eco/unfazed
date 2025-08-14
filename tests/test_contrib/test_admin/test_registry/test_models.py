@@ -6,14 +6,15 @@ from tortoise import fields as f
 from tortoise.models import Model
 
 from tests.apps.admin.account.models import Book, Profile, User
-from unfazed.cache.backends.locmem import LocMemCache
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.registry import (
+    ActionKwargs,
+    ActionOutput,
     BaseModelAdmin,
-    CacheAdmin,
     ModelAdmin,
     ModelInlineAdmin,
     ToolAdmin,
+    action,
     admin_collector,
     fields,
     register,
@@ -244,7 +245,7 @@ def test_model_admin() -> None:
         serializer = CarSerializer
 
         editable = False
-        help_text = ["help_text"]
+        help_text = "help_text"
         can_show_all = False
         can_search = False
         search_fields = ["alias"]
@@ -277,7 +278,7 @@ def test_model_admin() -> None:
     assert attrs.list_sort == ["id"]
     assert attrs.list_order == ["price", "length"]
 
-    assert attrs.help_text == ["help_text"]
+    assert attrs.help_text == "help_text"
 
     class CarAdmin2(ModelAdmin):
         serializer = CarSerializer
@@ -383,7 +384,7 @@ def test_inline_admin() -> None:
     class BookAdmin(ModelInlineAdmin):
         serializer = BookSerializer
 
-        help_text = ["help_text"]
+        help_text = "help_text"
         can_search = False
         search_fields = ["title"]
         can_add = False
@@ -420,7 +421,7 @@ def test_inline_admin() -> None:
     assert attrs.list_filter == ["author"]
     assert attrs.list_sort == ["id"]
     assert attrs.list_order == ["title", "author"]
-    assert attrs.help_text == ["help_text"]
+    assert attrs.help_text == "help_text"
 
     class BookAdmin1(ModelInlineAdmin):
         serializer = BookSerializer
@@ -445,13 +446,15 @@ def test_tool_admin() -> None:
             fields.TimeField("late_used_time"),
             fields.UploadField("upload"),
             fields.EditorField("editor"),
-            fields.BoolField("is_active"),
+            fields.BooleanField("is_active"),
             fields.ImageField("image"),
             fields.JsonField("extra_info"),
-            fields.DateTimeField("created_at"),
+            fields.DatetimeField("created_at"),
         ]
 
-        output_field = "editor"
+        @action(name="export", label="Export", output=ActionOutput.Download)
+        async def export(self, ctx: ActionKwargs) -> str:
+            return "export"
 
     instance = ExportTool()
 
@@ -459,17 +462,3 @@ def test_tool_admin() -> None:
 
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
-
-    assert ret.attrs.output_field == "editor"
-
-
-async def test_cache_admin() -> None:
-    class CacheTool(CacheAdmin):
-        cache_client = LocMemCache("test_models")
-
-    cache = CacheTool()
-
-    await cache.set({"key": "foo", "value": "bar"})
-    assert await cache.search({"key": "foo", "value": "bar"}) == "bar"
-    await cache.delete({"key": "foo", "value": "bar"})
-    assert await cache.search({"key": "foo", "value": "bar"}) is None
