@@ -16,6 +16,7 @@ from unfazed.contrib.admin.registry import (
     fields,
     register,
 )
+from unfazed.contrib.admin.schema import Action
 from unfazed.contrib.admin.services import AdminModelService
 from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
@@ -186,22 +187,23 @@ class _SuperRequest:
     user = _SuperUser()
 
 
-def build_request() -> _SuperRequest:
-    return _SuperRequest()
+def build_request() -> HttpRequest:
+    request = HttpRequest(scope={"type": "http", "method": "GET", "user": _SuperUser()})
+    return request
 
 
 async def test_without_relation() -> None:
     # create article
     article = {"title": "test", "content": "test", "author": "test", "id": -1}
     request = t.cast(HttpRequest, build_request())
-    ret = await AdminModelService.model_save("ArticleAdmin", article, {}, request)
+    ret = await AdminModelService.model_save("ArticleAdmin", article, request)
 
     assert ret.title == "test"
 
     # update article
     article = {"title": "test2", "content": "test2", "author": "test2", "id": ret.id}
 
-    ret = await AdminModelService.model_save("ArticleAdmin", article, {}, request)
+    ret = await AdminModelService.model_save("ArticleAdmin", article, request)
     assert ret.title == "test2"
 
     # delete article
@@ -222,14 +224,28 @@ async def test_without_relation() -> None:
 
     # sync action
     ret = await AdminModelService.model_action(
-        "ArticleAdmin", "sync_method", {}, request
+        Action(
+            name="ArticleAdmin",
+            action="sync_method",
+            search_condition=[],
+            form_data={},
+            input_data={},
+        ),
+        request,
     )
 
     assert ret == "sync hello"
 
     # async action
     ret = await AdminModelService.model_action(
-        "ArticleAdmin", "async_method", {}, request
+        Action(
+            name="ArticleAdmin",
+            action="async_method",
+            search_condition=[],
+            form_data={},
+            input_data={},
+        ),
+        request,
     )
     assert ret == "async hello"
 
@@ -258,273 +274,6 @@ async def test_model_data_with_relation(setup_user: t.Generator) -> None:
     assert "groups" not in u1_dict
 
 
-async def test_m2m(setup_user: t.Generator) -> None:
-    # create
-    user = {"name": "test", "age": 10, "id": -1}
-    group_list = [
-        {"name": "test", "id": -1, "__status": "create"},
-        {"name": "test2", "id": -1, "__status": "create"},
-    ]
-
-    request = t.cast(HttpRequest, build_request())
-
-    ret = await AdminModelService.model_save(
-        "M2MUserAdmin", user, {"InlineM2MGroupAdmin": group_list}, request
-    )
-
-    assert ret.name == "test"
-    assert await Group.all().count() == 2
-
-    # update
-    user = {"name": "testupdate", "age": 10, "id": ret.id}
-    group1 = await Group.get(name="test")
-    group2 = await Group.get(name="test2")
-
-    group_list = [
-        {"name": "test_update", "id": group1.id, "__status": "update"},
-        {"name": "test2", "id": group2.id, "__status": "do_nothing"},
-    ]
-    ret = await AdminModelService.model_save(
-        "M2MUserAdmin", user, {"InlineM2MGroupAdmin": group_list}, request
-    )
-
-    assert ret.name == "testupdate"
-    assert await Group.filter(name="test_update").count() == 1
-
-    # delete
-    user = {"name": "testupdate", "age": 10, "id": ret.id}
-    group_list = [
-        {"name": "test_update", "id": group1.id, "__status": "update"},
-        {"name": "test2", "id": group2.id, "__status": "delete"},
-    ]
-    ret = await AdminModelService.model_save(
-        "M2MUserAdmin", user, {"InlineM2MGroupAdmin": group_list}, request
-    )
-    assert ret.name == "testupdate"
-
-    theuser = await User.get(pk=ret.id)
-    await theuser.fetch_related("groups")
-
-    assert len(theuser.groups) == 1
-
-
-async def test_bk_m2m(setup_user: t.Generator) -> None:
-    # create
-    request = t.cast(HttpRequest, build_request())
-
-    group = {"name": "test", "id": -1}
-    user_list = [
-        {"name": "test", "age": 10, "id": -1, "__status": "create"},
-        {"name": "test2", "age": 10, "id": -1, "__status": "create"},
-    ]
-
-    ret = await AdminModelService.model_save(
-        "M2MGroupAdmin", group, {"InlineM2MUserAdmin": user_list}, request
-    )
-
-    assert ret.name == "test"
-    assert await User.all().count() == 2
-
-    # update
-    group = {"name": "testupdate", "id": ret.id}
-    user1 = await User.get(name="test")
-    user2 = await User.get(name="test2")
-
-    user_list = [
-        {"name": "test_update", "age": 10, "id": user1.id, "__status": "update"},
-        {"name": "test2", "age": 10, "id": user2.id, "__status": "do_nothing"},
-    ]
-
-    ret = await AdminModelService.model_save(
-        "M2MGroupAdmin", group, {"InlineM2MUserAdmin": user_list}, request
-    )
-
-    assert ret.name == "testupdate"
-    assert await User.filter(name="test_update").count() == 1
-
-    # delete
-    group = {"name": "testupdate", "id": ret.id}
-    user_list = [
-        {"name": "test_update", "age": 10, "id": user1.id, "__status": "update"},
-        {"name": "test2", "age": 10, "id": user2.id, "__status": "delete"},
-    ]
-
-    ret = await AdminModelService.model_save(
-        "M2MGroupAdmin", group, {"InlineM2MUserAdmin": user_list}, request
-    )
-
-    assert ret.name == "testupdate"
-    thegroup = await Group.get(pk=ret.id)
-    await thegroup.fetch_related("users")
-    assert len(thegroup.users) == 1
-
-
-async def test_fk(setup_user: t.Generator) -> None:
-    # create
-    request = t.cast(HttpRequest, build_request())
-
-    user = {"name": "test", "age": 10, "id": -1}
-    book_list = [
-        {"title": "test", "author": "test", "id": -1, "__status": "create"},
-        {"title": "test2", "author": "test2", "id": -1, "__status": "create"},
-    ]
-
-    ret = await AdminModelService.model_save(
-        "FKUserAdmin", user, {"InlineFKBookAdmin": book_list}, request
-    )
-
-    assert ret.name == "test"
-    assert await Book.all().count() == 2
-
-    # update
-
-    user = {"name": "testupdate", "age": 11, "id": ret.id}
-
-    book1 = await Book.get(title="test")
-    book2 = await Book.get(title="test2")
-    book_list = [
-        {
-            "title": "testupdate",
-            "author": "test",
-            "id": book1.id,
-            "owner_id": ret.id,
-            "__status": "update",
-        },
-        {
-            "title": "test2",
-            "author": "test2",
-            "id": book2.id,
-            "owner_id": ret.id,
-            "__status": "do_nothing",
-        },
-    ]
-
-    ret = await AdminModelService.model_save(
-        "FKUserAdmin", user, {"InlineFKBookAdmin": book_list}, request
-    )
-
-    assert ret.name == "testupdate"
-    assert await Book.filter(title="testupdate").count() == 1
-    assert await Book.filter(title="test").count() == 0
-
-    # delete
-    user = {"name": "testupdate", "age": 11, "id": ret.id}
-    book1 = await Book.get(title="testupdate")
-    book2 = await Book.get(title="test2")
-    book_list = [
-        {
-            "title": "testupdate",
-            "author": "test",
-            "id": book1.id,
-            "owner_id": ret.id,
-            "__status": "update",
-        },
-        {
-            "title": "test2",
-            "author": "test2",
-            "id": book2.id,
-            "owner_id": ret.id,
-            "__status": "delete",
-        },
-    ]
-    ret = await AdminModelService.model_save(
-        "FKUserAdmin", user, {"InlineFKBookAdmin": book_list}, request
-    )
-
-    theuser = await User.get(pk=ret.id)
-    await theuser.fetch_related("books")
-    assert len(theuser.books) == 1
-
-    # bk fk relation
-
-    with pytest.raises(ValueError):
-        book = {"title": "test", "author": "test", "id": -1, "owner_id": -1}
-        user_list = [
-            {"name": "test", "age": 10, "id": -1, "__status": "create"},
-        ]
-
-        await AdminModelService.model_save(
-            "BkFKBookAdmin", book, {"InlineBkFKUserAdmin": user_list}, request
-        )
-
-
-async def test_o2o(setup_user: t.Generator) -> None:
-    # create
-    request = t.cast(HttpRequest, build_request())
-
-    user = {"name": "test", "age": 10, "id": -1}
-    profile = {"avatar": "test", "id": -1, "__status": "create"}
-
-    ret = await AdminModelService.model_save(
-        "O2OUserAdmin", user, {"InlineO2OProfileAdmin": [profile]}, request
-    )
-
-    assert ret.name == "test"
-    assert await Profile.all().count() == 1
-
-    # update
-    profile_ins = await Profile.get(user_id=ret.id)
-    user = {"name": "testupdate", "age": 11, "id": ret.id}
-    profile = {
-        "avatar": "testupdate",
-        "id": profile_ins.id,
-        "user_id": ret.id,
-        "__status": "update",
-    }
-
-    ret = await AdminModelService.model_save(
-        "O2OUserAdmin", user, {"InlineO2OProfileAdmin": [profile]}, request
-    )
-
-    assert ret.name == "testupdate"
-    assert await Profile.filter(avatar="testupdate").count() == 1
-    assert await Profile.filter(avatar="test").count() == 0
-
-    # no action
-
-    profile = {
-        "avatar": "testupdate",
-        "id": profile_ins.id,
-        "user_id": ret.id,
-        "__status": "no_action",
-    }
-
-    ret = await AdminModelService.model_save(
-        "O2OUserAdmin", user, {"InlineO2OProfileAdmin": [profile]}, request
-    )
-    assert ret.name == "testupdate"
-    assert await Profile.filter(avatar="testupdate").count() == 1
-    assert await Profile.filter(avatar="test").count() == 0
-
-    # delete
-    user = {"name": "testupdate", "age": 11, "id": ret.id}
-    profile = {
-        "avatar": "testupdate",
-        "id": profile_ins.id,
-        "user_id": ret.id,
-        "__status": "delete",
-    }
-
-    ret = await AdminModelService.model_save(
-        "O2OUserAdmin", user, {"InlineO2OProfileAdmin": [profile]}, request
-    )
-
-    theuser = await User.get(pk=ret.id)
-    await theuser.fetch_related("profile")
-    assert theuser.profile is None
-
-    # bk o2o relation
-    with pytest.raises(ValueError):
-        profile = {"avatar": "test", "id": -1, "user_id": -1}
-        user_list = [
-            {"name": "test", "age": 10, "id": -1, "__status": "create"},
-        ]
-
-        await AdminModelService.model_save(
-            "BKO2OProfileAdmin", profile, {"InlineBKO2OUserAdmin": user_list}, request
-        )
-
-
 class _WithoutSuperUser:
     is_superuser = False
 
@@ -533,8 +282,11 @@ class WithoutSuperRequest:
     user = _WithoutSuperUser()
 
 
-def build_request_without_super() -> WithoutSuperRequest:
-    return WithoutSuperRequest()
+def build_request_without_super() -> HttpRequest:
+    request = HttpRequest(
+        scope={"type": "http", "method": "GET", "user": _WithoutSuperUser()}
+    )
+    return request
 
 
 async def test_permission_denied() -> None:
@@ -544,19 +296,28 @@ async def test_permission_denied() -> None:
         await AdminModelService.model_desc("ArticleAdmin", request)
 
     with pytest.raises(PermissionDenied):
-        await AdminModelService.model_detail("ArticleAdmin", {}, request)
+        await AdminModelService.model_inlines("ArticleAdmin", {}, request)
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_data("ArticleAdmin", [], 1, 10, request)
 
     with pytest.raises(PermissionDenied):
-        await AdminModelService.model_save("ArticleAdmin", {}, {}, request)
+        await AdminModelService.model_save("ArticleAdmin", {}, request)
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_delete("ArticleAdmin", {}, request)
 
     with pytest.raises(PermissionDenied):
-        await AdminModelService.model_action("ArticleAdmin", "sync_method", {}, request)
+        await AdminModelService.model_action(
+            Action(
+                name="ArticleAdmin",
+                action="sync_method",
+                search_condition=[],
+                form_data={},
+                input_data={},
+            ),
+            request,
+        )
 
 
 async def test_failed() -> None:
@@ -564,16 +325,14 @@ async def test_failed() -> None:
 
     with pytest.raises(KeyError):
         await AdminModelService.model_action(
-            "ArticleAdmin", "unknownaction", {}, request
-        )
-
-    # no relation
-    with pytest.raises(ValueError):
-        article = {"title": "test", "content": "test", "author": "test", "id": -1}
-        user = {"name": "test", "age": 10, "id": -1}
-
-        await AdminModelService.model_save(
-            "WithOutUserAdmin", user, {"WithOutArticleAdmin": [article]}, request
+            Action(
+                name="ArticleAdmin",
+                action="unknownaction",
+                search_condition=[],
+                form_data={},
+                input_data={},
+            ),
+            request,
         )
 
 
@@ -586,12 +345,10 @@ async def test_routes() -> None:
     # need further test when connect to unfazed-admin
     models_ret = [i for i in ret if i.name == "Models"][0]
     tools_ret = [i for i in ret if i.name == "Tools"][0]
-    caches_ret = [i for i in ret if i.name == "Cache"][0]
 
-    assert "O2OUserAdmin" in [i.name for i in models_ret.children]
-    assert "ExportToolAdmin" in [i.name for i in tools_ret.children]
-    assert "WithoutPermissionAdmin" not in [i.name for i in tools_ret.children]
-    assert "CacheUserAdmin" in [i.name for i in caches_ret.children]
+    assert "O2OUserAdmin" in [i.name for i in models_ret.routes]
+    assert "ExportToolAdmin" in [i.name for i in tools_ret.routes]
+    assert "WithoutPermissionAdmin" not in [i.name for i in tools_ret.routes]
 
 
 def test_settings() -> None:
@@ -619,9 +376,9 @@ async def test_model_desc() -> None:
     # assert "InlineM2MGroupAdmin" in [i["name"] for i in ret["inlines"]]
 
 
-async def test_model_detail() -> None:
+async def test_model_inlines() -> None:
     request = t.cast(HttpRequest, build_request())
 
-    ret = await AdminModelService.model_detail("M2MUserAdmin", {}, request)
+    ret = await AdminModelService.model_inlines("M2MUserAdmin", {}, request)
 
     assert "InlineM2MGroupAdmin" in ret

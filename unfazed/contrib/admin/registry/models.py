@@ -115,8 +115,8 @@ class BaseAdmin:
             label=self.label,
             routes=[],
             icon=self.icon,
-            hideInMenu=self.hidden,
-            hideChildrenInMenu=self.hidden_children,
+            hideInMenu=self.hideInMenu,
+            hideChildrenInMenu=self.hideChildrenInMenu,
         )
 
 

@@ -62,5 +62,5 @@ async def test_decorator() -> None:
 
     assert "test_action2" in actions
 
-    assert getattr(ins, "test_action")() == "test_action"
-    assert await getattr(ins, "test_action2")() == "test_action2"
+    assert getattr(ins, "test_action")(ActionKwargs()) == "test_action"
+    assert await getattr(ins, "test_action2")(ActionKwargs()) == "test_action2"

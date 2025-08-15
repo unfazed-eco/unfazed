@@ -13,6 +13,7 @@ from unfazed.serializer import Serializer
 from unfazed.type import Doc
 
 from .registry import (
+    ActionKwargs,
     AdminInlineSerializeModel,
     AdminSerializeModel,
     AdminToolSerializeModel,
@@ -23,6 +24,7 @@ from .registry import (
     parse_cond,
     site,
 )
+from .schema import Action
 
 
 class IdSchema(BaseModel):
@@ -55,6 +57,7 @@ class AdminModelService:
             if route_label not in temp:
                 temp_top_route = AdminRoute(
                     name=route_label,
+                    label=admin_ins.label,
                     path=admin_ins.path,
                     routes=[],
                     icon="el-icon-s-home",
@@ -124,26 +127,30 @@ class AdminModelService:
     @classmethod
     async def model_action(
         cls,
-        admin_ins_name: str,
-        action: str,
-        cond: t.List[Condition],
-        extra: t.Dict[str, t.Any],
-        request: HttpRequest,
+        ctx: Action,
+        request: HttpRequest | None = None,
     ) -> t.Any:
-        admin_ins: ModelAdmin = admin_collector[admin_ins_name]
-        if not hasattr(admin_ins, action):
-            raise KeyError(f"admin ins {admin_ins.name} does not have action {action}")
+        admin_ins: ModelAdmin = admin_collector[ctx.name]
+        if not hasattr(admin_ins, ctx.action):
+            raise KeyError(
+                f"admin ins {admin_ins.name} does not have action {ctx.action}"
+            )
 
         if not await admin_ins.has_action_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        method = getattr(admin_ins, action)
-        cond_dict = parse_cond(condtion=cond)
-        if inspect.iscoroutinefunction(method):
-            return await method(cond_dict=cond_dict, extra=extra, request=request)
-        return await run_in_threadpool(
-            method, cond_dict=cond_dict, extra=extra, request=request
+        method = getattr(admin_ins, ctx.action)
+        cond_dict = parse_cond(condtion=ctx.search_condition)
+
+        ctx = ActionKwargs(
+            search_condition=cond_dict,
+            form_data=ctx.form_data,
+            input_data=ctx.input_data,
+            request=request,
         )
+        if inspect.iscoroutinefunction(method):
+            return await method(ctx=ctx)
+        return await run_in_threadpool(method, ctx=ctx)
 
     @classmethod
     async def model_save(
@@ -177,7 +184,6 @@ class AdminModelService:
         cls,
         admin_ins_name: str,
         data: t.Dict,
-        strategy: t.Literal["set_null", "delete", "do_nothing"],
         request: HttpRequest,
     ) -> None:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]

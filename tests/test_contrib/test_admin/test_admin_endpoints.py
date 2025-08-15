@@ -78,7 +78,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         assert resp3.status_code == 200
 
         resp4 = await request.post(
-            "/api/contrib/admin/model-detail",
+            "/api/contrib/admin/model-inlines",
             json={"name": "AuthorAdmin", "data": {}},
         )
         assert resp4.status_code == 200
@@ -88,7 +88,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             json={
                 "name": "AuthorAdmin",
                 "action": "test_action1",
-                "data": {},
+                "form_data": {},
+                "input_data": {},
+                "search_condition": [],
             },
         )
 
@@ -99,7 +101,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             json={
                 "name": "AuthorAdmin",
                 "action": "test_action2",
-                "data": {},
+                "form_data": {},
+                "input_data": {},
+                "search_condition": [],
             },
         )
 
@@ -110,7 +114,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             json={
                 "name": "AuthorAdmin",
                 "action": "test_action4",
-                "data": {},
+                "form_data": {},
+                "input_data": {},
+                "search_condition": [],
             },
         )
 
@@ -121,7 +127,9 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
             json={
                 "name": "AuthorAdmin",
                 "action": "test_action3",
-                "data": {},
+                "form_data": {},
+                "input_data": {},
+                "search_condition": [],
             },
         )
 
@@ -136,7 +144,6 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
                     "age": 18,
                     "id": -1,
                 },
-                "inlines": {},
             },
         )
 
@@ -175,7 +182,9 @@ async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None
                 json={
                     "name": "AuthorAdmin",
                     "action": "test_action1",
-                    "data": {},
+                    "form_data": {},
+                    "input_data": {},
+                    "search_condition": [],
                 },
             )
 

@@ -376,12 +376,15 @@ class Serializer(BaseModel, metaclass=MetaClass):
             m2mfield: ManyToManyFieldInstance = t.cast(
                 ManyToManyFieldInstance, self_model._meta.fields_map[m2m_field_name]
             )
+
             if m2mfield.related_model == other_model:
+                breakpoint()
                 return Relation(
                     to=other_cls.__name__,
-                    source_field=m2m_field_name,  # also field.related_name
+                    source_field="",  # also field.related_name
                     dest_field="",
                     relation="m2m",
+                    through=m2m_field_name,
                 )
 
         # check if it is a fk relation

@@ -44,11 +44,7 @@ class Data(BaseModel):
 class Action(BaseModel):
     name: str = Field(description="name of the model")
     action: str = Field(description="action of the action")
-    extra: t.Dict[str, t.Any] = Field(
-        default_factory=dict,
-        description="extra data for the action",
-    )
-    cond: t.List[Condition] = Field(
+    search_condition: t.List[Condition] = Field(
         default_factory=list,
         description="conditions to filter the data",
         examples=[
@@ -56,11 +52,17 @@ class Action(BaseModel):
                 "field": "name",
                 "eq": "admin",
             },
-            {
-                "field": "age",
-                "gt": 18,
-            },
         ],
+    )
+
+    form_data: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="form data for the action",
+    )
+
+    input_data: t.Dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="input data for the action",
     )
 
 
@@ -85,7 +87,7 @@ class Save(BaseModel):
 
 class Delete(BaseModel):
     name: str = Field(description="name of the model")
-    data: t.List[ModelLineDataT] = Field(
+    data: ModelLineDataT = Field(
         description="one line data of the model",
         examples=[
             {
@@ -96,6 +98,7 @@ class Delete(BaseModel):
     )
 
     strategy: t.Literal["set_null", "delete", "do_nothing"] = Field(
+        default="do_nothing",
         description="strategy to delete the related data",
         examples=[
             "set_null",

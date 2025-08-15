@@ -60,9 +60,7 @@ async def model_action(
 ) -> t.Annotated[
     HttpResponse, Doc(description="depends on the action implemetion, text/json/stream")
 ]:
-    ret = await AdminModelService.model_action(
-        ctx.name, ctx.action, ctx.cond, ctx.extra, request
-    )
+    ret = await AdminModelService.model_action(ctx, request)
 
     return generic_response(ret)
 
@@ -72,11 +70,9 @@ async def model_action(
 async def model_save(
     request: HttpRequest, ctx: t.Annotated[s.Save, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.SaveResp)]:
-    ret = await AdminModelService.model_save(
-        ctx.name, ctx.data, ctx.inlines, request=request
-    )
+    ret = await AdminModelService.model_save(ctx.name, ctx.data, request=request)
 
-    return JsonResponse(s.SaveResp(data=ret))
+    return JsonResponse(s.SaveResp(data=ret.model_dump()))
 
 
 @login_required
@@ -84,7 +80,5 @@ async def model_save(
 async def model_delete(
     request: HttpRequest, ctx: t.Annotated[s.Delete, p.Json()]
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DeleteResp)]:
-    await AdminModelService.model_delete(
-        ctx.name, ctx.data, ctx.strategy, request=request
-    )
+    await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
     return JsonResponse(s.DeleteResp(data={}))
