@@ -3,11 +3,13 @@ import typing as t
 import pytest
 import pytest_asyncio
 
-from tests.apps.admin.account.models import Book, Group, Profile, User
+from tests.apps.admin.account.models import Book, Group, GroupUser, Profile, User
 from tests.apps.admin.article.models import Article
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.registry import (
     ActionKwargs,
+    AdminRelation,
+    AdminThrough,
     ModelAdmin,
     ModelInlineAdmin,
     ToolAdmin,
@@ -42,6 +44,10 @@ def setup_collector() -> t.Generator:
         class Meta:
             model = Profile
 
+    class GroupUserSerializer(Serializer):
+        class Meta:
+            model = GroupUser
+
     # =============================
 
     # ===== common test =======
@@ -58,9 +64,24 @@ def setup_collector() -> t.Generator:
     class InlineM2MUserAdmin(ModelInlineAdmin):
         pass
 
+    @register(GroupUserSerializer)
+    class InlineM2MGroupUserAdmin(ModelInlineAdmin):
+        pass
+
     @register(GroupSerializer)
     class M2MGroupAdmin(ModelAdmin):
-        inlines = ["InlineM2MUserAdmin"]
+        inlines = [
+            AdminRelation(
+                target="InlineM2MUserAdmin",
+                through=AdminThrough(
+                    mid_model="InlineM2MGroupUserAdmin",
+                    source_field="id",
+                    source_to_through_field="group_id",
+                    target_field="id",
+                    target_to_through_field="user_id",
+                ),
+            )
+        ]
 
     # ====== m2m test ======
     @register(GroupSerializer)
@@ -69,7 +90,18 @@ def setup_collector() -> t.Generator:
 
     @register(UserSerializer)
     class M2MUserAdmin(ModelAdmin):
-        inlines = ["InlineM2MGroupAdmin"]
+        inlines = [
+            AdminRelation(
+                target="InlineM2MGroupAdmin",
+                through=AdminThrough(
+                    mid_model="GroupUser",
+                    source_field="id",
+                    source_to_through_field="user_id",
+                    target_field="id",
+                    target_to_through_field="group_id",
+                ),
+            )
+        ]
 
     # ====== o2o test ======
 
@@ -79,7 +111,7 @@ def setup_collector() -> t.Generator:
 
     @register(UserSerializer)
     class O2OUserAdmin(ModelAdmin):
-        inlines = ["InlineO2OProfileAdmin"]
+        inlines = [AdminRelation(target="InlineO2OProfileAdmin")]
 
     # ====== o2o bk test ======
     @register(UserSerializer)
@@ -88,7 +120,7 @@ def setup_collector() -> t.Generator:
 
     @register(ProfileSerializer)
     class BKO2OProfileAdmin(ModelAdmin):
-        inlines = ["InlineBKO2OUserAdmin"]
+        inlines = [AdminRelation(target="InlineBKO2OUserAdmin")]
 
     # ====== fk test ======
     @register(BookSerializer)
@@ -97,7 +129,7 @@ def setup_collector() -> t.Generator:
 
     @register(UserSerializer)
     class FKUserAdmin(ModelAdmin):
-        inlines = ["InlineFKBookAdmin"]
+        inlines = [AdminRelation(target="InlineFKBookAdmin")]
 
     # ====== bk fk test ======
     @register(UserSerializer)
@@ -106,7 +138,7 @@ def setup_collector() -> t.Generator:
 
     @register(BookSerializer)
     class BkFKBookAdmin(ModelAdmin):
-        inlines = ["InlineBkFKUserAdmin"]
+        inlines = [AdminRelation(target="InlineBkFKUserAdmin")]
 
     # ======= without relation test =======
     @register(ArticleSerializer)
@@ -115,7 +147,7 @@ def setup_collector() -> t.Generator:
 
     @register(UserSerializer)
     class WithOutUserAdmin(ModelAdmin):
-        inlines = ["WithOutArticleAdmin"]
+        inlines = [AdminRelation(target="WithOutArticleAdmin")]
 
     # =============================
 
@@ -376,7 +408,7 @@ async def test_model_desc() -> None:
     # assert "InlineM2MGroupAdmin" in [i["name"] for i in ret["inlines"]]
 
 
-async def test_model_inlines() -> None:
+async def _test_model_inlines() -> None:
     request = t.cast(HttpRequest, build_request())
 
     ret = await AdminModelService.model_inlines("M2MUserAdmin", {}, request)

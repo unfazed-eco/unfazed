@@ -4,11 +4,46 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from unfazed.http import HttpRequest
-from unfazed.schema import Relation
 from unfazed.type import Doc
 
 ShowStr = t.Annotated[str, Doc(description="show in frontend admin")]
 ActualStr = t.Annotated[str, Doc(description="actual value")]
+
+
+class AutoFill(object):
+    pass
+
+
+class AdminThrough(BaseModel):
+    mid_model: str = Field(description="mid model name")
+
+    source_field: str = Field(description="source field name")
+    source_to_through_field: str = Field(description="source to through field name")
+
+    target_field: str = Field(description="target field name")
+    target_to_through_field: str = Field(description="target to through field name")
+
+
+class AdminRelation(BaseModel):
+    target: str = Field(description="target Admin name")
+
+    source_field: str | AutoFill = Field(
+        default=AutoFill(), description="source field name"
+    )
+
+    target_field: str | AutoFill = Field(
+        default=AutoFill(), description="target field name"
+    )
+
+    relation: t.Literal["fk", "o2o", "m2m", "bk_fk", "bk_o2o"] | AutoFill = Field(
+        default=AutoFill(), description="relation type"
+    )
+
+    through: t.Optional[AdminThrough] = Field(
+        default=None, description="through model name"
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ActionOutput(StrEnum):
@@ -189,7 +224,7 @@ class AdminInlineSerializeModel(BaseAdminSerializeModel):
     attrs: AdminInlineAttrs = Field(
         description="attrs of this model, frontend admin will build the page according to the attrs",
     )
-    relation: t.Optional[Relation] = Field(
+    relation: t.Optional[AdminRelation] = Field(
         default=None,
         description="relation of this model, frontend admin will show the relation",
     )

@@ -1,4 +1,4 @@
-from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.contrib.admin.registry import AdminRelation, ModelAdmin, register
 
 from .serializers import (
     GroupSerializer,
@@ -10,7 +10,10 @@ from .serializers import (
 
 @register(UserSerializer)
 class UserAdmin(ModelAdmin):
-    inlines = ["InlineGroupAdmin", "InlineRoleAdmin"]
+    inlines = [
+        AdminRelation(target="InlineGroupAdmin"),
+        AdminRelation(target="InlineRoleAdmin"),
+    ]
 
 
 @register(UserSerializer)
@@ -20,7 +23,10 @@ class InlineUserAdmin(ModelAdmin):
 
 @register(GroupSerializer)
 class GroupAdmin(ModelAdmin):
-    inlines = ["InlineRoleAdmin", "InlineUserAdmin"]
+    inlines = [
+        AdminRelation(target="InlineRoleAdmin"),
+        AdminRelation(target="InlineUserAdmin"),
+    ]
 
 
 @register(GroupSerializer)
@@ -30,7 +36,7 @@ class InlineGroupAdmin(ModelAdmin):
 
 @register(RoleSerializer)
 class RoleAdmin(ModelAdmin):
-    inlines = ["PermissionAdmin"]
+    inlines = [AdminRelation(target="PermissionAdmin")]
 
 
 @register(RoleSerializer)

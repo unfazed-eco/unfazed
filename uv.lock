@@ -1102,7 +1102,7 @@ wheels = [
 
 [[package]]
 name = "unfazed"
-version = "0.0.15b6"
+version = "0.0.15b7"
 source = { editable = "." }
 dependencies = [
     { name = "aerich" },
@@ -1130,6 +1130,7 @@ shell = [
 [package.dev-dependencies]
 dev = [
     { name = "asyncmy" },
+    { name = "ipython" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocs-static-i18n" },
@@ -1167,6 +1168,7 @@ provides-extras = ["shell"]
 [package.metadata.requires-dev]
 dev = [
     { name = "asyncmy", specifier = ">=0.2.10" },
+    { name = "ipython", specifier = ">=9.4.0" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.5.49" },
     { name = "mkdocs-static-i18n", specifier = ">=1.2.3" },

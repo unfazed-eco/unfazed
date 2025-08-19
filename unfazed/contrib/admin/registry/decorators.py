@@ -12,6 +12,24 @@ if t.TYPE_CHECKING:
 
 
 def register(serializer_cls: t.Type[Serializer] | None = None) -> t.Callable:
+    """Register an admin class in the admin collector.
+
+    Args:
+        serializer_cls: The serializer class to use for the admin.
+
+
+    Usage:
+        ```python
+        @register(UserSerializer)
+        class UserAdmin(ModelAdmin):
+            pass
+
+        @register(GroupSerializer)
+        class GroupAdmin(ModelAdmin):
+            pass
+        ```
+    """
+
     def wrapper(admin_cls: t.Type["BaseAdmin"]) -> t.Type["BaseAdmin"]:
         admin_ins = admin_cls()
         if serializer_cls:
@@ -40,12 +58,20 @@ def action(
 
     Args:
         name: The name of the action.
+        label: The label of the action displayed in the UI.
         input: The input type of the action.
         output: The output type of the action.
         confirm: Whether to confirm the action.
         description: The description of the action.
         batch: Whether the action is a batch action.
+        extra: Extra arguments for the action.
 
+    Usage:
+        ```python
+        @action(name="export", label="Export", output=ActionOutput.Download)
+        async def export(self, ctx: ActionKwargs) -> str:
+            return "export"
+        ```
     """
 
     def wrapper(method: t.Callable) -> t.Callable:

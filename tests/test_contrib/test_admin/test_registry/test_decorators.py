@@ -1,3 +1,6 @@
+import typing as t
+
+import pytest
 from tortoise import Model, fields
 
 from unfazed.contrib.admin.registry import (
@@ -30,8 +33,8 @@ async def test_decorator() -> None:
         @action(
             name="test_action",
             confirm=True,
-            description="test_action",
-            label="test_action",
+            description="test_action_description",
+            label="test_action_label",
             output=ActionOutput.Download,
             input=ActionInput.String,
             batch=True,
@@ -54,8 +57,8 @@ async def test_decorator() -> None:
 
     action1 = actions["test_action"]
     assert action1.confirm is True
-    assert action1.description == "test_action"
-    assert action1.label == "test_action"
+    assert action1.description == "test_action_description"
+    assert action1.label == "test_action_label"
     assert action1.output == ActionOutput.Download
     assert action1.input == ActionInput.String
     assert action1.batch is True
@@ -64,3 +67,13 @@ async def test_decorator() -> None:
 
     assert getattr(ins, "test_action")(ActionKwargs()) == "test_action"
     assert await getattr(ins, "test_action2")(ActionKwargs()) == "test_action2"
+
+
+async def test_decorator_failed() -> None:
+    with pytest.raises(ValueError):
+
+        @register(StudenSerializer)
+        class StudentAdmin(ModelAdmin):
+            @action(name="test_action", confirm=True)
+            def test_action(self, ctx: ActionKwargs, **kwargs: t.Any) -> str:
+                return "test_action"

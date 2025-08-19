@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest_asyncio
 
-from tests.apps.admin.article.models import Author
+from tests.apps.admin.registry.models import T1User
 from unfazed.contrib.admin.registry import (
     ActionKwargs,
     ModelAdmin,
@@ -32,14 +32,14 @@ class UnkownUser:
 @pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     admin_collector.clear()
-    await Author.all().delete()
+    await T1User.all().delete()
 
-    class AuthorSerializer(Serializer):
+    class T1UserSerializer(Serializer):
         class Meta:
-            model = Author
+            model = T1User
 
-    @register(AuthorSerializer)
-    class AuthorAdmin(ModelAdmin):
+    @register(T1UserSerializer)
+    class TET1UserAdmin(ModelAdmin):
         @action(name="test_action1", confirm=True)
         async def test_action1(self, ctx: ActionKwargs) -> str:
             return "test_action"
@@ -59,7 +59,7 @@ async def setup_endpoint_env() -> t.AsyncGenerator[None, None]:
     yield
 
     admin_collector.clear()
-    await Author.all().delete()
+    await T1User.all().delete()
 
 
 async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
@@ -73,20 +73,20 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         assert resp2.status_code == 200
 
         resp3 = await request.post(
-            "/api/contrib/admin/model-desc", json={"name": "AuthorAdmin"}
+            "/api/contrib/admin/model-desc", json={"name": "TET1UserAdmin"}
         )
         assert resp3.status_code == 200
 
         resp4 = await request.post(
             "/api/contrib/admin/model-inlines",
-            json={"name": "AuthorAdmin", "data": {}},
+            json={"name": "TET1UserAdmin", "data": {}},
         )
         assert resp4.status_code == 200
 
         resp5 = await request.post(
             "/api/contrib/admin/model-action",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "action": "test_action1",
                 "form_data": {},
                 "input_data": {},
@@ -99,7 +99,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         resp6 = await request.post(
             "/api/contrib/admin/model-action",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "action": "test_action2",
                 "form_data": {},
                 "input_data": {},
@@ -112,7 +112,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         resp7 = await request.post(
             "/api/contrib/admin/model-action",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "action": "test_action4",
                 "form_data": {},
                 "input_data": {},
@@ -125,7 +125,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         resp8 = await request.post(
             "/api/contrib/admin/model-action",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "action": "test_action3",
                 "form_data": {},
                 "input_data": {},
@@ -138,10 +138,11 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         resp9 = await request.post(
             "/api/contrib/admin/model-save",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "data": {
                     "name": "test_endpoints",
-                    "age": 18,
+                    "email": "test_endpoints@example.com",
+                    "password": "test_endpoints",
                     "id": -1,
                 },
             },
@@ -152,7 +153,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
 
         resp10 = await request.post(
             "/api/contrib/admin/model-data",
-            json={"name": "AuthorAdmin", "cond": [], "page": 1, "size": 10},
+            json={"name": "TET1UserAdmin", "cond": [], "page": 1, "size": 10},
         )
 
         assert resp10.status_code == 200
@@ -160,7 +161,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         resp11 = await request.post(
             "/api/contrib/admin/model-delete",
             json={
-                "name": "AuthorAdmin",
+                "name": "TET1UserAdmin",
                 "data": {"id": ret["id"]},
             },
         )
@@ -180,7 +181,7 @@ async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None
             resp5 = await request.post(
                 "/api/contrib/admin/model-action",
                 json={
-                    "name": "AuthorAdmin",
+                    "name": "TET1UserAdmin",
                     "action": "test_action1",
                     "form_data": {},
                     "input_data": {},

@@ -19,15 +19,14 @@ from .schema import (
     AdminField,
     AdminInlineAttrs,
     AdminInlineSerializeModel,
+    AdminRelation,
     AdminSerializeModel,
     AdminSite,
     AdminToolAttrs,
     AdminToolSerializeModel,
+    AutoFill,
 )
 from .utils import convert_field_type
-
-if t.TYPE_CHECKING:
-    pass
 
 
 class BaseAdmin:
@@ -321,7 +320,8 @@ class ModelAdmin(BaseModelAdmin):
     editable: bool = True
 
     # relations
-    inlines: t.List[str] = []
+    # currently unfazed need developers define the relation clearly
+    inlines: t.List[AdminRelation] = []
 
     def to_inlines(self) -> t.Dict[str, AdminInlineSerializeModel]:
         inlines = self.inlines
@@ -330,33 +330,84 @@ class ModelAdmin(BaseModelAdmin):
 
         ret = {}
         self_serializer: t.Type[Serializer] = self.serializer
-        for name in inlines:
+        for admin_relation in inlines:
+            name = admin_relation.target
             inline: ModelInlineAdmin = admin_collector[name]
 
+            if not isinstance(inline, ModelInlineAdmin):
+                raise ValueError(
+                    f"inline {inline.name} is not a ModelInlineAdmin, it is a {type(inline)}"
+                )
+
             inline_serializer: Serializer = inline.serializer
-            relation = inline_serializer.find_relation(self_serializer)
+            relation = self_serializer.find_relation(inline_serializer)
 
-            if not relation:
-                raise ValueError(
-                    f"dont have relation between {inline.name} and {self.name} not found"
-                )
+            if isinstance(admin_relation.relation, AutoFill):
+                if not relation:
+                    raise ValueError(
+                        f"dont have relation between {inline.name} and {self.name}"
+                    )
 
-            elif relation.relation == "bk_fk":
-                raise ValueError(
-                    f"bk_fk relation between {inline.name} and {self.name} is not supported"
-                )
+                else:
+                    admin_relation.relation = relation.relation
 
-            elif relation.relation == "bk_o2o":
-                raise ValueError(
-                    f"bk_o2o relation between {inline.name} and {self.name} is not supported"
-                )
+                if isinstance(admin_relation.source_field, AutoFill):
+                    admin_relation.source_field = relation.source_field
+
+                if isinstance(admin_relation.target_field, AutoFill):
+                    admin_relation.target_field = relation.target_field
+
+            # check if the fields are correctly defined
+            if admin_relation.relation == "m2m":
+                assert admin_relation.through is not None
+                mid_name = admin_relation.through.mid_model
+                mid_admin: ModelInlineAdmin = admin_collector[mid_name]
+                mid_serializer: Serializer = mid_admin.serializer
+
+                mid_fields = mid_serializer.model_fields
+
+                if admin_relation.through.target_to_through_field not in mid_fields:
+                    raise ValueError(
+                        f"field {admin_relation.through.target_to_through_field} not found in {mid_fields}"
+                    )
+
+                if admin_relation.through.source_to_through_field not in mid_fields:
+                    raise ValueError(
+                        f"field {admin_relation.through.source_to_through_field} not found in {mid_fields}"
+                    )
+
+                if (
+                    admin_relation.through.source_field
+                    not in self_serializer.model_fields
+                ):
+                    raise ValueError(
+                        f"field {admin_relation.through.source_field} not found in {self_serializer.model_fields}"
+                    )
+
+                if (
+                    admin_relation.through.target_field
+                    not in inline_serializer.model_fields
+                ):
+                    raise ValueError(
+                        f"field {admin_relation.through.target_field} not found in {inline_serializer.model_fields}"
+                    )
 
             else:
-                admin_inline_serialize_model: AdminInlineSerializeModel = (
-                    inline.to_serialize()
-                )
-                admin_inline_serialize_model.relation = relation
-                ret[inline.name] = admin_inline_serialize_model
+                if admin_relation.source_field not in self_serializer.model_fields:
+                    raise ValueError(
+                        f"field {admin_relation.source_field} not found in {self_serializer.model_fields}"
+                    )
+
+                if admin_relation.target_field not in inline_serializer.model_fields:
+                    raise ValueError(
+                        f"field {admin_relation.target_field} not found in {inline_serializer.model_fields}"
+                    )
+
+            admin_inline_serialize_model: AdminInlineSerializeModel = (
+                inline.to_serialize()
+            )
+            admin_inline_serialize_model.relation = admin_relation
+            ret[inline.name] = admin_inline_serialize_model
 
         return ret
 

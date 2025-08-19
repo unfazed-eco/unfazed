@@ -13,7 +13,9 @@ from .schema import (
     ActionKwargs,
     ActionOutput,
     AdminInlineSerializeModel,
+    AdminRelation,
     AdminSerializeModel,
+    AdminThrough,
     AdminToolSerializeModel,
 )
 from .utils import parse_cond
@@ -27,7 +29,6 @@ __all__ = [
     "register",
     "action",
     "ModelInlineAdmin",
-    
     "ToolAdmin",
     "BaseModelAdmin",
     "AdminSerializeModel",
@@ -36,4 +37,6 @@ __all__ = [
     "ActionKwargs",
     "ActionOutput",
     "ActionInput",
+    "AdminRelation",
+    "AdminThrough",
 ]

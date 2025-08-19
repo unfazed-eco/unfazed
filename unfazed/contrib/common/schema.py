@@ -10,7 +10,7 @@ class BaseResponse(BaseModel, t.Generic[T]):
         default=0, description="response code, 0 for success, other for error"
     )
     message: str = Field(default="success", description="response message")
-    data: T
+    data: t.Optional[T] = Field(default={}, description="response data")
 
 
 class ErrorResponse(BaseResponse[t.Dict[str, t.Any]]):

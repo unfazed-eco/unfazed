@@ -111,7 +111,7 @@ class AdminModelService:
         page: int,
         size: int,
         request: HttpRequest,
-    ) -> t.Dict:
+    ) -> Result:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_view_perm(request):
@@ -122,7 +122,7 @@ class AdminModelService:
         queryset = serializer_cls.get_queryset(cond, fetch_relations=False)
         result: Result = await serializer_cls.list(queryset, page, size)
 
-        return result.model_dump(exclude_none=True)
+        return result
 
     @classmethod
     async def model_action(
