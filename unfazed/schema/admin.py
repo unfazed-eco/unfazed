@@ -46,9 +46,15 @@ class AdminRoute(BaseModel):
     )
     icon: str | None = Field(
         default=None,
-        description="icon for this route from cdn",
+        description="icon for this route from ant design",
         examples=[
-            "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/svgs/solid/user.svg"
+            "table",
+            "user",
+            "setting",
+            "home",
+            "dashboard",
+            "file",
+            "folder",
         ],
     )
     hideInMenu: bool = Field(

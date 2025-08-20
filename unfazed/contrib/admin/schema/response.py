@@ -1,10 +1,10 @@
 import typing as t
 
 from unfazed.contrib.admin.registry.schema import (
+    AdminCustomSerializeModel,
     AdminInlineSerializeModel,
     AdminSerializeModel,
     AdminSite,
-    AdminToolSerializeModel,
 )
 from unfazed.contrib.common.schema import BaseResponse
 from unfazed.schema import AdminRoute, Result
@@ -22,7 +22,7 @@ class SiteSettingsResp(BaseResponse[AdminSite]):
     pass
 
 
-class DescResp(BaseResponse[t.Union[AdminSerializeModel, AdminToolSerializeModel]]):
+class DescResp(BaseResponse[t.Union[AdminSerializeModel, AdminCustomSerializeModel]]):
     pass
 
 

@@ -3,15 +3,15 @@ import typing as t
 if t.TYPE_CHECKING:
     from .models import (  # pragma: no cover
         BaseAdmin,
+        CustomAdmin,
         ModelAdmin,
         ModelInlineAdmin,
-        ToolAdmin,
     )
 
 from unfazed.utils import Storage
 
 T = t.TypeVar(
-    "T", bound=t.Union["BaseAdmin", "ModelAdmin", "ModelInlineAdmin", "ToolAdmin"]
+    "T", bound=t.Union["BaseAdmin", "ModelAdmin", "ModelInlineAdmin", "CustomAdmin"]
 )
 
 

@@ -1,5 +1,11 @@
-from unfazed.contrib.admin.registry import AdminRelation, ModelAdmin, register
+from unfazed.contrib.admin.registry import (
+    AdminRelation,
+    ModelAdmin,
+    ModelInlineAdmin,
+    register,
+)
 
+from .mixin import AuthMixin
 from .serializers import (
     GroupSerializer,
     PermissionSerializer,
@@ -9,7 +15,7 @@ from .serializers import (
 
 
 @register(UserSerializer)
-class UserAdmin(ModelAdmin):
+class UserAdmin(ModelAdmin, AuthMixin):
     inlines = [
         AdminRelation(target="InlineGroupAdmin"),
         AdminRelation(target="InlineRoleAdmin"),
@@ -17,12 +23,12 @@ class UserAdmin(ModelAdmin):
 
 
 @register(UserSerializer)
-class InlineUserAdmin(ModelAdmin):
+class InlineUserAdmin(ModelInlineAdmin):
     pass
 
 
 @register(GroupSerializer)
-class GroupAdmin(ModelAdmin):
+class GroupAdmin(ModelAdmin, AuthMixin):
     inlines = [
         AdminRelation(target="InlineRoleAdmin"),
         AdminRelation(target="InlineUserAdmin"),
@@ -30,20 +36,20 @@ class GroupAdmin(ModelAdmin):
 
 
 @register(GroupSerializer)
-class InlineGroupAdmin(ModelAdmin):
+class InlineGroupAdmin(ModelInlineAdmin):
     pass
 
 
 @register(RoleSerializer)
-class RoleAdmin(ModelAdmin):
+class RoleAdmin(ModelAdmin, AuthMixin):
     inlines = [AdminRelation(target="PermissionAdmin")]
 
 
 @register(RoleSerializer)
-class InlineRoleAdmin(ModelAdmin):
+class InlineRoleAdmin(ModelInlineAdmin):
     pass
 
 
 @register(PermissionSerializer)
-class PermissionAdmin(ModelAdmin):
+class PermissionAdmin(ModelInlineAdmin):
     pass

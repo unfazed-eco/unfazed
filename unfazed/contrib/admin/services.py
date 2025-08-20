@@ -14,12 +14,12 @@ from unfazed.type import Doc
 
 from .registry import (
     ActionKwargs,
+    AdminCustomSerializeModel,
     AdminInlineSerializeModel,
     AdminSerializeModel,
-    AdminToolSerializeModel,
+    CustomAdmin,
     ModelAdmin,
     ModelInlineAdmin,
-    ToolAdmin,
     admin_collector,
     parse_cond,
     site,
@@ -36,7 +36,7 @@ class AdminModelService:
     async def list_route(cls, request: HttpRequest) -> t.List[AdminRoute]:
         temp = {}
 
-        admin_ins: t.Union[ModelAdmin, ModelInlineAdmin, ToolAdmin]
+        admin_ins: t.Union[ModelAdmin, ModelInlineAdmin, CustomAdmin]
         for _, admin_ins in admin_collector:
             if not await admin_ins.has_view_perm(request):
                 continue
@@ -57,10 +57,10 @@ class AdminModelService:
             if route_label not in temp:
                 temp_top_route = AdminRoute(
                     name=route_label,
-                    label=admin_ins.label,
-                    path=admin_ins.path,
+                    label=route_label,
+                    path=f"/{route_label.replace(' ', '-')}",
                     routes=[],
-                    icon="el-icon-s-home",
+                    icon="",
                     hideInMenu=False,
                     hideChildrenInMenu=False,
                 )
@@ -84,7 +84,7 @@ class AdminModelService:
     @classmethod
     async def model_desc(
         cls, admin_ins_name: str, request: HttpRequest
-    ) -> t.Union[AdminSerializeModel, AdminToolSerializeModel]:
+    ) -> t.Union[AdminSerializeModel, AdminCustomSerializeModel]:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
         if not await admin_ins.has_view_perm(request):

@@ -16,14 +16,14 @@ from .fields import Field as CustomField
 from .schema import (
     AdminAction,
     AdminAttrs,
+    AdminCustomAttrs,
+    AdminCustomSerializeModel,
     AdminField,
     AdminInlineAttrs,
     AdminInlineSerializeModel,
     AdminRelation,
     AdminSerializeModel,
     AdminSite,
-    AdminToolAttrs,
-    AdminToolSerializeModel,
     AutoFill,
 )
 from .utils import convert_field_type
@@ -89,7 +89,7 @@ class BaseAdmin:
         AdminSite,
         AdminSerializeModel,
         AdminInlineSerializeModel,
-        AdminToolSerializeModel,
+        AdminCustomSerializeModel,
     ]:
         raise NotImplementedError  # pragma: no cover
 
@@ -213,6 +213,9 @@ class BaseModelAdmin(BaseAdmin):
     # search panel
     can_search: bool = True
     search_fields: t.List[str] = []
+
+    # route label
+    route_label: str = "Data Management"
 
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
@@ -512,21 +515,21 @@ class ModelInlineAdmin(ModelAdmin):
         )
 
 
-class ToolAdmin(BaseAdmin):
+class CustomAdmin(BaseAdmin):
     fields_set: t.List[CustomField] = []
-    route_label: str = "Tools"
+    route_label: str = "Custom Pages"
 
     @t.override
-    def to_serialize(self) -> AdminToolSerializeModel:
+    def to_serialize(self) -> AdminCustomSerializeModel:
         fields_map = {}
         for field in self.fields_set:
             fields_map[field.name] = field.to_json()
 
-        attrs = AdminToolAttrs(help_text=self.help_text)
+        attrs = AdminCustomAttrs(help_text=self.help_text)
 
         actions = self.get_actions()
 
-        return AdminToolSerializeModel(
+        return AdminCustomSerializeModel(
             fields=fields_map,
             actions=actions,
             attrs=attrs,

@@ -18,9 +18,9 @@ from unfazed.contrib.admin.registry import (
     AdminRelation,
     AdminThrough,
     BaseModelAdmin,
+    CustomAdmin,
     ModelAdmin,
     ModelInlineAdmin,
-    ToolAdmin,
     action,
     admin_collector,
     fields,
@@ -579,9 +579,12 @@ def test_inline_admin() -> None:
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
 
+    route_ret = instance.to_route()
+    assert route_ret is None
+
 
 def test_tool_admin() -> None:
-    class ExportTool(ToolAdmin):
+    class ExportTool(CustomAdmin):
         fields_set = [
             fields.CharField("name"),
             fields.IntegerField("age"),

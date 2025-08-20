@@ -17,9 +17,16 @@ from tests.apps.admin.registry.models import (
     T2User,
     T2UserRole,
 )
-from unfazed.contrib.admin.registry import ActionKwargs, ModelAdmin, action, register
+from unfazed.contrib.admin.registry import (
+    ActionKwargs,
+    ModelAdmin,
+    action,
+    admin_collector,
+    register,
+)
 from unfazed.contrib.admin.schema import Action
 from unfazed.contrib.admin.services import AdminModelService
+from unfazed.exception import PermissionDenied
 from unfazed.http import HttpRequest
 from unfazed.serializer import Serializer
 
@@ -200,6 +207,11 @@ async def test_admin_services_without_relations(
 
     assert (await Car.get_or_none(id=update_ret.id)) is None
 
+    # delete non-existed
+
+    with pytest.raises(ValueError):
+        await AdminModelService.model_delete("TSCarAdmin", {"id": -1}, build_request())
+
     # action
 
     action_ret = await AdminModelService.model_action(
@@ -212,6 +224,18 @@ async def test_admin_services_without_relations(
     )
     assert action_ret is not None
     assert action_ret == "test_action"
+
+    # non-existed action
+
+    with pytest.raises(KeyError):
+        await AdminModelService.model_action(
+            Action(
+                name="TSCarAdmin",
+                action="non_existed_action",
+                search_condition=[],
+            ),
+            build_request(),
+        )
 
 
 async def test_admin_services_inlines_with_relation_fields(
@@ -410,3 +434,61 @@ async def test_admin_services_inlines_without_relation_fields(
     assert user_role_save_ret.id > 0
 
     assert (await T2UserRole.get(id=user_role_save_ret.id)) is not None
+
+
+class _WithoutSuperUser:
+    is_superuser = False
+
+
+class WithoutSuperRequest:
+    user = _WithoutSuperUser()
+
+
+def build_request_without_super() -> HttpRequest:
+    request = HttpRequest(
+        scope={"type": "http", "method": "GET", "user": _WithoutSuperUser()}
+    )
+    return request
+
+
+async def test_permission_denied() -> None:
+    admin_collector.clear()
+
+    class CarSerializer(Serializer):
+        class Meta:
+            model = Car
+
+    @register(CarSerializer)
+    class TSCarAdmin(ModelAdmin):
+        @action(name="test_action")
+        def test_action(self, ctx: ActionKwargs) -> str:
+            return "test_action"
+
+    request = t.cast(HttpRequest, build_request_without_super())
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_desc("TSCarAdmin", request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_inlines("TSCarAdmin", {}, request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_data("TSCarAdmin", [], 1, 10, request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_save("TSCarAdmin", {}, request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_delete("TSCarAdmin", {}, request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.model_action(
+            Action(
+                name="TSCarAdmin",
+                action="test_action",
+                search_condition=[],
+                form_data={},
+                input_data={},
+            ),
+            request,
+        )

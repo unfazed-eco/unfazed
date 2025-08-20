@@ -3,20 +3,20 @@ from .decorators import action, register
 from .models import (
     BaseAdmin,
     BaseModelAdmin,
+    CustomAdmin,
     ModelAdmin,
     ModelInlineAdmin,
-    ToolAdmin,
     site,
 )
 from .schema import (
     ActionInput,
     ActionKwargs,
     ActionOutput,
+    AdminCustomSerializeModel,
     AdminInlineSerializeModel,
     AdminRelation,
     AdminSerializeModel,
     AdminThrough,
-    AdminToolSerializeModel,
 )
 from .utils import parse_cond
 
@@ -29,11 +29,11 @@ __all__ = [
     "register",
     "action",
     "ModelInlineAdmin",
-    "ToolAdmin",
+    "CustomAdmin",
     "BaseModelAdmin",
     "AdminSerializeModel",
     "AdminInlineSerializeModel",
-    "AdminToolSerializeModel",
+    "AdminCustomSerializeModel",
     "ActionKwargs",
     "ActionOutput",
     "ActionInput",

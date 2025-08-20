@@ -180,7 +180,7 @@ class AdminInlineAttrs(AdminBaseAttrs):
     )
 
 
-class AdminToolAttrs(BaseModel):
+class AdminCustomAttrs(BaseModel):
     help_text: str = Field(
         default="",
         description="help text for this tool, frontend admin will show the help text",
@@ -230,8 +230,8 @@ class AdminInlineSerializeModel(BaseAdminSerializeModel):
     )
 
 
-class AdminToolSerializeModel(BaseAdminSerializeModel):
-    attrs: AdminToolAttrs = Field(
+class AdminCustomSerializeModel(BaseAdminSerializeModel):
+    attrs: AdminCustomAttrs = Field(
         description="attrs of this model, frontend admin will build the page according to the attrs",
     )
 
