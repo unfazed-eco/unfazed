@@ -1,6 +1,7 @@
 import inspect
 import typing as t
 from enum import Enum
+from functools import cached_property
 from itertools import chain
 
 from pydantic.fields import FieldInfo
@@ -216,6 +217,42 @@ class BaseModelAdmin(BaseAdmin):
 
     # route label
     route_label: str = "Data Management"
+
+    @cached_property
+    def model_description(self) -> t.Dict[str, t.Any]:
+        model: t.Type[TModel] = self.serializer.Meta.model  # type: ignore
+        return model.describe()
+
+    @property
+    def permission_prefix(self) -> str:
+        return f"{self.model_description['app']}.{self.model_description['table']}"
+
+    @property
+    def view_permission(self) -> str:
+        return f"{self.permission_prefix}.can_view"
+
+    @property
+    def change_permission(self) -> str:
+        return f"{self.permission_prefix}.can_change"
+
+    @property
+    def delete_permission(self) -> str:
+        return f"{self.permission_prefix}.can_delete"
+
+    @property
+    def create_permission(self) -> str:
+        return f"{self.permission_prefix}.can_create"
+
+    def action_permission(self, action: str) -> str:
+        return f"{self.permission_prefix}.can_exec_{action}"
+
+    def get_all_permissions(self) -> t.List[str]:
+        return [
+            self.view_permission,
+            self.change_permission,
+            self.delete_permission,
+            self.create_permission,
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
@@ -518,6 +555,22 @@ class ModelInlineAdmin(ModelAdmin):
 class CustomAdmin(BaseAdmin):
     fields_set: t.List[CustomField] = []
     route_label: str = "Custom Pages"
+
+    @property
+    def permission_prefix(self) -> str:
+        return f"custom.{self.__class__.__name__.lower()}"
+
+    @property
+    def view_permission(self) -> str:
+        return f"{self.permission_prefix}.can_view"
+
+    def action_permission(self, action: str) -> str:
+        return f"{self.permission_prefix}.can_exec_{action}"
+
+    def get_all_permissions(self) -> t.List[str]:
+        return [
+            self.view_permission,
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:
