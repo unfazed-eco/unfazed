@@ -400,7 +400,7 @@ class ModelAdmin(BaseModelAdmin):
             # check if the fields are correctly defined
             if admin_relation.relation == "m2m":
                 assert admin_relation.through is not None
-                mid_name = admin_relation.through.mid_model
+                mid_name = admin_relation.through.through
                 mid_admin: ModelInlineAdmin = admin_collector[mid_name]
                 mid_serializer: Serializer = mid_admin.serializer
 

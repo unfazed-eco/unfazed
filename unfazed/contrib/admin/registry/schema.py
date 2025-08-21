@@ -15,7 +15,7 @@ class AutoFill(object):
 
 
 class AdminThrough(BaseModel):
-    mid_model: str = Field(description="mid model name")
+    through: str = Field(description="mid model name")
 
     source_field: str = Field(description="source field name")
     source_to_through_field: str = Field(description="source to through field name")

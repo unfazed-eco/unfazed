@@ -1,6 +1,12 @@
 from unfazed.route import path
 
-from .endpoints import login, logout, register
+from .endpoints import (
+    login,
+    logout,
+    oauth_login_redirect,
+    oauth_logout_redirect,
+    register,
+)
 
 patterns = [
     path(
@@ -23,5 +29,19 @@ patterns = [
         name="unfazed_auth_register",
         methods=["POST"],
         operation_id="register",
+    ),
+    path(
+        "/oauth-login-redirect",
+        endpoint=oauth_login_redirect,
+        name="unfazed_auth_oauth_login_redirect",
+        methods=["GET"],
+        operation_id="oauth_login_redirect",
+    ),
+    path(
+        "/oauth-logout-redirect",
+        endpoint=oauth_logout_redirect,
+        name="unfazed_auth_oauth_logout_redirect",
+        methods=["GET"],
+        operation_id="oauth_logout_redirect",
     ),
 ]

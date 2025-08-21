@@ -85,6 +85,10 @@ def test_base_model_admin() -> None:
         not_null_fields: t.List[str] = ["price"]
         json_fields: t.List[str] = ["description"]
 
+        @action(name="action1", label="Action 1")
+        async def action1(self, ctx: ActionKwargs) -> None:
+            pass
+
     instance = CarAdmin()
 
     fields = instance.get_fields()
@@ -141,6 +145,18 @@ def test_base_model_admin() -> None:
 
     assert "extra" in fields
     assert fields["extra"].field_type == "IntegerField"
+
+    # test permission str generation
+    assert instance.view_permission == "models.test_models_car.can_view"
+    assert instance.change_permission == "models.test_models_car.can_change"
+    assert instance.delete_permission == "models.test_models_car.can_delete"
+    assert instance.create_permission == "models.test_models_car.can_create"
+    assert (
+        instance.action_permission("action1")
+        == "models.test_models_car.can_exec_action1"
+    )
+
+    assert len(instance.get_all_permissions()) == 5
 
 
 def test_failed_base_model_admin() -> None:
@@ -318,7 +334,7 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_role_admin.relation.target == "T1RoleAdmin"
     assert t1_role_admin.relation.relation == "m2m"
     assert t1_role_admin.relation.through is not None
-    assert t1_role_admin.relation.through.mid_model == "T1UserRoleAdmin"
+    assert t1_role_admin.relation.through.through == "T1UserRoleAdmin"
     assert t1_role_admin.relation.through.source_field == "id"
     assert t1_role_admin.relation.through.source_to_through_field == "user_id"
     assert t1_role_admin.relation.through.target_field == "id"
@@ -360,7 +376,7 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_role_admin.relation.target == "T2RoleAdmin"
     assert t2_role_admin.relation.relation == "m2m"
     assert t2_role_admin.relation.through is not None
-    assert t2_role_admin.relation.through.mid_model == "T2UserRoleAdmin"
+    assert t2_role_admin.relation.through.through == "T2UserRoleAdmin"
     assert t2_role_admin.relation.through.source_field == "id"
     assert t2_role_admin.relation.through.source_to_through_field == "user_id"
     assert t2_role_admin.relation.through.target_field == "id"
@@ -445,7 +461,7 @@ def test_model_admin_failed() -> None:
                 target="T5RoleAdmin",
                 relation="m2m",
                 through=AdminThrough(
-                    mid_model="T5UserRoleAdmin",
+                    through="T5UserRoleAdmin",
                     source_field="not_exist",
                     source_to_through_field="user_id",
                     target_field="id",
@@ -472,7 +488,7 @@ def test_model_admin_failed() -> None:
             target="T5RoleAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="T5UserRoleAdmin",
+                through="T5UserRoleAdmin",
                 source_field="id",
                 source_to_through_field="not_exist",
                 target_field="id",
@@ -489,7 +505,7 @@ def test_model_admin_failed() -> None:
             target="T5RoleAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="T5UserRoleAdmin",
+                through="T5UserRoleAdmin",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_field="not_exist",
@@ -506,7 +522,7 @@ def test_model_admin_failed() -> None:
             target="T5RoleAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="T5UserRoleAdmin",
+                through="T5UserRoleAdmin",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_field="id",
@@ -608,3 +624,9 @@ def test_tool_admin() -> None:
 
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
+
+    # test permission str generation
+    assert instance.view_permission == "custom.exporttool.can_view"
+    assert instance.action_permission("export") == "custom.exporttool.can_exec_export"
+
+    assert len(instance.get_all_permissions()) == 2

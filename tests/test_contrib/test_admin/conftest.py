@@ -82,7 +82,7 @@ def setup_inline() -> None:
             AdminRelation(
                 target="T1RoleAdmin",
                 through=AdminThrough(
-                    mid_model="T1UserRoleAdmin",
+                    through="T1UserRoleAdmin",
                     source_field="id",
                     source_to_through_field="user_id",
                     target_field="id",
@@ -148,7 +148,7 @@ def setup_inline() -> None:
                 target="T2RoleAdmin",
                 relation="m2m",
                 through=AdminThrough(
-                    mid_model="T2UserRoleAdmin",
+                    through="T2UserRoleAdmin",
                     source_field="id",
                     source_to_through_field="user_id",
                     target_field="id",

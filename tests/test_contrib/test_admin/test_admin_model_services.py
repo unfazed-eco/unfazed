@@ -35,10 +35,6 @@ class _SuperUser:
     is_superuser = True
 
 
-class _SuperRequest:
-    user = _SuperUser()
-
-
 def build_request() -> HttpRequest:
     request = HttpRequest(scope={"type": "http", "method": "GET", "user": _SuperUser()})
     return request

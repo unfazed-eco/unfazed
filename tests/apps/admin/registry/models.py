@@ -4,6 +4,12 @@ import typing as t
 from tortoise import Model
 from tortoise import fields as f
 
+from unfazed.contrib.common.base_models import (
+    ForeignKeyField,
+    ManyToManyField,
+    OneToOneField,
+)
+
 
 class Brand(enum.StrEnum):
     BMW = "BMW"
@@ -52,8 +58,12 @@ class T1User(Model):
     email = f.CharField(max_length=100)
     password = f.CharField(max_length=100)
 
-    roles = f.ManyToManyField(
-        "models.T1Role", related_name="users", through="models.T1UserRole"
+    roles = ManyToManyField(
+        "models.T1Role",
+        related_name="users",
+        through="test_models_t1_user_role",
+        forward_key="role_id",
+        backward_key="user_id",
     )
 
     class Meta:
@@ -70,8 +80,8 @@ class T1Role(Model):
 
 class T1UserRole(Model):
     id = f.BigIntField(primary_key=True)
-    user = f.ForeignKeyField("models.T1User", related_name="user_roles")
-    role = f.ForeignKeyField("models.T1Role", related_name="user_roles")
+    user = ForeignKeyField("models.T1User", related_name="user_roles")
+    role = ForeignKeyField("models.T1Role", related_name="user_roles")
 
     class Meta:
         table = "test_models_t1_user_role"
@@ -79,7 +89,7 @@ class T1UserRole(Model):
 
 class T1Profile(Model):
     id = f.BigIntField(primary_key=True)
-    user = f.OneToOneField("models.T1User", related_name="profile")
+    user = OneToOneField("models.T1User", related_name="profile")
 
     class Meta:
         table = "test_models_t1_profile"
@@ -88,7 +98,7 @@ class T1Profile(Model):
 class T1Book(Model):
     id = f.BigIntField(primary_key=True)
     title = f.CharField(max_length=100)
-    owner = f.ForeignKeyField("models.T1User", related_name="books")
+    owner = ForeignKeyField("models.T1User", related_name="books")
 
     class Meta:
         table = "test_models_t1_book"

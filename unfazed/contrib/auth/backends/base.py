@@ -35,3 +35,9 @@ class BaseAuthBackend(ABC):
 
     @abstractmethod
     async def logout(self, session: t.Dict[str, t.Dict]) -> t.Any: ...
+
+    @abstractmethod
+    async def oauth_login_redirect(self) -> str: ...
+
+    @abstractmethod
+    async def oauth_logout_redirect(self) -> str: ...

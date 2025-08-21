@@ -22,7 +22,7 @@ from .mixin import AuthMixin
 @register(s.UserSerializer)
 class UserAdmin(ModelAdmin, AuthMixin):
     list_display = ["id", "account", "email", "is_superuser"]
-    detail_display = ["id", "account", "email", "is_superuser"]
+    detail_display = ["id", "account", "email", "is_superuser", "password"]
 
     search_fields = ["account", "email"]
     can_search = True
@@ -32,7 +32,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
             target="InlineGroupUnderUserAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="InlineGroupUnderUserAdmin",
+                through="InlineGroupUnderUserAdmin",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_to_through_field="group_id",
@@ -43,7 +43,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
             target="InlineUserRoleUnderUserAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="InlineUserRoleUnderUserAdmin",
+                through="InlineUserRoleUnderUserAdmin",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_to_through_field="role_id",
@@ -86,7 +86,7 @@ class GroupAdmin(ModelAdmin, AuthMixin):
             target="InlineRoleUnderGroupAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="InlineGroupRoleUnderGroupAdmin",
+                through="InlineGroupRoleUnderGroupAdmin",
                 source_field="id",
                 source_to_through_field="group_id",
                 target_to_through_field="role_id",
@@ -97,7 +97,7 @@ class GroupAdmin(ModelAdmin, AuthMixin):
             target="InlineUserUnderGroupAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="InlineUserGroupUnderGroupAdmin",
+                through="InlineUserGroupUnderGroupAdmin",
                 source_field="id",
                 source_to_through_field="group_id",
                 target_to_through_field="user_id",
@@ -140,7 +140,7 @@ class RoleAdmin(ModelAdmin, AuthMixin):
             target="InlinePermissionUnderRoleAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="InlineRolePermissionUnderRoleAdmin",
+                through="InlineRolePermissionUnderRoleAdmin",
                 source_field="id",
                 source_to_through_field="role_id",
                 target_to_through_field="permission_id",
@@ -191,7 +191,10 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
         """
 
         admin_instance: t.Union[ModelAdmin, CustomAdmin]
-        for admin_instance in admin_collector:
+        for _, admin_instance in admin_collector:
+            if isinstance(admin_instance, ModelInlineAdmin):
+                continue
+
             permissions = admin_instance.get_all_permissions()
             for permission in permissions:
                 await m.Permission.get_or_create(access=permission)

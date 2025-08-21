@@ -3,11 +3,17 @@ import typing as t
 from pydantic import BaseModel
 
 from unfazed.conf import register_settings
-from unfazed.type import CanBeImported
+from unfazed.type import CanBeImported, Doc
 
 
 class AuthBackend(BaseModel):
-    BACKEND_CLS: str
+    BACKEND_CLS: t.Annotated[
+        CanBeImported,
+        Doc(
+            description="backend class, must inherit from unfazed.contrib.auth.backends.base.BaseAuthBackend",
+            examples=["unfazed.contrib.auth.backends.default.DefaultAuthBackend"],
+        ),
+    ]
     OPTIONS: t.Dict[str, t.Any] = {}
 
 
@@ -26,6 +32,9 @@ class UnfazedContribAuthSettings(BaseModel):
 
     """
 
-    USER_MODEL: CanBeImported
+    USER_MODEL: t.Annotated[
+        CanBeImported,
+        Doc(description="user model", examples=["unfazed.contrib.auth.models.User"]),
+    ]
     BACKENDS: t.Dict[str, AuthBackend] = {}
     SESSION_KEY: str = "unfazed_auth_session"

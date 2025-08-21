@@ -1,7 +1,7 @@
 import typing as t
 
 from unfazed.conf import settings
-from unfazed.http import HttpRequest, HttpResponse
+from unfazed.http import HttpRequest, HttpResponse, RedirectResponse
 from unfazed.route import params as p
 from unfazed.utils import generic_response
 
@@ -47,3 +47,17 @@ async def register(
     s = AuthService()
     ret = await s.register(ctx)
     return generic_response(ret)
+
+
+async def oauth_login_redirect(request: HttpRequest, platform: str) -> RedirectResponse:
+    s = AuthService()
+    ret = await s.oauth_login_redirect(platform)
+    return RedirectResponse(ret)
+
+
+async def oauth_logout_redirect(
+    request: HttpRequest, platform: str
+) -> RedirectResponse:
+    s = AuthService()
+    ret = await s.oauth_logout_redirect(platform)
+    return RedirectResponse(ret)

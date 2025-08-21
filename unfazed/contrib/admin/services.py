@@ -156,7 +156,8 @@ class AdminModelService:
     async def model_save(
         cls, admin_ins_name: str, data: t.Dict, request: HttpRequest
     ) -> t.Annotated[
-        t.Any, Doc(description="return the saved model inherited by BaseSerializer")
+        Serializer,
+        Doc(description="return the saved model inherited by BaseSerializer"),
     ]:
         admin_ins: ModelAdmin = admin_collector[admin_ins_name]
 
@@ -168,13 +169,13 @@ class AdminModelService:
         serializer_cls: t.Type[Serializer] = admin_ins.serializer
 
         # handle main model
-        idschema = IdSchema(**data)
+        idschema = IdSchema.model_validate(data)
         if idschema.id <= 0:
-            serializer = serializer_cls(**data)
+            serializer = serializer_cls.model_validate(data)
             db_ins = await serializer.create()
         else:
             current_db_ins = await serializer_cls.get_object(idschema)
-            serializer = serializer_cls(**data)
+            serializer = serializer_cls.model_validate(data)
             db_ins = await serializer.update(current_db_ins)
 
         return await serializer_cls.retrieve(db_ins)

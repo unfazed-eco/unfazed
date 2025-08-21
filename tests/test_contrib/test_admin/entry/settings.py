@@ -6,6 +6,7 @@ UNFAZED_SETTINGS = {
     "ROOT_URLCONF": "tests.test_contrib.test_admin.entry.routes",
     "INSTALLED_APPS": [
         "tests.apps.admin.registry",
+        "tests.apps.admin.article",
         "unfazed.contrib.admin",
     ],
     "DATABASE": {

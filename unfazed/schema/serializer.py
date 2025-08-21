@@ -56,7 +56,7 @@ class Relation(BaseModel):
             target_field="",
             relation="m2m",
             through=Through(
-                mid_model="UserRoleSerializer",
+                through="UserRoleSerializer",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_field="id",

@@ -19,7 +19,7 @@ class BaseModel(Model):
         await super().save(*args, **kwargs)
 
 
-class JsonTextField(fields.TextField):  # type: ignore
+class JsonTextField(fields.TextField):
     def to_db_value(self, value: t.Any, instance: t.Union[Model, t.Type[Model]]) -> str:
         try:
             return json.dumps(value).decode("utf-8")
@@ -31,8 +31,10 @@ class JsonTextField(fields.TextField):  # type: ignore
             return value
         try:
             return json.loads(value.encode())
-        except Exception as e:
-            raise ValueError(f"Failed to deserialize value: {value}") from e
+        except Exception as e:  # pragma: no cover
+            raise ValueError(
+                f"Failed to deserialize value: {value}"
+            ) from e  # pragma: no cover
 
 
 class ActiveEnum(IntEnum):

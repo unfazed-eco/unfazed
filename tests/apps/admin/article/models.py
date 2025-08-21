@@ -1,5 +1,7 @@
 from tortoise import Model, fields
 
+from unfazed.contrib.common.base_models import JsonTextField
+
 
 class BaseModel(Model):
     class Meta:
@@ -12,6 +14,7 @@ class Article(BaseModel):
     title = fields.CharField(max_length=255)
     author = fields.CharField(max_length=255)
     content = fields.TextField()
+    extra = JsonTextField(default={})
 
 
 class Author(BaseModel):

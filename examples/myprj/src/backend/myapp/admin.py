@@ -16,7 +16,7 @@ class StudentAdmin(ModelAdmin):
             target="CourseAdmin",
             relation="m2m",
             through=AdminThrough(
-                mid_model="StudentCourseAdmin",
+                through="StudentCourseAdmin",
                 source_field="id",
                 source_to_through_field="student_id",
                 target_field="id",

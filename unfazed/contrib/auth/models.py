@@ -78,8 +78,8 @@ class Group(BaseModel):
     users = ManyToManyField(
         "models.User",
         through="unfazed_auth_user_group",
-        forward_key="group_id",
-        backward_key="user_id",
+        forward_key="user_id",
+        backward_key="group_id",
         related_name="groups",
     )
 
@@ -157,22 +157,22 @@ class Role(BaseModel):
     users = ManyToManyField(
         "models.User",
         through="unfazed_auth_user_role",
-        forward_key="role_id",
-        backward_key="user_id",
+        forward_key="user_id",
+        backward_key="role_id",
         related_name="roles",
     )
     groups = ManyToManyField(
         "models.Group",
         through="unfazed_auth_group_role",
-        forward_key="role_id",
-        backward_key="group_id",
+        forward_key="group_id",
+        backward_key="role_id",
         related_name="roles",
     )
     permissions = ManyToManyField(
         "models.Permission",
         through="unfazed_auth_role_permission",
-        forward_key="role_id",
-        backward_key="permission_id",
+        forward_key="permission_id",
+        backward_key="role_id",
         related_name="roles",
     )
 

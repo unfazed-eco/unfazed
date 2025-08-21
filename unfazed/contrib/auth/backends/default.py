@@ -65,3 +65,9 @@ class DefaultAuthBackend(BaseAuthBackend):
 
     async def logout(self, session: t.Dict[str, t.Any]) -> t.Any:
         return {}
+
+    async def oauth_login_redirect(self) -> str:
+        return ""
+
+    async def oauth_logout_redirect(self) -> str:
+        return ""
