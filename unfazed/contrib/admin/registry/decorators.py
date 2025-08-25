@@ -84,11 +84,11 @@ def action(
             )
 
         @wraps(method)
-        async def asyncinner(self, ctx: ActionKwargs) -> t.Any:
+        async def asyncinner(self: "BaseAdmin", ctx: ActionKwargs) -> t.Any:
             return await method(self, ctx)
 
         @wraps(method)
-        def inner(self, ctx: ActionKwargs) -> t.Any:
+        def inner(self: "BaseAdmin", ctx: ActionKwargs) -> t.Any:
             return method(self, ctx)
 
         attrs = AdminAction(

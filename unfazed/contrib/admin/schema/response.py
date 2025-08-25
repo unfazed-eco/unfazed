@@ -30,7 +30,7 @@ class InlinesResp(BaseResponse[t.Dict[str, AdminInlineSerializeModel]]):
     pass
 
 
-class DataResp(BaseResponse[Result[ModelLineDataT]]):
+class DataResp(BaseResponse[Result]):
     pass
 
 

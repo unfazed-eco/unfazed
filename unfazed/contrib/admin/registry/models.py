@@ -9,6 +9,7 @@ from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
+from unfazed.protocol import AdminAuthProtocol
 from unfazed.schema import AdminRoute
 from unfazed.serializer import Serializer
 
@@ -135,7 +136,6 @@ class SiteSettings(BaseAdmin):
     iconfontUrl: str = ""
     pageSize: int = 20
     timeZone: str = "UTC"
-    pwa: bool = True
     showWatermark: bool = True
 
     # antd will call backend api use this prefix
@@ -187,7 +187,7 @@ class SiteSettings(BaseAdmin):
 site = SiteSettings()
 
 
-class BaseModelAdmin(BaseAdmin):
+class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     serializer: t.Type[Serializer]
 
     # fields description
@@ -379,7 +379,7 @@ class ModelAdmin(BaseModelAdmin):
                     f"inline {inline.name} is not a ModelInlineAdmin, it is a {type(inline)}"
                 )
 
-            inline_serializer: Serializer = inline.serializer
+            inline_serializer: t.Type[Serializer] = inline.serializer
             relation = self_serializer.find_relation(inline_serializer)
 
             if isinstance(admin_relation.relation, AutoFill):
@@ -391,10 +391,16 @@ class ModelAdmin(BaseModelAdmin):
                 else:
                     admin_relation.relation = relation.relation
 
-                if isinstance(admin_relation.source_field, AutoFill):
+                if (
+                    isinstance(admin_relation.source_field, AutoFill)
+                    and relation.source_field is not None
+                ):
                     admin_relation.source_field = relation.source_field
 
-                if isinstance(admin_relation.target_field, AutoFill):
+                if (
+                    isinstance(admin_relation.target_field, AutoFill)
+                    and relation.target_field is not None
+                ):
                     admin_relation.target_field = relation.target_field
 
             # check if the fields are correctly defined
@@ -402,7 +408,7 @@ class ModelAdmin(BaseModelAdmin):
                 assert admin_relation.through is not None
                 mid_name = admin_relation.through.through
                 mid_admin: ModelInlineAdmin = admin_collector[mid_name]
-                mid_serializer: Serializer = mid_admin.serializer
+                mid_serializer: t.Type[Serializer] = mid_admin.serializer
 
                 mid_fields = mid_serializer.model_fields
 

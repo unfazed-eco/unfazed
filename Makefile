@@ -14,3 +14,7 @@ publish:
 	@echo "Publishing package..."
 	uv build
 	uv publish
+
+
+docs:
+	uv run mkdocs build

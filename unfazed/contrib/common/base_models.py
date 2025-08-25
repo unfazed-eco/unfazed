@@ -4,6 +4,11 @@ from enum import IntEnum
 
 import orjson as json
 from tortoise import Model, fields
+from tortoise.fields.relational import (
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    OneToOneFieldInstance,
+)
 
 
 class BaseModel(Model):
@@ -19,7 +24,9 @@ class BaseModel(Model):
         await super().save(*args, **kwargs)
 
 
-class JsonTextField(fields.TextField):
+# TODO fix mypy error
+# error: Metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+class JsonTextField(fields.TextField):  # type: ignore
     def to_db_value(self, value: t.Any, instance: t.Union[Model, t.Type[Model]]) -> str:
         try:
             return json.dumps(value).decode("utf-8")
@@ -44,8 +51,8 @@ class ActiveEnum(IntEnum):
 
 def ForeignKeyField(
     model_name: str, related_name: str, null: bool = False, **kwargs: t.Any
-) -> fields.relational.ForeignKeyFieldInstance:
-    return fields.ForeignKeyField(
+) -> ForeignKeyFieldInstance:
+    return ForeignKeyFieldInstance(
         model_name,
         related_name,
         db_constraint=False,
@@ -62,8 +69,8 @@ def ManyToManyField(
     backward_key: str,
     related_name: str,
     **kwargs: t.Any,
-) -> fields.relational.ManyToManyRelation:
-    return fields.ManyToManyField(
+) -> ManyToManyFieldInstance:
+    return ManyToManyFieldInstance(
         model_name,
         through,
         forward_key,
@@ -77,8 +84,8 @@ def ManyToManyField(
 
 def OneToOneField(
     model_name: str, related_name: str, null: bool = False, **kwargs: t.Any
-) -> fields.relational.OneToOneFieldInstance:
-    return fields.OneToOneField(
+) -> OneToOneFieldInstance:
+    return OneToOneFieldInstance(
         model_name,
         related_name,
         db_constraint=False,

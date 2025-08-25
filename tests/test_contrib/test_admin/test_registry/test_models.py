@@ -44,7 +44,7 @@ def test_site() -> None:
     assert ret.fixedHeader is False
     assert ret.fixSiderbar is False
     assert ret.colorWeak is False
-    assert ret.pwa is True
+    assert ret.pwa is False
     assert (
         ret.logo
         == "https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg"
@@ -595,7 +595,7 @@ def test_inline_admin() -> None:
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
 
-    route_ret = instance.to_route()
+    route_ret = instance.to_route()  # type: ignore
     assert route_ret is None
 
 

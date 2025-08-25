@@ -198,3 +198,5 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
             permissions = admin_instance.get_all_permissions()
             for permission in permissions:
                 await m.Permission.get_or_create(access=permission)
+
+        return "Permissions synced successfully"

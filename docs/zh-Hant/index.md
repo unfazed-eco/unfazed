@@ -42,8 +42,8 @@ Unfazed 是一个工程导向、异步优先、易测试、易扩展的 Python w
 
 ### contrib
 
-1. admin 模块：[admin](features/contrib/admin.md)  - coming soon
-2. auth 模块：[auth](features/contrib/auth.md)  - coming soon
+1. admin 模块：[admin](features/contrib/admin.md)
+2. auth 模块：[auth](features/contrib/auth.md)
 3. session 模块：[session](features/contrib/session.md)
 
 ### 依赖

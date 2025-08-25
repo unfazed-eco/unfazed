@@ -136,7 +136,7 @@ class AdminModelService:
                 f"admin ins {admin_ins.name} does not have action {ctx.action}"
             )
 
-        if not await admin_ins.has_action_perm(request):
+        if request is not None and not await admin_ins.has_action_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
         method = getattr(admin_ins, ctx.action)

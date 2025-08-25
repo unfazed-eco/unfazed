@@ -196,10 +196,9 @@ async def test_admin_services_without_relations(
 
     # delete
 
-    delete_ret = await AdminModelService.model_delete(
+    await AdminModelService.model_delete(
         "TSCarAdmin", {"id": update_ret.id}, build_request()
     )
-    assert delete_ret is None
 
     assert (await Car.get_or_none(id=update_ret.id)) is None
 
@@ -460,7 +459,7 @@ async def test_permission_denied() -> None:
         def test_action(self, ctx: ActionKwargs) -> str:
             return "test_action"
 
-    request = t.cast(HttpRequest, build_request_without_super())
+    request = build_request_without_super()
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_desc("TSCarAdmin", request)

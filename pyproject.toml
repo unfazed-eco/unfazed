@@ -106,7 +106,7 @@ strict_equality = true
 show_error_context = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_serializer.*"
+module = "tests.*"
 disable_error_code = "attr-defined"
 
 [dependency-groups]

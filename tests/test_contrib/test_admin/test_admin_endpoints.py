@@ -149,6 +149,7 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
         )
 
         assert resp9.status_code == 200
+        print(resp9.json())
         ret = resp9.json()["data"]
 
         resp10 = await request.post(

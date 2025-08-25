@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from unfazed.schema import Condition
 from unfazed.type import Doc
 
-ModelLineDataT = t.TypeVar("ModelLineDataT", bound=t.Dict[str, t.Any])
+ModelLineDataT: t.TypeAlias = t.Dict[str, t.Any]
 
 
 class Detail(BaseModel):

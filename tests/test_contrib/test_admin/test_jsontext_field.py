@@ -9,10 +9,10 @@ async def test_jsontext_field() -> None:
     )
     await article.save()
 
-    assert article.extra == {"test": "test"}
+    assert article.extra == {"test": "test"}  # type: ignore
 
     with pytest.raises(ValueError):
-        article.extra = b"test"
+        article.extra = b"test"  # type: ignore
         await article.save()
 
     article.extra = "test"

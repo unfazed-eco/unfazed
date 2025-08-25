@@ -56,7 +56,8 @@ class AuthService:
 
     async def register(self, ctx: RegisterCtx) -> t.Dict:
         backend = self.choose_backend(ctx.platform)
-        return await backend.register(ctx)
+        await backend.register(ctx)
+        return {}
 
     async def oauth_login_redirect(self, platform: str) -> str:
         backend = self.choose_backend(platform)

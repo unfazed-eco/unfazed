@@ -50,7 +50,7 @@ async def model_data(
     ret = await AdminModelService.model_data(
         ctx.name, ctx.cond, ctx.page, ctx.size, request=request
     )
-    return JsonResponse(s.DataResp(data=ret.model_dump(exclude_none=True)))
+    return JsonResponse(s.DataResp(data=ret))
 
 
 @login_required

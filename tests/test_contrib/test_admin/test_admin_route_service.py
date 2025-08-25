@@ -36,7 +36,7 @@ def build_non_super_request() -> HttpRequest:
 
 
 @pytest.fixture
-def setup_route_service_env() -> t.AsyncGenerator:
+def setup_route_service_env() -> t.Generator:
     admin_collector.clear()
 
     class T1UserSerializer(Serializer):
@@ -50,12 +50,12 @@ def setup_route_service_env() -> t.AsyncGenerator:
     @register(T1UserSerializer)
     class T1UserAdmin(ModelAdmin):
         async def has_view_perm(self, request: HttpRequest) -> bool:
-            return request.user.is_superuser
+            return request.user.is_superuser == 1
 
     @register(T1UserSerializer)
     class T1UserAdmin2(ModelAdmin):
         async def has_view_perm(self, request: HttpRequest) -> bool:
-            return request.user.is_superuser
+            return request.user.is_superuser == 1
 
         def to_route(self) -> None:
             return None
@@ -63,7 +63,7 @@ def setup_route_service_env() -> t.AsyncGenerator:
     @register(T2UserSerializer)
     class T2UserAdmin(ModelAdmin):
         async def has_view_perm(self, request: HttpRequest) -> bool:
-            return request.user.is_superuser
+            return request.user.is_superuser == 1
 
     @register()
     class T1CustomAdmin(CustomAdmin):
@@ -73,7 +73,7 @@ def setup_route_service_env() -> t.AsyncGenerator:
         ]
 
         async def has_view_perm(self, request: HttpRequest) -> bool:
-            return request.user.is_superuser
+            return request.user.is_superuser == 1
 
     yield
 

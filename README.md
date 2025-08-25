@@ -40,7 +40,7 @@ API Development:
 Security & Sessions:
 - Role-based access control (RBAC)
 - Secure session management
-- Production-ready admin interface (coming soon)
+- Production-ready admin interface
 
 
 ## Installation

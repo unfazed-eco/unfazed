@@ -1,11 +1,12 @@
 import typing as t
 
 from unfazed.http import HttpRequest
+from unfazed.protocol import AdminAuthProtocol
 
 from .models import AbstractUser
 
 
-class AuthMixin:
+class AuthMixin(AdminAuthProtocol):
     async def has_view_permission(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:
