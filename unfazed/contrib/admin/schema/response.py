@@ -1,95 +1,42 @@
 import typing as t
 
-from pydantic import BaseModel
+from unfazed.contrib.admin.registry.schema import (
+    AdminCustomSerializeModel,
+    AdminInlineSerializeModel,
+    AdminSerializeModel,
+    AdminSite,
+)
+from unfazed.contrib.common.schema import BaseResponse
+from unfazed.schema import AdminRoute, Result
 
-from unfazed.route import params as p
-from unfazed.type import Doc
-
-
-class BaseResp(BaseModel):
-    code: int = 0
-    message: str = ""
-
-
-class DescField(BaseModel):
-    blank: bool
-    choices: list
-    # TODO: should be dumpable
-    default: str | None
-    help_text: str
-    readonly: bool
-    show: bool
-    type: str
+ModelLineDataT = t.TypeVar("ModelLineDataT", bound=t.Dict[str, t.Any])
 
 
-class DescAttr(BaseModel):
-    can_add: bool
-    can_search: bool
-    can_showall: bool
-    help_text: str
-    list_filter: list
-    list_per_page: int
-    list_search: list
-    list_sort: list
-
-
-class DescAction(BaseResp):
-    name: str
-    help_text: str
-    confirm: bool
-
-
-class DescBatchAction(DescAction):
+# route
+class RouteResp(BaseResponse[t.List[AdminRoute]]):
     pass
 
 
-class DescData(BaseModel):
-    fields: dict[str, DescField]
-    attrs: DescAttr
-    actions: dict[str, DescAction]
-    batch_actions: dict[str, DescBatchAction]
+# site settings
+class SiteSettingsResp(BaseResponse[AdminSite]):
+    pass
 
 
-class DescResp(BaseResp):
-    data: DescData
+class DescResp(BaseResponse[t.Union[AdminSerializeModel, AdminCustomSerializeModel]]):
+    pass
 
 
-DESC_RESP = [p.ResponseSpec(model=DescResp, description="Model Description")]
+class InlinesResp(BaseResponse[t.Dict[str, AdminInlineSerializeModel]]):
+    pass
 
 
-class DetailInlineData(BaseModel):
-    actions: dict[str, DescAction]
-    attrs: DescAttr
-    fields: dict[str, DescField]
+class DataResp(BaseResponse[Result]):
+    pass
 
 
-class DetailData(BaseModel):
-    inlines: t.Dict[str, DetailInlineData]
+class SaveResp(BaseResponse[t.Dict]):
+    pass
 
 
-class DetailResp(BaseResp):
-    data: DetailData
-
-
-DETAIL_RESP = [p.ResponseSpec(model=DetailData, description="Model relations detail")]
-
-
-class DataResp(BaseResp):
-    data: t.List[t.Annotated[t.Dict, Doc(description="depends on the tortoise model")]]
-
-
-DATA_RESP = [p.ResponseSpec(model=DataResp, description="query data from model")]
-
-
-class SaveResp(BaseResp):
-    data: t.Dict = {}
-
-
-SAVE_RESP = [p.ResponseSpec(model=SaveResp, description="save data to model")]
-
-
-class DeleteResp(BaseResp):
-    data: t.Dict = {}
-
-
-DELETE_RESP = [p.ResponseSpec(model=DeleteResp, description="delete data to model")]
+class DeleteResp(BaseResponse[t.Dict]):
+    pass

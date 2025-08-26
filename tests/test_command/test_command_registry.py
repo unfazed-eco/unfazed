@@ -30,10 +30,10 @@ def test_command_center() -> None:
 
     cmd = t.cast(BaseCommand, command_center.commands["common"])
 
-    loop.call_soon(cmd._callback())
+    loop.call_soon(cmd._callback())  # type: ignore
 
     cmd = t.cast(BaseCommand, command_center.commands["sync-common"])
-    loop.call_soon(cmd._callback())
+    loop.call_soon(cmd._callback())  # type: ignore
 
 
 async def test_cmd_failed() -> None:

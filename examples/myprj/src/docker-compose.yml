@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:9527:9527"
+    command: tail -f /src/.env
+    # command: make run
+    volumes:
+      - .:/src

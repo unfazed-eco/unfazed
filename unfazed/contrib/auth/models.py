@@ -1,30 +1,18 @@
 import typing as t
-from enum import Enum
 
-from tortoise import fields
+from tortoise import fields, models
 from tortoise.fields.relational import ManyToManyRelation
-from tortoise.models import Model
 
 from unfazed.conf import settings
+from unfazed.contrib.common.base_models import (
+    BaseModel,
+    ForeignKeyField,
+    ManyToManyField,
+)
 from unfazed.type import Doc
 from unfazed.utils import import_string
 
 from .settings import UnfazedContribAuthSettings
-
-
-class Status(Enum):
-    ACTIVE = 1
-    INACTIVE = 0
-
-
-class BaseModel(Model):
-    class Meta:
-        abstract = True
-
-    id = fields.IntField(primary_key=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    is_active = fields.SmallIntField(default=Status.ACTIVE.value, choices=Status)
 
 
 class AbstractUser(BaseModel):
@@ -57,25 +45,22 @@ class AbstractUser(BaseModel):
 
         ret = list(self.roles)
         for group in self.groups:
-            await group.fetch_related("roles")
-            ret.extend(list(group.roles))
+            roles_under_group = await group.query_roles()
+            ret.extend(roles_under_group)
 
-        return ret
+        return list(set(ret))
+
+    async def query_groups(self) -> t.List["Group"]:
+        await self.fetch_related("groups")
+        return list(self.groups)
 
     async def has_permission(self, access: str) -> bool:
         if self.is_superuser:
             return True
-        await self.fetch_related("roles", "groups")
-
-        for role in self.roles:
+        roles = await self.query_roles()
+        for role in roles:
             if await role.has_permission(access):
                 return True
-
-        for group in self.groups:
-            await group.fetch_related("roles")
-            for role in group.roles:
-                if await role.has_permission(access):
-                    return True
 
         return False
 
@@ -90,14 +75,78 @@ class Group(BaseModel):
         table = "unfazed_auth_group"
 
     name = fields.CharField(max_length=255)
-    users = fields.ManyToManyField(
+    users = ManyToManyField(
         "models.User",
+        through="unfazed_auth_user_group",
+        forward_key="user_id",
+        backward_key="group_id",
         related_name="groups",
-        on_delete=fields.NO_ACTION,
-        db_constraint=False,
     )
 
     roles: ManyToManyRelation["Role"]
+
+    async def query_roles(self) -> t.List["Role"]:
+        await self.fetch_related("roles")
+        return list(self.roles)
+
+    async def query_users(self) -> t.List["AbstractUser"]:
+        await self.fetch_related("users")
+        return list(self.users)
+
+
+class UserGroup(models.Model):
+    class Meta:
+        table = "unfazed_auth_user_group"
+
+    id = fields.BigIntField(primary_key=True)
+    user = ForeignKeyField(
+        "models.User",
+        related_name="user_groups",
+        null=True,
+    )
+
+    group = ForeignKeyField(
+        "models.Group",
+        related_name="user_groups",
+        null=True,
+    )
+
+
+class UserRole(models.Model):
+    class Meta:
+        table = "unfazed_auth_user_role"
+
+    id = fields.BigIntField(primary_key=True)
+
+    user = ForeignKeyField(
+        "models.User",
+        related_name="user_roles",
+        null=True,
+    )
+
+    role = ForeignKeyField(
+        "models.Role",
+        related_name="user_roles",
+        null=True,
+    )
+
+
+class GroupRole(models.Model):
+    class Meta:
+        table = "unfazed_auth_group_role"
+
+    id = fields.BigIntField(primary_key=True)
+    group = ForeignKeyField(
+        "models.Group",
+        related_name="group_roles",
+        null=True,
+    )
+
+    role = ForeignKeyField(
+        "models.Role",
+        related_name="group_roles",
+        null=True,
+    )
 
 
 class Role(BaseModel):
@@ -105,23 +154,26 @@ class Role(BaseModel):
         table = "unfazed_auth_role"
 
     name = fields.CharField(max_length=255)
-    users = fields.ManyToManyField(
+    users = ManyToManyField(
         "models.User",
+        through="unfazed_auth_user_role",
+        forward_key="user_id",
+        backward_key="role_id",
         related_name="roles",
-        on_delete=fields.NO_ACTION,
-        db_constraint=False,
     )
-    groups = fields.ManyToManyField(
+    groups = ManyToManyField(
         "models.Group",
+        through="unfazed_auth_group_role",
+        forward_key="group_id",
+        backward_key="role_id",
         related_name="roles",
-        on_delete=fields.NO_ACTION,
-        db_constraint=False,
     )
-    permissions = fields.ManyToManyField(
+    permissions = ManyToManyField(
         "models.Permission",
+        through="unfazed_auth_role_permission",
+        forward_key="permission_id",
+        backward_key="role_id",
         related_name="roles",
-        on_delete=fields.NO_ACTION,
-        db_constraint=False,
     )
 
     async def query_users(self) -> t.List["AbstractUser"]:
@@ -129,17 +181,43 @@ class Role(BaseModel):
 
         ret = list(self.users)
         for group in self.groups:
-            await group.fetch_related("users")
-            ret.extend(list(group.users))
+            users_under_group = await group.query_users()
+            ret.extend(users_under_group)
 
-        return ret
+        return list(set(ret))
+
+    async def query_groups(self) -> t.List["Group"]:
+        await self.fetch_related("groups")
+        return list(self.groups)
+
+    async def query_permissions(self) -> t.List["Permission"]:
+        await self.fetch_related("permissions")
+        return list(self.permissions)
 
     async def has_permission(self, access: str) -> bool:
-        await self.fetch_related("permissions")
-        for permission in self.permissions:
+        for permission in await self.query_permissions():
             if permission.access == access:
                 return True
+
         return False
+
+
+class RolePermission(models.Model):
+    class Meta:
+        table = "unfazed_auth_role_permission"
+
+    id = fields.BigIntField(primary_key=True)
+    role = ForeignKeyField(
+        "models.Role",
+        related_name="role_permissions",
+        null=True,
+    )
+
+    permission = ForeignKeyField(
+        "models.Permission",
+        related_name="role_permissions",
+        null=True,
+    )
 
 
 class Permission(BaseModel):

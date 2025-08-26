@@ -1,3 +1,4 @@
+from .admin import AdminAuthProtocol
 from .asgi import ASGIType
 from .cache import CompressorBase, SerializerBase
 from .middleware import MiddleWare
@@ -11,4 +12,5 @@ __all__ = [
     "ASGIType",
     "SerializerBase",
     "CompressorBase",
+    "AdminAuthProtocol",
 ]

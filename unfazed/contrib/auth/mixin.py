@@ -1,50 +1,12 @@
 import typing as t
-from functools import cached_property
-
-from tortoise import Model
 
 from unfazed.http import HttpRequest
+from unfazed.protocol import AdminAuthProtocol
 
 from .models import AbstractUser
 
 
-class AuthMixin:
-    @cached_property
-    def model_description(self) -> t.Dict[str, t.Any]:
-        model: t.Type[Model] = self.serializer.Meta.model  # type: ignore
-        return model.describe()
-
-    @property
-    def permission_prefix(self) -> str:
-        return f"{self.model_description['app']}.{self.model_description['table']}"
-
-    @property
-    def view_permission(self) -> str:
-        return f"{self.permission_prefix}.can_view"
-
-    @property
-    def change_permission(self) -> str:
-        return f"{self.permission_prefix}.can_change"
-
-    @property
-    def delete_permission(self) -> str:
-        return f"{self.permission_prefix}.can_delete"
-
-    @property
-    def create_permission(self) -> str:
-        return f"{self.permission_prefix}.can_create"
-
-    def action_permission(self, action: str) -> str:
-        return f"{self.permission_prefix}.can_exec_{action}"
-
-    def get_all_permissions(self) -> t.List[str]:
-        return [
-            self.view_permission,
-            self.change_permission,
-            self.delete_permission,
-            self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
-
+class AuthMixin(AdminAuthProtocol):
     async def has_view_permission(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
     ) -> bool:

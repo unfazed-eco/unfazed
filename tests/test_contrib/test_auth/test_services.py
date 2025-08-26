@@ -30,6 +30,11 @@ async def test_authservice() -> None:
         LoginCtx(account="admin", password="admin", platform="notexisted")
     )
 
+    oauth_login_ret = await service.oauth_login_redirect("default")
+    assert oauth_login_ret == ""
+    oauth_logout_ret = await service.oauth_logout_redirect("default")
+    assert oauth_logout_ret == ""
+
 
 async def test_failed_load() -> None:
     auth_settings = UnfazedContribAuthSettings(

@@ -1,31 +1,25 @@
 from .request import Action, Data, Delete, Detail, Save
 from .response import (
-    DATA_RESP,
-    DELETE_RESP,
-    DESC_RESP,
-    DETAIL_RESP,
-    SAVE_RESP,
     DataResp,
     DeleteResp,
     DescResp,
-    DetailResp,
+    InlinesResp,
+    RouteResp,
     SaveResp,
+    SiteSettingsResp,
 )
 
 __all__ = [
-    "DESC_RESP",
-    "DETAIL_RESP",
     "DescResp",
-    "DetailResp",
+    "InlinesResp",
     "Detail",
     "Data",
-    "DATA_RESP",
     "DataResp",
     "Action",
     "Save",
-    "SAVE_RESP",
     "SaveResp",
     "Delete",
-    "DELETE_RESP",
     "DeleteResp",
+    "RouteResp",
+    "SiteSettingsResp",
 ]

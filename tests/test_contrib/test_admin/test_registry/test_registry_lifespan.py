@@ -5,7 +5,7 @@ from unfazed.core import Unfazed
 
 _Settings = {
     "INSTALLED_APPS": [
-        "tests.apps.admin.account",
+        "tests.apps.admin.registry",
         "tests.apps.admin.article",
         "unfazed.contrib.admin",
     ],
@@ -23,4 +23,3 @@ async def test_registry_lifespan() -> None:
     await lifespan.on_startup()
 
     assert "ArticleAdmin" in admin_collector
-    assert "UserAdmin" in admin_collector

@@ -1,7 +1,7 @@
+from unfazed.contrib.common.schema import ErrorResponse
+from unfazed.http import JsonResponse
 from unfazed.middleware import BaseMiddleware
 from unfazed.type import Receive, Scope, Send
-
-from .utils import response_error
 
 
 class CommonMiddleware(BaseMiddleware):
@@ -57,5 +57,5 @@ class CommonMiddleware(BaseMiddleware):
             else:
                 message = str(err)
 
-            response = response_error(code=code, message=message)
+            response = JsonResponse(ErrorResponse(code=code, message=message))
             await response(scope, receive, send)

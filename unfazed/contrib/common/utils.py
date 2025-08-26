@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from unfazed.http import JsonResponse
 
-from .schema import RespContent
+from .schema import BaseResponse
 
 
 def response_success(
@@ -15,16 +15,4 @@ def response_success(
     data = data or {}
     if isinstance(data, BaseModel):
         data = data.model_dump(exclude_none=True, by_alias=True)
-    return JsonResponse(RespContent(data=data, message=message))
-
-
-def response_error(
-    *,
-    code: int,
-    message: str,
-    data: t.List | t.Dict | BaseModel | None = None,
-) -> JsonResponse:
-    data = data or {}
-    if isinstance(data, BaseModel):
-        data = data.model_dump(exclude_none=True, by_alias=True)
-    return JsonResponse(RespContent(code=code, message=message, data=data))
+    return JsonResponse(BaseResponse(data=data, message=message))

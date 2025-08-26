@@ -7,6 +7,28 @@ from unfazed.http import HttpRequest, HttpResponse
 
 
 def login_required(func: t.Callable) -> t.Callable:
+    """
+    Decorator for endpoints that checks that the user is logged in, raise LoginRequired if not.
+
+    Supports both async and sync endpoints.
+
+    Usage:
+
+    ```python
+
+
+    @login_required
+    async def my_endpoint(request: HttpRequest) -> HttpResponse:
+        return HttpResponse("Hello, world!")
+
+    @login_required
+    def my_endpoint(request: HttpRequest) -> HttpResponse:
+        return HttpResponse("Hello, world!")
+
+    ```
+
+    """
+
     @wraps(func)
     async def asyncwrapper(
         request: HttpRequest, *args: t.Any, **kwargs: t.Any
@@ -30,6 +52,24 @@ def login_required(func: t.Callable) -> t.Callable:
 
 
 def permission_required(perm: str) -> t.Callable:
+    """
+    Decorator for endpoints that checks that the user has a specific permission,
+    raise PermissionDenied if not.
+
+    Supports both async and sync endpoints.
+
+    Usage:
+
+    ```python
+
+
+    @permission_required("my_app.my_permission")
+    async def my_endpoint(request: HttpRequest) -> HttpResponse:
+        return HttpResponse("Hello, world!")
+
+    ```
+    """
+
     def decorator(func: t.Callable) -> t.Callable:
         @wraps(func)
         async def asyncwrapper(

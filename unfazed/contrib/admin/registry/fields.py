@@ -23,8 +23,8 @@ class Field:
         self.default = default
 
     def to_json(self) -> AdminField:
-        return AdminField(
-            **{
+        return AdminField.model_validate(
+            {
                 "name": self.name,
                 "readonly": self.readonly,
                 "show": self.show,
@@ -61,7 +61,7 @@ class UploadField(Field):
     pass
 
 
-class BoolField(Field):
+class BooleanField(Field):
     pass
 
 
@@ -73,5 +73,5 @@ class JsonField(Field):
     pass
 
 
-class DateTimeField(Field):
+class DatetimeField(Field):
     pass

@@ -1,6 +1,6 @@
 [project]
 name = "unfazed"
-version = "0.0.14"
+version = "0.0.15b7"
 description = "Production ready async python web framework"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -52,8 +52,6 @@ asyncio_default_fixture_loop_scope = "session"
 testpaths = [
     "tests",
 ]
-
-
 
 [tool.coverage.report]
 exclude_lines = [
@@ -108,12 +106,13 @@ strict_equality = true
 show_error_context = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_serializer.*"
+module = "tests.*"
 disable_error_code = "attr-defined"
 
 [dependency-groups]
 dev = [
     "asyncmy>=0.2.10",
+    "ipython>=9.4.0",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.5.49",
     "mkdocs-static-i18n>=1.2.3",

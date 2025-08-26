@@ -4,7 +4,9 @@ import pytest
 
 from tests.apps.auth.common.models import Phone, User
 from unfazed.contrib.admin.registry import (
+    ActionKwargs,
     BaseModelAdmin,
+    ModelAdmin,
     action,
     admin_collector,
     register,
@@ -26,11 +28,11 @@ async def setup_auth_mixin_env() -> t.AsyncGenerator:
     @register(PhoneSerializer)
     class PhoneAdmin(BaseModelAdmin, AuthMixin):
         @action(name="action1")
-        def action1(self) -> None:
+        def action1(self, ctx: ActionKwargs) -> None:
             pass
 
         @action(name="action2")
-        def action2(self) -> None:
+        def action2(self, ctx: ActionKwargs) -> None:
             pass
 
     yield
@@ -39,7 +41,7 @@ async def setup_auth_mixin_env() -> t.AsyncGenerator:
 
 
 async def test_admin_mixin() -> None:
-    phone_ins: AuthMixin = admin_collector["PhoneAdmin"]
+    phone_ins: t.Union[ModelAdmin] = admin_collector["PhoneAdmin"]
 
     assert phone_ins.view_permission == "models.unfazed_auth_phone.can_view"
     assert phone_ins.create_permission == "models.unfazed_auth_phone.can_create"

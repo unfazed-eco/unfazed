@@ -1,6 +1,7 @@
 import inspect
 import typing as t
 from enum import Enum
+from functools import cached_property
 from itertools import chain
 
 from pydantic.fields import FieldInfo
@@ -8,42 +9,37 @@ from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
-from unfazed.schema import AdminRoute, RouteMeta
+from unfazed.protocol import AdminAuthProtocol
+from unfazed.schema import AdminRoute
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
-from .decorators import action
-from .fields import CharField, TextField
 from .fields import Field as CustomField
 from .schema import (
     AdminAction,
     AdminAttrs,
+    AdminCustomAttrs,
+    AdminCustomSerializeModel,
     AdminField,
     AdminInlineAttrs,
     AdminInlineSerializeModel,
+    AdminRelation,
     AdminSerializeModel,
     AdminSite,
-    AdminToolAttrs,
-    AdminToolSerializeModel,
+    AutoFill,
 )
 from .utils import convert_field_type
 
-if t.TYPE_CHECKING:
-    from unfazed.cache.backends.locmem import LocMemCache  # pragma: no cover
-    from unfazed.cache.backends.redis.serializedclient import (
-        SerializerBackend,  # pragma: no cover
-    )
-
 
 class BaseAdmin:
-    help_text: t.List[str] = []
+    help_text: str = ""
     route_label: str | None = None
 
     # route config
     component: str = ""
     icon: str = ""
-    hidden: bool = False
-    hidden_children: bool = False
+    hideInMenu: bool = False
+    hideChildrenInMenu: bool = False
 
     # register behavior
     override: bool = False
@@ -55,6 +51,14 @@ class BaseAdmin:
     @property
     def title(self) -> str:
         return self.__class__.__name__
+
+    @property
+    def path(self) -> str:
+        return f"/{self.name}"
+
+    @property
+    def label(self) -> str:
+        return self.name.capitalize()
 
     async def has_view_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
@@ -87,7 +91,7 @@ class BaseAdmin:
         AdminSite,
         AdminSerializeModel,
         AdminInlineSerializeModel,
-        AdminToolSerializeModel,
+        AdminCustomSerializeModel,
     ]:
         raise NotImplementedError  # pragma: no cover
 
@@ -106,15 +110,14 @@ class BaseAdmin:
 
     def to_route(self) -> AdminRoute | None:
         return AdminRoute(
-            title=self.title,
             component=self.component,
+            path=self.path,
             name=self.name,
-            children=[],
-            meta=RouteMeta(
-                icon=self.icon,
-                hidden=self.hidden,
-                hidden_children=self.hidden_children,
-            ),
+            label=self.label,
+            routes=[],
+            icon=self.icon,
+            hideInMenu=self.hideInMenu,
+            hideChildrenInMenu=self.hideChildrenInMenu,
         )
 
 
@@ -133,6 +136,7 @@ class SiteSettings(BaseAdmin):
     iconfontUrl: str = ""
     pageSize: int = 20
     timeZone: str = "UTC"
+    showWatermark: bool = True
 
     # antd will call backend api use this prefix
     # for example, if apiPrefix is /api/contrib/admin
@@ -161,7 +165,9 @@ class SiteSettings(BaseAdmin):
                 "layout": self.layout,
                 "contentWidth": self.contentWidth,
                 "fixedHeader": self.fixedHeader,
+                "fixSiderbar": self.fixSiderbar,
                 "colorWeak": self.colorWeak,
+                "pwa": self.pwa,
                 "logo": self.logo,
                 "pageSize": self.pageSize,
                 "timeZone": self.timeZone,
@@ -170,6 +176,8 @@ class SiteSettings(BaseAdmin):
                 "version": unfazed_settings.VERSION or "0.0.1",
                 "authPlugins": self.authPlugins,
                 "extra": self.extra,
+                "iconfontUrl": self.iconfontUrl,
+                "showWatermark": self.showWatermark,
             }
         )
 
@@ -179,7 +187,7 @@ class SiteSettings(BaseAdmin):
 site = SiteSettings()
 
 
-class BaseModelAdmin(BaseAdmin):
+class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     serializer: t.Type[Serializer]
 
     # fields description
@@ -206,6 +214,45 @@ class BaseModelAdmin(BaseAdmin):
     # search panel
     can_search: bool = True
     search_fields: t.List[str] = []
+
+    # route label
+    route_label: str = "Data Management"
+
+    @cached_property
+    def model_description(self) -> t.Dict[str, t.Any]:
+        model: t.Type[TModel] = self.serializer.Meta.model  # type: ignore
+        return model.describe()
+
+    @property
+    def permission_prefix(self) -> str:
+        return f"{self.model_description['app']}.{self.model_description['table']}"
+
+    @property
+    def view_permission(self) -> str:
+        return f"{self.permission_prefix}.can_view"
+
+    @property
+    def change_permission(self) -> str:
+        return f"{self.permission_prefix}.can_change"
+
+    @property
+    def delete_permission(self) -> str:
+        return f"{self.permission_prefix}.can_delete"
+
+    @property
+    def create_permission(self) -> str:
+        return f"{self.permission_prefix}.can_create"
+
+    def action_permission(self, action: str) -> str:
+        return f"{self.permission_prefix}.can_exec_{action}"
+
+    def get_all_permissions(self) -> t.List[str]:
+        return [
+            self.view_permission,
+            self.change_permission,
+            self.delete_permission,
+            self.create_permission,
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
@@ -309,42 +356,104 @@ class ModelAdmin(BaseModelAdmin):
     # behaviors on detail page
     detail_display: t.List[str] = []
 
-    # have edit btn to detail page
+    # can access detail page
     editable: bool = True
 
     # relations
-    inlines: t.List[str] = []
+    # currently unfazed need developers define the relation clearly
+    inlines: t.List[AdminRelation] = []
 
-    def to_inlines(self) -> t.Dict:
+    def to_inlines(self) -> t.Dict[str, AdminInlineSerializeModel]:
         inlines = self.inlines
         if not inlines:
             return {}
 
         ret = {}
         self_serializer: t.Type[Serializer] = self.serializer
-        for name in inlines:
-            inline = admin_collector[name]
+        for admin_relation in inlines:
+            name = admin_relation.target
+            inline: ModelInlineAdmin = admin_collector[name]
 
-            inline_serializer: Serializer = inline.serializer
-            relation = inline_serializer.find_relation(self_serializer)
-
-            if not relation:
+            if not isinstance(inline, ModelInlineAdmin):
                 raise ValueError(
-                    f"dont have relation between {inline.name} and {self.name} not found"
+                    f"inline {inline.name} is not a ModelInlineAdmin, it is a {type(inline)}"
                 )
 
-            elif relation.relation == "bk_fk":
-                raise ValueError(
-                    f"bk_fk relation between {inline.name} and {self.name} is not supported"
-                )
+            inline_serializer: t.Type[Serializer] = inline.serializer
+            relation = self_serializer.find_relation(inline_serializer)
 
-            elif relation.relation == "bk_o2o":
-                raise ValueError(
-                    f"bk_o2o relation between {inline.name} and {self.name} is not supported"
-                )
+            if isinstance(admin_relation.relation, AutoFill):
+                if not relation:
+                    raise ValueError(
+                        f"dont have relation between {inline.name} and {self.name}"
+                    )
+
+                else:
+                    admin_relation.relation = relation.relation
+
+                if (
+                    isinstance(admin_relation.source_field, AutoFill)
+                    and relation.source_field is not None
+                ):
+                    admin_relation.source_field = relation.source_field
+
+                if (
+                    isinstance(admin_relation.target_field, AutoFill)
+                    and relation.target_field is not None
+                ):
+                    admin_relation.target_field = relation.target_field
+
+            # check if the fields are correctly defined
+            if admin_relation.relation == "m2m":
+                assert admin_relation.through is not None
+                mid_name = admin_relation.through.through
+                mid_admin: ModelInlineAdmin = admin_collector[mid_name]
+                mid_serializer: t.Type[Serializer] = mid_admin.serializer
+
+                mid_fields = mid_serializer.model_fields
+
+                if admin_relation.through.target_to_through_field not in mid_fields:
+                    raise ValueError(
+                        f"field {admin_relation.through.target_to_through_field} not found in {mid_fields}"
+                    )
+
+                if admin_relation.through.source_to_through_field not in mid_fields:
+                    raise ValueError(
+                        f"field {admin_relation.through.source_to_through_field} not found in {mid_fields}"
+                    )
+
+                if (
+                    admin_relation.through.source_field
+                    not in self_serializer.model_fields
+                ):
+                    raise ValueError(
+                        f"field {admin_relation.through.source_field} not found in {self_serializer.model_fields}"
+                    )
+
+                if (
+                    admin_relation.through.target_field
+                    not in inline_serializer.model_fields
+                ):
+                    raise ValueError(
+                        f"field {admin_relation.through.target_field} not found in {inline_serializer.model_fields}"
+                    )
 
             else:
-                ret[inline.name] = relation.model_dump()
+                if admin_relation.source_field not in self_serializer.model_fields:
+                    raise ValueError(
+                        f"field {admin_relation.source_field} not found in {self_serializer.model_fields}"
+                    )
+
+                if admin_relation.target_field not in inline_serializer.model_fields:
+                    raise ValueError(
+                        f"field {admin_relation.target_field} not found in {inline_serializer.model_fields}"
+                    )
+
+            admin_inline_serialize_model: AdminInlineSerializeModel = (
+                inline.to_serialize()
+            )
+            admin_inline_serialize_model.relation = admin_relation
+            ret[inline.name] = admin_inline_serialize_model
 
         return ret
 
@@ -400,9 +509,6 @@ class ModelInlineAdmin(ModelAdmin):
     max_num: int = 0
     min_num: int = 0
 
-    # item control
-    can_copy: bool = False
-
     def to_route(self) -> None:
         return None
 
@@ -426,7 +532,6 @@ class ModelInlineAdmin(ModelAdmin):
                 "help_text": self.help_text,
                 "max_num": self.max_num,
                 "min_num": self.min_num,
-                "can_copy": self.can_copy,
                 "can_show_all": self.can_show_all,
                 "can_search": self.can_search,
                 "search_fields": self.search_fields or list_display,
@@ -453,53 +558,38 @@ class ModelInlineAdmin(ModelAdmin):
         )
 
 
-class ToolAdmin(BaseAdmin):
+class CustomAdmin(BaseAdmin):
     fields_set: t.List[CustomField] = []
-    route_label: str = "Tools"
-    output_field: str
+    route_label: str = "Custom Pages"
+
+    @property
+    def permission_prefix(self) -> str:
+        return f"custom.{self.__class__.__name__.lower()}"
+
+    @property
+    def view_permission(self) -> str:
+        return f"{self.permission_prefix}.can_view"
+
+    def action_permission(self, action: str) -> str:
+        return f"{self.permission_prefix}.can_exec_{action}"
+
+    def get_all_permissions(self) -> t.List[str]:
+        return [
+            self.view_permission,
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
-    def to_serialize(self) -> AdminToolSerializeModel:
+    def to_serialize(self) -> AdminCustomSerializeModel:
         fields_map = {}
         for field in self.fields_set:
             fields_map[field.name] = field.to_json()
 
-        attrs = AdminToolAttrs(output_field=self.output_field, help_text=self.help_text)
+        attrs = AdminCustomAttrs(help_text=self.help_text)
 
         actions = self.get_actions()
 
-        return AdminToolSerializeModel(
+        return AdminCustomSerializeModel(
             fields=fields_map,
             actions=actions,
             attrs=attrs,
         )
-
-
-class CacheAdmin(BaseAdmin):
-    route_label: str = "Cache"
-    fields_set: t.List[CustomField] = [
-        CharField(name="key", help_text="cache key"),
-        TextField(name="value", help_text="cache value"),
-    ]
-
-    output_field: str = "value"
-
-    cache_client: t.Union["LocMemCache", "SerializerBackend"]
-
-    @action(name="search")
-    async def search(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
-        return await self.cache_client.get(key)
-
-    @action(name="set")
-    async def set(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
-        value = data.get("value", None)
-
-        return await self.cache_client.set(key, value)
-
-    @action(name="delete")
-    async def delete(self, data: t.Dict, request: HttpRequest | None = None) -> t.Any:
-        key = data.get("key", None)
-
-        return await self.cache_client.delete(key)

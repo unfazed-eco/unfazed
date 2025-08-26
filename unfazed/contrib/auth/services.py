@@ -54,7 +54,17 @@ class AuthService:
         resp = await backend.logout(session_info)
         return resp
 
-    async def register(self, ctx: RegisterCtx) -> t.Any:
+    async def register(self, ctx: RegisterCtx) -> t.Dict:
         backend = self.choose_backend(ctx.platform)
         await backend.register(ctx)
         return {}
+
+    async def oauth_login_redirect(self, platform: str) -> str:
+        backend = self.choose_backend(platform)
+        redirect_url = await backend.oauth_login_redirect()
+        return redirect_url
+
+    async def oauth_logout_redirect(self, platform: str) -> str:
+        backend = self.choose_backend(platform)
+        redirect_url = await backend.oauth_logout_redirect()
+        return redirect_url

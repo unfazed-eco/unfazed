@@ -376,11 +376,13 @@ class Serializer(BaseModel, metaclass=MetaClass):
             m2mfield: ManyToManyFieldInstance = t.cast(
                 ManyToManyFieldInstance, self_model._meta.fields_map[m2m_field_name]
             )
+
             if m2mfield.related_model == other_model:
+                # TODO: add through field
                 return Relation(
-                    to=other_cls.__name__,
-                    source_field=m2m_field_name,  # also field.related_name
-                    dest_field="",
+                    target=other_cls.__name__,
+                    source_field="",  # also field.related_name
+                    target_field="",
                     relation="m2m",
                 )
 
@@ -391,10 +393,10 @@ class Serializer(BaseModel, metaclass=MetaClass):
             )
             if fk_field.related_model == other_model:
                 return Relation(
-                    to=other_cls.__name__,
+                    target=other_cls.__name__,
                     source_field=fk_field.source_field
                     or "",  # also fk_field.source_field
-                    dest_field=fk_field.to_field,
+                    target_field=fk_field.to_field,
                     relation="fk",
                 )
 
@@ -405,9 +407,9 @@ class Serializer(BaseModel, metaclass=MetaClass):
             )
             if bk_fk_field.related_model == other_model:
                 return Relation(
-                    to=other_cls.__name__,
-                    source_field="",
-                    dest_field=bk_fk_field.relation_source_field,
+                    target=other_cls.__name__,
+                    source_field="id",
+                    target_field=bk_fk_field.relation_source_field,
                     relation="bk_fk",
                 )
 
@@ -418,9 +420,9 @@ class Serializer(BaseModel, metaclass=MetaClass):
             )
             if o2o_field.related_model == other_model:
                 return Relation(
-                    to=other_cls.__name__,
+                    target=other_cls.__name__,
                     source_field=o2o_field.source_field or "",
-                    dest_field=o2o_field.to_field,
+                    target_field=o2o_field.to_field,
                     relation="o2o",
                 )
 
@@ -431,9 +433,9 @@ class Serializer(BaseModel, metaclass=MetaClass):
             )
             if bk_o2o_field.related_model == other_model:
                 return Relation(
-                    to=other_cls.__name__,
-                    source_field="",
-                    dest_field=bk_o2o_field.relation_source_field,
+                    target=other_cls.__name__,
+                    source_field="id",
+                    target_field=bk_o2o_field.relation_source_field,
                     relation="bk_o2o",
                 )
 

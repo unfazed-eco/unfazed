@@ -1,0 +1,3 @@
+site_name: myprj
+nav:
+  - Home: index.md

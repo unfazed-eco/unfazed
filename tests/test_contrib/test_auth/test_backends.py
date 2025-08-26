@@ -65,3 +65,18 @@ async def test_default_backend() -> None:
     with pytest.raises(WrongPassword):
         bkd4 = DefaultAuthBackend()
         await bkd4.register(RegisterCtx(account="test1", password=""))
+
+    # logout
+
+    logout_ret = await bkd.logout(session_info)
+
+    assert logout_ret == {}
+
+    # oauth login redirect
+    oauth_login_ret = await bkd.oauth_login_redirect()
+
+    assert oauth_login_ret == ""
+
+    oauth_logout_ret = await bkd.oauth_logout_redirect()
+
+    assert oauth_logout_ret == ""

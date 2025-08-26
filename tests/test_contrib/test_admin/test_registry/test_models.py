@@ -1,19 +1,27 @@
-import enum
 import typing as t
 
 import pytest
-from tortoise import fields as f
-from tortoise.models import Model
 
-from tests.apps.admin.account.models import Book, Profile, User
-from unfazed.cache.backends.locmem import LocMemCache
+from tests.apps.admin.registry.models import (
+    Car,
+    T1Book,
+    T2Book,
+    T2Role,
+    T2User,
+    T2UserRole,
+)
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.registry import (
+    ActionKwargs,
+    ActionOutput,
+    AdminInlineSerializeModel,
+    AdminRelation,
+    AdminThrough,
     BaseModelAdmin,
-    CacheAdmin,
+    CustomAdmin,
     ModelAdmin,
     ModelInlineAdmin,
-    ToolAdmin,
+    action,
     admin_collector,
     fields,
     register,
@@ -29,50 +37,32 @@ def test_site() -> None:
 
     ret = site.to_serialize()
     assert ret.title == "Unfazed Admin"
+    assert ret.navTheme == "light"
+    assert ret.colorPrimary == "#1890ff"
+    assert ret.layout == "mix"
+    assert ret.contentWidth == "Fluid"
+    assert ret.fixedHeader is False
+    assert ret.fixSiderbar is False
+    assert ret.colorWeak is False
+    assert ret.pwa is False
+    assert (
+        ret.logo
+        == "https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg"
+    )
 
-    site.extra = {"foo": "bar"}
-    ret = site.to_serialize()
-    assert ret.extra == {"foo": "bar"}
+    assert ret.pageSize == 20
+    assert ret.timeZone == "UTC"
+    assert ret.apiPrefix == "/api/contrib/admin"
+    assert ret.debug is True
+    assert ret.version == "0.1.0"
+    assert ret.authPlugins == []
+    assert ret.extra == {}
+
+    assert ret.iconfontUrl == ""
+    assert ret.showWatermark is True
 
     route = site.to_route()  # type: ignore
     assert route is None
-
-
-class Brand(enum.StrEnum):
-    BMW = "BMW"
-    BENZ = "BENZ"
-
-
-class Color(enum.IntEnum):
-    RED = 1
-    GREEN = 2
-
-
-class Car(Model):
-    id = f.BigIntField(primary_key=True)
-    bits = f.BinaryField()
-    limited = f.BooleanField()
-    brand = f.CharEnumField(enum_type=Brand, default=Brand.BENZ)
-    alias = f.CharField(max_length=100)
-    year = f.DateField()
-    production_datetime = f.DatetimeField(auto_now_add=True)
-    release_datetime = f.DatetimeField()
-    price = f.DecimalField(max_digits=10, decimal_places=2)
-    length = f.FloatField()
-    color = f.IntEnumField(enum_type=Color)
-    height = f.IntField()
-    extra_info: t.Dict = f.JSONField(default={})
-    version = f.SmallIntField()
-    description = f.TextField()
-    usage = f.TimeDeltaField()
-    late_used_time = f.TimeField()
-    uuid = f.UUIDField()
-    override = f.CharField(max_length=100)
-    pic = f.CharField(max_length=255)
-    created_at = f.BigIntField()
-
-    class Meta:
-        table = "car"
 
 
 def test_base_model_admin() -> None:
@@ -94,6 +84,10 @@ def test_base_model_admin() -> None:
         readonly_fields: t.List[str] = ["year"]
         not_null_fields: t.List[str] = ["price"]
         json_fields: t.List[str] = ["description"]
+
+        @action(name="action1", label="Action 1")
+        async def action1(self, ctx: ActionKwargs) -> None:
+            pass
 
     instance = CarAdmin()
 
@@ -151,6 +145,18 @@ def test_base_model_admin() -> None:
 
     assert "extra" in fields
     assert fields["extra"].field_type == "IntegerField"
+
+    # test permission str generation
+    assert instance.view_permission == "models.test_models_car.can_view"
+    assert instance.change_permission == "models.test_models_car.can_change"
+    assert instance.delete_permission == "models.test_models_car.can_delete"
+    assert instance.create_permission == "models.test_models_car.can_create"
+    assert (
+        instance.action_permission("action1")
+        == "models.test_models_car.can_exec_action1"
+    )
+
+    assert len(instance.get_all_permissions()) == 5
 
 
 def test_failed_base_model_admin() -> None:
@@ -244,7 +250,7 @@ def test_model_admin() -> None:
         serializer = CarSerializer
 
         editable = False
-        help_text = ["help_text"]
+        help_text = "help_text"
         can_show_all = False
         can_search = False
         search_fields = ["alias"]
@@ -277,7 +283,7 @@ def test_model_admin() -> None:
     assert attrs.list_sort == ["id"]
     assert attrs.list_order == ["price", "length"]
 
-    assert attrs.help_text == ["help_text"]
+    assert attrs.help_text == "help_text"
 
     class CarAdmin2(ModelAdmin):
         serializer = CarSerializer
@@ -294,96 +300,250 @@ def test_model_admin() -> None:
     assert bool(ret.attrs) is True
 
 
-@pytest.fixture(autouse=True)
-def setup_inline() -> None:
-    admin_collector.clear()
+def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
+    assert "T1UserAdmin" in admin_collector
+    user_admin: ModelAdmin = admin_collector["T1UserAdmin"]
 
-    class CarSerializer(Serializer):
+    ret = user_admin.to_inlines()
+
+    assert "T1BookAdmin" in ret
+    assert "T1ProfileAdmin" in ret
+    assert "T1RoleAdmin" in ret
+
+    # bk_fk
+    t1_book_admin: AdminInlineSerializeModel = ret["T1BookAdmin"]
+    assert t1_book_admin.relation is not None
+
+    assert t1_book_admin.relation.target == "T1BookAdmin"
+    assert t1_book_admin.relation.source_field == "id"
+    assert t1_book_admin.relation.target_field == "owner_id"
+    assert t1_book_admin.relation.relation == "bk_fk"
+
+    # o2o
+    t1_profile_admin: AdminInlineSerializeModel = ret["T1ProfileAdmin"]
+    assert t1_profile_admin.relation is not None
+
+    assert t1_profile_admin.relation.target == "T1ProfileAdmin"
+    assert t1_profile_admin.relation.source_field == "id"
+    assert t1_profile_admin.relation.target_field == "user_id"
+    assert t1_profile_admin.relation.relation == "bk_o2o"
+
+    # m2m
+    t1_role_admin: AdminInlineSerializeModel = ret["T1RoleAdmin"]
+    assert t1_role_admin.relation is not None
+    assert t1_role_admin.relation.target == "T1RoleAdmin"
+    assert t1_role_admin.relation.relation == "m2m"
+    assert t1_role_admin.relation.through is not None
+    assert t1_role_admin.relation.through.through == "T1UserRoleAdmin"
+    assert t1_role_admin.relation.through.source_field == "id"
+    assert t1_role_admin.relation.through.source_to_through_field == "user_id"
+    assert t1_role_admin.relation.through.target_field == "id"
+    assert t1_role_admin.relation.through.target_to_through_field == "role_id"
+
+
+def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None:
+    assert "T2UserAdmin" in admin_collector
+    user_admin: ModelAdmin = admin_collector["T2UserAdmin"]
+
+    ret = user_admin.to_inlines()
+
+    assert "T2BookAdmin" in ret
+    assert "T2ProfileAdmin" in ret
+    assert "T2RoleAdmin" in ret
+
+    # bk_fk
+    t2_book_admin: AdminInlineSerializeModel = ret["T2BookAdmin"]
+    assert t2_book_admin.relation is not None
+
+    assert t2_book_admin.relation.target == "T2BookAdmin"
+    assert t2_book_admin.relation.source_field == "id"
+    assert t2_book_admin.relation.target_field == "owner_id"
+    assert t2_book_admin.relation.relation == "bk_fk"
+
+    # o2o
+    t2_profile_admin: AdminInlineSerializeModel = ret["T2ProfileAdmin"]
+    assert t2_profile_admin.relation is not None
+
+    assert t2_profile_admin.relation.target == "T2ProfileAdmin"
+    assert t2_profile_admin.relation.source_field == "id"
+    assert t2_profile_admin.relation.target_field == "user_id"
+    assert t2_profile_admin.relation.relation == "bk_o2o"
+
+    # m2m
+
+    t2_role_admin: AdminInlineSerializeModel = ret["T2RoleAdmin"]
+    assert t2_role_admin.relation is not None
+    assert t2_role_admin.relation.target == "T2RoleAdmin"
+    assert t2_role_admin.relation.relation == "m2m"
+    assert t2_role_admin.relation.through is not None
+    assert t2_role_admin.relation.through.through == "T2UserRoleAdmin"
+    assert t2_role_admin.relation.through.source_field == "id"
+    assert t2_role_admin.relation.through.source_to_through_field == "user_id"
+    assert t2_role_admin.relation.through.target_field == "id"
+    assert t2_role_admin.relation.through.target_to_through_field == "role_id"
+
+
+def test_model_admin_failed() -> None:
+    class T3UserSerializer(Serializer):
+        class Meta:
+            model = T2User
+
+    class T3BookSerializer(Serializer):
+        class Meta:
+            model = T2Book
+
+    class T3RoleSerializer(Serializer):
+        class Meta:
+            model = T2Role
+
+    class T3UserRoleSerializer(Serializer):
+        class Meta:
+            model = T2UserRole
+
+    class T3CarSerializer(Serializer):
         class Meta:
             model = Car
 
-    @register(CarSerializer)
-    class CarAdmin(ModelAdmin):
+    @register(T3UserSerializer)
+    class T3UserAdmin(ModelAdmin):
+        inlines = [AdminRelation(target="T3BookAdmin")]
+
+    @register(T3BookSerializer)
+    class T3BookAdmin(ModelAdmin):
         pass
 
-    class BookSerializer(Serializer):
-        class Meta:
-            model = Book
-
-    @register(BookSerializer)
-    class BookAdmin(ModelAdmin):
-        pass
-
-    class UserSerializer(Serializer):
-        class Meta:
-            model = User
-
-    @register(UserSerializer)
-    class UserAdmin1(ModelAdmin):
-        inlines = ["BookAdmin"]
-
-    @register(UserSerializer)
-    class UserAdmin2(ModelAdmin):
-        inlines = ["CarAdmin"]
-
-    @register(UserSerializer)
-    class UserAdmin3(ModelAdmin):
-        inlines = []
-
-    @register(UserSerializer)
-    class InlineUserAdmin4(ModelAdmin):
-        pass
-
-    @register(BookSerializer)
-    class BookAdmin2(ModelAdmin):
-        inlines = ["InlineUserAdmin4"]
-
-    class ProfileSerializer(Serializer):
-        class Meta:
-            model = Profile
-
-    @register(ProfileSerializer)
-    class ProfileAdmin(ModelAdmin):
-        inlines = ["InlineUserAdmin4"]
-
-
-def test_model_admin_inlines() -> None:
-    # normal
-    instance1: ModelAdmin = admin_collector["UserAdmin1"]
-    ret = instance1.to_inlines()
-
-    assert "BookAdmin" in ret
-
-    # no relation
+    # admin in inlines must be ModelInlineAdmin
     with pytest.raises(ValueError):
-        instance2: ModelAdmin = admin_collector["UserAdmin2"]
-        instance2.to_inlines()
+        instance = admin_collector["T3UserAdmin"]
+        instance.to_inlines()
 
-    # no inlines
-    instance3: ModelAdmin = admin_collector["UserAdmin3"]
-    ret3 = instance3.to_inlines()
-    assert ret3 == {}
+    @register(T3UserSerializer)
+    class T4UserAdmin(ModelAdmin):
+        inlines = [AdminRelation(target="T4CarAdmin")]
 
-    # bk_fk
+    @register(T3CarSerializer)
+    class T4CarAdmin(ModelInlineAdmin):
+        pass
+
+    instance4 = admin_collector["T4UserAdmin"]
+    # it must have relation between inlines and admin
     with pytest.raises(ValueError):
-        instance4: ModelAdmin = admin_collector["BookAdmin2"]
         instance4.to_inlines()
 
-    # bk_o2o
+    instance4.inlines = [
+        AdminRelation(
+            target="T4CarAdmin",
+            relation="bk_fk",
+            source_field="not_exist",
+            target_field="owner_id",
+        )
+    ]
+
     with pytest.raises(ValueError):
-        instance5: ModelAdmin = admin_collector["ProfileAdmin"]
+        instance4.to_inlines()
+
+    instance4.inlines = [
+        AdminRelation(
+            target="T4CarAdmin",
+            relation="bk_fk",
+            source_field="id",
+            target_field="not_exist",
+        )
+    ]
+
+    with pytest.raises(ValueError):
+        instance4.to_inlines()
+
+    @register(T3UserSerializer)
+    class T5UserAdmin(ModelAdmin):
+        inlines = [
+            AdminRelation(
+                target="T5RoleAdmin",
+                relation="m2m",
+                through=AdminThrough(
+                    through="T5UserRoleAdmin",
+                    source_field="not_exist",
+                    source_to_through_field="user_id",
+                    target_field="id",
+                    target_to_through_field="role_id",
+                ),
+            )
+        ]
+
+    @register(T3RoleSerializer)
+    class T5RoleAdmin(ModelInlineAdmin):
+        pass
+
+    @register(T3UserRoleSerializer)
+    class T5UserRoleAdmin(ModelInlineAdmin):
+        pass
+
+    # it must have relation between inlines and admin
+    instance5 = admin_collector["T5UserAdmin"]
+    with pytest.raises(ValueError):
+        instance5.to_inlines()
+
+    instance5.inlines = [
+        AdminRelation(
+            target="T5RoleAdmin",
+            relation="m2m",
+            through=AdminThrough(
+                through="T5UserRoleAdmin",
+                source_field="id",
+                source_to_through_field="not_exist",
+                target_field="id",
+                target_to_through_field="role_id",
+            ),
+        )
+    ]
+
+    with pytest.raises(ValueError):
+        instance5.to_inlines()
+
+    instance5.inlines = [
+        AdminRelation(
+            target="T5RoleAdmin",
+            relation="m2m",
+            through=AdminThrough(
+                through="T5UserRoleAdmin",
+                source_field="id",
+                source_to_through_field="user_id",
+                target_field="not_exist",
+                target_to_through_field="role_id",
+            ),
+        )
+    ]
+
+    with pytest.raises(ValueError):
+        instance5.to_inlines()
+
+    instance5.inlines = [
+        AdminRelation(
+            target="T5RoleAdmin",
+            relation="m2m",
+            through=AdminThrough(
+                through="T5UserRoleAdmin",
+                source_field="id",
+                source_to_through_field="user_id",
+                target_field="id",
+                target_to_through_field="not_exist",
+            ),
+        )
+    ]
+
+    with pytest.raises(ValueError):
         instance5.to_inlines()
 
 
 def test_inline_admin() -> None:
     class BookSerializer(Serializer):
         class Meta:
-            model = Book
+            model = T1Book
 
     class BookAdmin(ModelInlineAdmin):
         serializer = BookSerializer
 
-        help_text = ["help_text"]
+        help_text = "help_text"
         can_search = False
         search_fields = ["title"]
         can_add = False
@@ -393,9 +553,9 @@ def test_inline_admin() -> None:
 
         list_per_page = 10
         list_search = ["title"]
-        list_filter = ["author"]
+        list_filter = ["owner_id"]
         list_sort = ["id"]
-        list_order = ["title", "author"]
+        list_order = ["title", "owner_id"]
 
         max_num = 10
         min_num = 1
@@ -417,10 +577,10 @@ def test_inline_admin() -> None:
     assert attrs.search_fields == ["title"]
     assert attrs.list_per_page == 10
     assert attrs.list_search == ["title"]
-    assert attrs.list_filter == ["author"]
+    assert attrs.list_filter == ["owner_id"]
     assert attrs.list_sort == ["id"]
-    assert attrs.list_order == ["title", "author"]
-    assert attrs.help_text == ["help_text"]
+    assert attrs.list_order == ["title", "owner_id"]
+    assert attrs.help_text == "help_text"
 
     class BookAdmin1(ModelInlineAdmin):
         serializer = BookSerializer
@@ -435,9 +595,12 @@ def test_inline_admin() -> None:
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
 
+    route_ret = instance.to_route()  # type: ignore
+    assert route_ret is None
+
 
 def test_tool_admin() -> None:
-    class ExportTool(ToolAdmin):
+    class ExportTool(CustomAdmin):
         fields_set = [
             fields.CharField("name"),
             fields.IntegerField("age"),
@@ -445,13 +608,15 @@ def test_tool_admin() -> None:
             fields.TimeField("late_used_time"),
             fields.UploadField("upload"),
             fields.EditorField("editor"),
-            fields.BoolField("is_active"),
+            fields.BooleanField("is_active"),
             fields.ImageField("image"),
             fields.JsonField("extra_info"),
-            fields.DateTimeField("created_at"),
+            fields.DatetimeField("created_at"),
         ]
 
-        output_field = "editor"
+        @action(name="export", label="Export", output=ActionOutput.Download)
+        async def export(self, ctx: ActionKwargs) -> str:
+            return "export"
 
     instance = ExportTool()
 
@@ -460,16 +625,8 @@ def test_tool_admin() -> None:
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
 
-    assert ret.attrs.output_field == "editor"
+    # test permission str generation
+    assert instance.view_permission == "custom.exporttool.can_view"
+    assert instance.action_permission("export") == "custom.exporttool.can_exec_export"
 
-
-async def test_cache_admin() -> None:
-    class CacheTool(CacheAdmin):
-        cache_client = LocMemCache("test_models")
-
-    cache = CacheTool()
-
-    await cache.set({"key": "foo", "value": "bar"})
-    assert await cache.search({"key": "foo", "value": "bar"}) == "bar"
-    await cache.delete({"key": "foo", "value": "bar"})
-    assert await cache.search({"key": "foo", "value": "bar"}) is None
+    assert len(instance.get_all_permissions()) == 2
