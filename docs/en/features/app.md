@@ -51,7 +51,7 @@ Use Unfazed CLI to create new applications:
 unfazed-cli startapp -n myapp
 
 # Create complex application (includes more files)
-unfazed-cli startapp -n myapp --template complex
+unfazed-cli startapp -n myapp -t standard
 ```
 
 ### Application Directory Structure
