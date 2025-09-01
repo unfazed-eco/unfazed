@@ -51,7 +51,7 @@ graph TB
 unfazed-cli startapp -n myapp
 
 # 创建复杂应用（包含更多文件）
-unfazed-cli startapp -n myapp --template complex
+unfazed-cli startapp -n myapp -t standard
 ```
 
 ### 应用目录结构
