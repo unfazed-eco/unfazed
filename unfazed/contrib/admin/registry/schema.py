@@ -10,7 +10,7 @@ ShowStr = t.Annotated[str, Doc(description="show in frontend admin")]
 ActualStr = t.Annotated[str, Doc(description="actual value")]
 
 
-class AutoFill(object):
+class AutoFill(BaseModel):
     pass
 
 

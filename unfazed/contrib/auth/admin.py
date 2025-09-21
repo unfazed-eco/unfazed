@@ -23,7 +23,7 @@ from .mixin import AuthMixin
 class UserAdmin(ModelAdmin, AuthMixin):
     list_display = ["id", "account", "email", "is_superuser"]
     detail_display = ["id", "account", "email", "is_superuser", "password"]
-
+    readonly_fields = ["id"]
     search_fields = ["account", "email"]
     can_search = True
 
@@ -32,7 +32,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
             target="InlineGroupUnderUserAdmin",
             relation="m2m",
             through=AdminThrough(
-                through="InlineGroupUnderUserAdmin",
+                through="InlineUserGroupUnderUserAdmin",
                 source_field="id",
                 source_to_through_field="user_id",
                 target_to_through_field="group_id",
@@ -40,7 +40,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
             ),
         ),
         AdminRelation(
-            target="InlineUserRoleUnderUserAdmin",
+            target="InlineRoleUnderUserAdmin",
             relation="m2m",
             through=AdminThrough(
                 through="InlineUserRoleUnderUserAdmin",
@@ -55,7 +55,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
 
 @register(s.GroupSerializer)
 class InlineGroupUnderUserAdmin(ModelInlineAdmin):
-    pass
+    list_display = ["id", "name"]
 
 
 @register(s.UserGroupSerializer)
@@ -65,7 +65,7 @@ class InlineUserGroupUnderUserAdmin(ModelInlineAdmin):
 
 @register(s.RoleSerializer)
 class InlineRoleUnderUserAdmin(ModelInlineAdmin):
-    pass
+    list_display = ["id", "name"]
 
 
 @register(s.UserRoleSerializer)
@@ -79,6 +79,8 @@ class InlineUserRoleUnderUserAdmin(ModelInlineAdmin):
 @register(s.GroupSerializer)
 class GroupAdmin(ModelAdmin, AuthMixin):
     search_fields = ["name"]
+    detail_display = ["id", "name"]
+    readonly_fields = ["id"]
     can_search = True
 
     inlines = [
@@ -109,12 +111,12 @@ class GroupAdmin(ModelAdmin, AuthMixin):
 
 @register(s.UserSerializer)
 class InlineUserUnderGroupAdmin(ModelInlineAdmin):
-    pass
+    list_display = ["id", "account", "email", "is_superuser"]
 
 
 @register(s.RoleSerializer)
 class InlineRoleUnderGroupAdmin(ModelInlineAdmin):
-    pass
+    list_display = ["id", "name"]
 
 
 @register(s.UserGroupSerializer)
@@ -133,6 +135,8 @@ class InlineGroupRoleUnderGroupAdmin(ModelInlineAdmin):
 @register(s.RoleSerializer)
 class RoleAdmin(ModelAdmin, AuthMixin):
     search_fields = ["name"]
+    detail_display = ["id", "name"]
+    readonly_fields = ["id"]
     can_search = True
 
     inlines = [
@@ -152,7 +156,7 @@ class RoleAdmin(ModelAdmin, AuthMixin):
 
 @register(s.PermissionSerializer)
 class InlinePermissionUnderRoleAdmin(ModelInlineAdmin):
-    pass
+    list_display = ["id", "access"]
 
 
 @register(s.RolePermissionSerializer)
@@ -165,8 +169,10 @@ class InlineRolePermissionUnderRoleAdmin(ModelInlineAdmin):
 
 @register(s.PermissionSerializer)
 class PermissionAdmin(ModelAdmin, AuthMixin):
+    detail_display = ["id", "access","remark"]
     search_fields = ["access"]
     can_search = True
+    readonly_fields = ["id"]
 
     @action(
         name="sync_permission",

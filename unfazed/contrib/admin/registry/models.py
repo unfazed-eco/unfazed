@@ -11,6 +11,7 @@ from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
 from unfazed.protocol import AdminAuthProtocol
 from unfazed.schema import AdminRoute
+from unfazed.schema.admin import AdminOptions
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
@@ -30,13 +31,15 @@ from .schema import (
 )
 from .utils import convert_field_type
 
+unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+
 
 class BaseAdmin:
     help_text: str = ""
-    route_label: str | None = None
+    route_label: str | None = "Basic Model"
 
     # route config
-    component: str = ""
+    component: str = "ModelAdmin"
     icon: str = ""
     hideInMenu: bool = False
     hideChildrenInMenu: bool = False
@@ -128,7 +131,7 @@ class SiteSettings(BaseAdmin):
     layout: str = "mix"
     contentWidth: str = "Fluid"
     fixedHeader: bool = False
-    fixSiderbar: bool = False
+    fixSiderbar: bool = True
     colorWeak: bool = False
     title: str = "Unfazed Admin"
     pwa: bool = False
@@ -137,6 +140,8 @@ class SiteSettings(BaseAdmin):
     pageSize: int = 20
     timeZone: str = "UTC"
     showWatermark: bool = True
+    defaultLoginType: bool = False
+    websitePrefix: str = "/admin"
 
     # antd will call backend api use this prefix
     # for example, if apiPrefix is /api/contrib/admin
@@ -145,7 +150,12 @@ class SiteSettings(BaseAdmin):
 
     # auth type
     # TODO
-    authPlugins: t.List[t.Dict[str, t.Any]] = []
+    authPlugins: t.List[t.Dict[str, t.Any]] = [
+        {
+            "icon_url": "https://developers.google.com/identity/images/g-logo.png",
+            "platform": "google",
+        },
+    ]
 
     # custom settings
     # If the frontend is integrated with other non-unfazed-admin,
@@ -156,10 +166,13 @@ class SiteSettings(BaseAdmin):
         return
 
     def to_serialize(self) -> AdminSite:
-        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
         ret = AdminSite.model_validate(
             {
-                "title": self.title,
+                "title": (
+                    unfazed_settings.ADMIN.title
+                    if unfazed_settings.ADMIN
+                    else self.title
+                ),
                 "navTheme": self.navTheme,
                 "colorPrimary": self.colorPrimary,
                 "layout": self.layout,
@@ -168,16 +181,52 @@ class SiteSettings(BaseAdmin):
                 "fixSiderbar": self.fixSiderbar,
                 "colorWeak": self.colorWeak,
                 "pwa": self.pwa,
-                "logo": self.logo,
+                "logo": (
+                    unfazed_settings.ADMIN.logo if unfazed_settings.ADMIN else self.logo
+                ),
                 "pageSize": self.pageSize,
-                "timeZone": self.timeZone,
-                "apiPrefix": self.apiPrefix,
+                "timeZone": (
+                    unfazed_settings.ADMIN.timeZone
+                    if unfazed_settings.ADMIN
+                    else self.timeZone
+                ),
+                "apiPrefix": (
+                    unfazed_settings.ADMIN.apiPrefix
+                    if unfazed_settings.ADMIN
+                    else self.apiPrefix
+                ),
                 "debug": unfazed_settings.DEBUG,
                 "version": unfazed_settings.VERSION or "0.0.1",
-                "authPlugins": self.authPlugins,
-                "extra": self.extra,
-                "iconfontUrl": self.iconfontUrl,
-                "showWatermark": self.showWatermark,
+                "authPlugins": (
+                    unfazed_settings.ADMIN.authPlugins
+                    if unfazed_settings.ADMIN
+                    else self.authPlugins
+                ),
+                "extra": (
+                    unfazed_settings.ADMIN.extra
+                    if unfazed_settings.ADMIN
+                    else self.extra
+                ),
+                "iconfontUrl": (
+                    unfazed_settings.ADMIN.iconfontUrl
+                    if unfazed_settings.ADMIN
+                    else self.iconfontUrl
+                ),
+                "showWatermark": (
+                    unfazed_settings.ADMIN.showWatermark
+                    if unfazed_settings.ADMIN
+                    else self.showWatermark
+                ),
+                "defaultLoginType": (
+                    unfazed_settings.ADMIN.defaultLoginType
+                    if unfazed_settings.ADMIN
+                    else self.defaultLoginType
+                ),
+                "websitePrefix": (
+                    unfazed_settings.ADMIN.websitePrefix
+                    if unfazed_settings.ADMIN
+                    else self.websitePrefix
+                ),
             }
         )
 
@@ -216,7 +265,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     search_fields: t.List[str] = []
 
     # route label
-    route_label: str = "Data Management"
+    route_label: str = "Basic Model"
 
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:
@@ -252,7 +301,9 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
@@ -576,7 +627,9 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:

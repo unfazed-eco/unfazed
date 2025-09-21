@@ -4,7 +4,7 @@ from unfazed.contrib.auth.models import AbstractUser
 from unfazed.contrib.auth.schema import LoginCtx, RegisterCtx
 from unfazed.exception import AccountExisted, AccountNotFound, WrongPassword
 
-from .base import BaseAuthBackend
+from unfazed.contrib.auth.backends import BaseAuthBackend
 
 
 class DefaultAuthBackend(BaseAuthBackend):

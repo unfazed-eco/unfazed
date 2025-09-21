@@ -25,7 +25,7 @@ class Group(BaseModel):
     name: str
 
 
-class LoginResponse(BaseModel):
+class UserInfo(BaseModel):
     account: str
     email: str
     roles: t.List[Role]
@@ -33,7 +33,7 @@ class LoginResponse(BaseModel):
     extra: t.Dict[str, t.Any] | None = None
 
 
-class LoginSucceedResponse(BaseResponse[LoginResponse]):
+class LoginSucceedResponse(BaseResponse[UserInfo]):
     pass
 
 
@@ -50,4 +50,12 @@ class RegisterCtx(BaseModel):
 
 
 class RegisterSucceedResponse(BaseResponse[t.Dict]):
+    pass
+
+
+class RedirectUrlCtx(BaseModel):
+    redirect_url: str
+
+
+class RedirectUrlResponse(BaseResponse[RedirectUrlCtx]):
     pass
