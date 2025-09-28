@@ -169,7 +169,7 @@ class InlineRolePermissionUnderRoleAdmin(ModelInlineAdmin):
 
 @register(s.PermissionSerializer)
 class PermissionAdmin(ModelAdmin, AuthMixin):
-    detail_display = ["id", "access","remark"]
+    detail_display = ["id", "access", "remark"]
     search_fields = ["access"]
     can_search = True
     readonly_fields = ["id"]

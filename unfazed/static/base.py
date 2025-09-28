@@ -26,9 +26,7 @@ class StaticFiles:
         self.html = html
         self.html_index = "index.html"
 
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send
-    ) -> Union[FileResponse, HtmlResponse]:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             raise ValueError("StaticFiles can only be used with HTTP requests")
 
@@ -54,10 +52,18 @@ class StaticFiles:
         full_path: Path = (self.directory / path).resolve()
 
         # Check for index.html only if needed
-        if self.html and full_path.is_dir():
-            full_path = (full_path / self.html_index).resolve()
+        if self.html:
+            if full_path.is_dir():
+                full_path = (full_path / self.html_index).resolve()
 
-        if not full_path.exists():
-            raise FileNotFoundError(f"File '{full_path}' does not exist")
+            if not full_path.exists():
+                fallback = (self.directory / self.html_index).resolve()
+                if fallback.exists():
+                    full_path = fallback
+                else:
+                    raise FileNotFoundError(f"File '{full_path}' does not exist")
+        else:
+            if not full_path.exists():
+                raise FileNotFoundError(f"File '{full_path}' does not exist")
 
         return full_path

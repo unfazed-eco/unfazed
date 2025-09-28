@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 import typing as t
+
+from pydantic import BaseModel, Field
 
 
 class Condition(BaseModel):
@@ -68,7 +69,7 @@ class AdminRoute(BaseModel):
 
 class AdminOptions(BaseModel):
     defaultLoginType: bool = Field(
-        default=False,
+        default=True,
         alias="DEFAULT_LOGIN_TYPE",
         description="default login type of this admin site",
     )
@@ -82,7 +83,7 @@ class AdminOptions(BaseModel):
         alias="AUTH_PLUGINS",
         description="auth plugins of this admin site, see https://ant.design/components/app-api-reference/components/app#authPlugins",
     )
-    title: t.Dict[str, t.Any] = Field(
+    title: str = Field(
         default="Unfazed Admin",
         alias="TITLE",
         description="title of this admin site",

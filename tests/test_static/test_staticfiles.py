@@ -68,3 +68,25 @@ async def test_staticfiles_methods() -> None:
     scope5 = {"type": "http", "method": "POST", "path": "js/foo.js"}
     with pytest.raises(MethodNotAllowed):
         await static_files(scope5, mock_receive, mock_send)
+
+
+def test_staticfiles_html_directory_and_missing_index(tmp_path: Path) -> None:
+    # prepare a directory with a root index.html but without nested index
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "index.html").write_text("root", encoding="utf-8")
+    nested_dir = site_dir / "nested"
+    nested_dir.mkdir()
+
+    static_files = StaticFiles(directory=site_dir, html=True)
+
+    path_dir = static_files.lookup_path({"type": "http", "path": "nested"})
+    assert path_dir == (site_dir / "index.html").resolve()
+
+    # prepare a directory without any index.html to trigger the html fallback failure path
+    no_index_dir = tmp_path / "no_index"
+    no_index_dir.mkdir()
+
+    static_files_no_index = StaticFiles(directory=no_index_dir, html=True)
+    with pytest.raises(FileNotFoundError):
+        static_files_no_index.lookup_path({"type": "http", "path": "missing.html"})

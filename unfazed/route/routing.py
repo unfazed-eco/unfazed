@@ -139,7 +139,7 @@ class Static(Route):
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             path + "/{path:path}"
         )
-        self.app = StaticFiles(directory=directory, html=html)
+        self.app: StaticFiles = StaticFiles(directory=directory, html=html)
 
         self.load_middlewares(middlewares or [])
 

@@ -3,13 +3,13 @@ import typing as t
 from pydantic import BaseModel, Field
 
 from unfazed.schema import (
+    AdminOptions,
     Cache,
     Cors,
     Database,
     GZip,
     OpenAPI,
     TrustedHost,
-    AdminOptions,
 )
 from unfazed.type import CanBeImported
 

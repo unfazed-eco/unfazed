@@ -1,9 +1,8 @@
 import typing as t
 
 from unfazed.conf import settings
-from unfazed.http import HttpRequest, HttpResponse, RedirectResponse, JsonResponse
+from unfazed.http import HttpRequest, HttpResponse, JsonResponse
 from unfazed.route import params as p
-from unfazed.utils import generic_response
 
 from . import schema as s
 from .services import AuthService
@@ -59,7 +58,7 @@ async def oauth_login_redirect(
 
 async def oauth_logout_redirect(
     request: HttpRequest, platform: str
-) -> RedirectResponse:
-    s = AuthService()
-    ret = await s.oauth_logout_redirect(platform)
-    return RedirectResponse(ret)
+) -> t.Annotated[HttpResponse, p.ResponseSpec(model=s.RedirectUrlResponse)]:
+    a_s = AuthService()
+    ret = await a_s.oauth_logout_redirect(platform)
+    return JsonResponse(s.RedirectUrlResponse(data={"redirect_url": ret}))

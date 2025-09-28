@@ -42,7 +42,7 @@ def test_site() -> None:
     assert ret.layout == "mix"
     assert ret.contentWidth == "Fluid"
     assert ret.fixedHeader is False
-    assert ret.fixSiderbar is False
+    assert ret.fixSiderbar is True
     assert ret.colorWeak is False
     assert ret.pwa is False
     assert (
@@ -55,7 +55,12 @@ def test_site() -> None:
     assert ret.apiPrefix == "/api/contrib/admin"
     assert ret.debug is True
     assert ret.version == "0.1.0"
-    assert ret.authPlugins == []
+    assert ret.authPlugins == [
+        {
+            "icon_url": "https://developers.google.com/identity/images/g-logo.png",
+            "platform": "google",
+        },
+    ]
     assert ret.extra == {}
 
     assert ret.iconfontUrl == ""

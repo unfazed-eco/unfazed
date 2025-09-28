@@ -29,7 +29,13 @@ async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
         )
 
         assert resp_login.status_code == 200
-        assert "id" in resp_login.json()
+        res = resp_login.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"]["account"] == "admin"
+        assert res["data"]["email"] == ""
+        assert res["data"]["is_superuser"] == 0
+        assert res["data"]["platform"] == "default"
 
         request.headers.setdefault("Cookie", resp_login.headers.get("Set-Cookie"))
 
@@ -38,19 +44,32 @@ async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
         )
 
         assert resp_logout.status_code == 200
-        assert resp_logout.json() == {}
+        res = resp_logout.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"] == {}
 
-        with pytest.raises(ValueError):
-            await request.get(
-                "/api/contrib/auth/oauth-login-redirect",
-                params={"platform": "default"},
-            )
+        resp_oauth_login_redirect = await request.get(
+            "/api/contrib/auth/oauth-login-redirect",
+            params={"platform": "default"},
+        )
 
-        with pytest.raises(ValueError):
-            await request.get(
-                "/api/contrib/auth/oauth-logout-redirect",
-                params={"platform": "default"},
-            )
+        assert resp_oauth_login_redirect.status_code == 200
+        res = resp_oauth_login_redirect.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"]["redirect_url"] == ""
+
+        resp_oauth_logout_redirect = await request.get(
+            "/api/contrib/auth/oauth-logout-redirect",
+            params={"platform": "default"},
+        )
+
+        assert resp_oauth_logout_redirect.status_code == 200
+        res = resp_oauth_logout_redirect.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"]["redirect_url"] == ""
 
     async with Requestfactory(unfazed) as request2:
         resp_logout2 = await request2.post(

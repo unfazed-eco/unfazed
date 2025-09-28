@@ -11,7 +11,6 @@ from unfazed.conf import UnfazedSettings, settings
 from unfazed.http import HttpRequest
 from unfazed.protocol import AdminAuthProtocol
 from unfazed.schema import AdminRoute
-from unfazed.schema.admin import AdminOptions
 from unfazed.serializer import Serializer
 
 from .collector import admin_collector
@@ -30,8 +29,6 @@ from .schema import (
     AutoFill,
 )
 from .utils import convert_field_type
-
-unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
 
 
 class BaseAdmin:
@@ -166,6 +163,8 @@ class SiteSettings(BaseAdmin):
         return
 
     def to_serialize(self) -> AdminSite:
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+
         ret = AdminSite.model_validate(
             {
                 "title": (
@@ -301,9 +300,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
@@ -627,9 +624,7 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:
