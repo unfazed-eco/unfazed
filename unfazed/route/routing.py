@@ -158,6 +158,8 @@ class Static(Route):
             root_path = scope.get("root_path", "")
             route_path = get_route_path(scope)
             match = self.path_regex.match(route_path)
+            if not match and route_path.strip("/") == self.path.strip("/"):
+                match = self.path_regex.match(route_path + "/")
             if match:
                 matched_params = match.groupdict()
                 for key, value in matched_params.items():

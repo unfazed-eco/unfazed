@@ -9,7 +9,7 @@ from unfazed.test import Requestfactory
 async def test_integration(setup_route_unfazed: Unfazed) -> None:
     routes = setup_route_unfazed.routes
 
-    assert len(routes) == 6
+    assert len(routes) == 7
 
     async with Requestfactory(setup_route_unfazed) as request:
         # test path
@@ -25,7 +25,10 @@ async def test_integration(setup_route_unfazed: Unfazed) -> None:
         # test mount
         response = await request.get("/mount/app/bar")
         assert response.status_code == 200
-        # test static files
+        # test static html files
+        response = await request.get("/static_html")
+        assert response.status_code == 200
+        # test static html files
         response = await request.get("/static/js/foo.js")
         assert response.status_code == 200
 
