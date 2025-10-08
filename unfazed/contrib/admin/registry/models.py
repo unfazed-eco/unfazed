@@ -8,6 +8,7 @@ from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.contrib.admin.settings import UnfazedContribAdminSettings
 from unfazed.http import HttpRequest
 from unfazed.protocol import AdminAuthProtocol
 from unfazed.schema import AdminRoute
@@ -163,13 +164,17 @@ class SiteSettings(BaseAdmin):
         return
 
     def to_serialize(self) -> AdminSite:
+        unfazed_contrib_admin_settings: UnfazedContribAdminSettings = settings[
+            "UNFAZED_CONTRIB_ADMIN_SETTINGS"
+        ]
+
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
 
         ret = AdminSite.model_validate(
             {
                 "title": (
-                    unfazed_settings.ADMIN.title
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.title
+                    if unfazed_contrib_admin_settings.title
                     else self.title
                 ),
                 "navTheme": self.navTheme,
@@ -181,49 +186,51 @@ class SiteSettings(BaseAdmin):
                 "colorWeak": self.colorWeak,
                 "pwa": self.pwa,
                 "logo": (
-                    unfazed_settings.ADMIN.logo if unfazed_settings.ADMIN else self.logo
+                    unfazed_contrib_admin_settings.logo
+                    if unfazed_contrib_admin_settings
+                    else self.logo
                 ),
                 "pageSize": self.pageSize,
                 "timeZone": (
-                    unfazed_settings.ADMIN.timeZone
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.timeZone
+                    if unfazed_contrib_admin_settings
                     else self.timeZone
                 ),
                 "apiPrefix": (
-                    unfazed_settings.ADMIN.apiPrefix
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.apiPrefix
+                    if unfazed_contrib_admin_settings
                     else self.apiPrefix
                 ),
                 "debug": unfazed_settings.DEBUG,
                 "version": unfazed_settings.VERSION or "0.0.1",
                 "authPlugins": (
-                    unfazed_settings.ADMIN.authPlugins
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.authPlugins
+                    if unfazed_contrib_admin_settings
                     else self.authPlugins
                 ),
                 "extra": (
-                    unfazed_settings.ADMIN.extra
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.extra
+                    if unfazed_contrib_admin_settings
                     else self.extra
                 ),
                 "iconfontUrl": (
-                    unfazed_settings.ADMIN.iconfontUrl
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.iconfontUrl
+                    if unfazed_contrib_admin_settings
                     else self.iconfontUrl
                 ),
                 "showWatermark": (
-                    unfazed_settings.ADMIN.showWatermark
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.showWatermark
+                    if unfazed_contrib_admin_settings
                     else self.showWatermark
                 ),
                 "defaultLoginType": (
-                    unfazed_settings.ADMIN.defaultLoginType
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.defaultLoginType
+                    if unfazed_contrib_admin_settings
                     else self.defaultLoginType
                 ),
                 "websitePrefix": (
-                    unfazed_settings.ADMIN.websitePrefix
-                    if unfazed_settings.ADMIN
+                    unfazed_contrib_admin_settings.websitePrefix
+                    if unfazed_contrib_admin_settings
                     else self.websitePrefix
                 ),
             }
