@@ -61,4 +61,4 @@ async def oauth_logout_redirect(
 ) -> t.Annotated[HttpResponse, p.ResponseSpec(model=s.RedirectUrlResponse)]:
     a_s = AuthService()
     ret = await a_s.oauth_logout_redirect(platform)
-    return JsonResponse(s.RedirectUrlResponse(data={"redirect_url": ret}))
+    return RedirectResponse(ret)
