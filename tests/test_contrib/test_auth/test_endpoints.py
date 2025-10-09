@@ -55,16 +55,11 @@ async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
                 params={"platform": "default"},
             )
 
-        resp_oauth_logout_redirect = await request.get(
-            "/api/contrib/auth/oauth-logout-redirect",
-            params={"platform": "default"},
-        )
-
-        assert resp_oauth_logout_redirect.status_code == 200
-        res = resp_oauth_logout_redirect.json()
-        assert res["code"] == 0
-        assert res["message"] == "success"
-        assert res["data"]["redirect_url"] == ""
+        with pytest.raises(ValueError):
+            await request.get(
+                "/api/contrib/auth/oauth-logout-redirect",
+                params={"platform": "default"},
+            )
 
     async with Requestfactory(unfazed) as request2:
         resp_logout2 = await request2.post(

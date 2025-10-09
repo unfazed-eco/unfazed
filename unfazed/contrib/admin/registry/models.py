@@ -174,7 +174,7 @@ class SiteSettings(BaseAdmin):
             {
                 "title": (
                     unfazed_contrib_admin_settings.title
-                    if unfazed_contrib_admin_settings.title
+                    if unfazed_contrib_admin_settings
                     else self.title
                 ),
                 "navTheme": self.navTheme,
@@ -205,7 +205,7 @@ class SiteSettings(BaseAdmin):
                 "version": unfazed_settings.VERSION or "0.0.1",
                 "authPlugins": (
                     unfazed_contrib_admin_settings.authPlugins
-                    if unfazed_contrib_admin_settings
+                    if unfazed_contrib_admin_settings.authPlugins
                     else self.authPlugins
                 ),
                 "extra": (

@@ -29,6 +29,4 @@ UNFAZED_SETTINGS = {
     },
 }
 
-UNFAZED_CONTRIB_ADMIN_SETTINGS = {
-    "title": "test_admin",
-}
+UNFAZED_CONTRIB_ADMIN_SETTINGS = {}  # type: ignore
