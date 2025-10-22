@@ -3,6 +3,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from unfazed.contrib.admin.settings import AuthPlugin
 from unfazed.http import HttpRequest
 from unfazed.type import Doc
 
@@ -10,7 +11,7 @@ ShowStr = t.Annotated[str, Doc(description="show in frontend admin")]
 ActualStr = t.Annotated[str, Doc(description="actual value")]
 
 
-class AutoFill(object):
+class AutoFill(BaseModel):
     pass
 
 
@@ -260,7 +261,7 @@ class AdminSite(BaseModel):
     )
     # TODO
     # Need to agree with the frontend on what type this is
-    authPlugins: t.List[t.Dict[str, t.Any]] = Field(
+    authPlugins: t.List[AuthPlugin] = Field(
         default_factory=list,
         description="auth plugins of this admin site",
     )

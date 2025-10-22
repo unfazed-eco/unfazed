@@ -63,6 +63,7 @@ class Unfazed:
         routes: t.List[Route] | None = None,
         middlewares: t.List[t.Type[p.MiddleWare]] | None = None,
         settings: UnfazedSettings | None = None,
+        silent: bool = False,
     ) -> None:
         self._ready = False
         self._loading = False
@@ -81,6 +82,7 @@ class Unfazed:
         self.router = Router(routes)
         self.user_middleware = middlewares or []
         self.middleware_stack: ASGIApp | None = None
+        self.silent = silent
 
     @property
     def debug(self) -> bool:
@@ -224,26 +226,27 @@ class Unfazed:
     @unfazed_locker
     async def setup(self) -> None:
         """Setup application components in order"""
-        with Timer("setup_unfazed"):
-            with Timer("setup_logging"):
+        with Timer("setup_unfazed", silent=self.silent):
+            with Timer("setup_logging", silent=self.silent):
                 self.setup_logging()
-            with Timer("setup_cache"):
+            with Timer("setup_cache", silent=self.silent):
                 self.setup_cache()
-            with Timer("setup_app_center"):
+            with Timer("setup_app_center", silent=self.silent):
                 await self.app_center.setup()
-            with Timer("setup_model_center"):
+            with Timer("setup_model_center", silent=self.silent):
                 await self.model_center.setup()
-            with Timer("setup_routes"):
+            with Timer("setup_routes", silent=self.silent):
                 self.setup_routes()
-            with Timer("setup_middleware"):
+            with Timer("setup_middleware", silent=self.silent):
                 self.setup_middleware()
-            with Timer("setup_command_center"):
+            with Timer("setup_command_center", silent=self.silent):
                 await self.command_center.setup()
-            with Timer("setup_lifespan"):
+            with Timer("setup_lifespan", silent=self.silent):
                 self.setup_lifespan()
-            with Timer("setup_openapi"):
+            with Timer("setup_openapi", silent=self.silent):
                 self.setup_openapi()
-            self.log_setup_info()
+            if not self.silent:
+                self.log_setup_info()
 
     def log_setup_info(self) -> None:
         import logging
