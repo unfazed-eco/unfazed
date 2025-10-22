@@ -27,6 +27,7 @@ from unfazed.contrib.admin.registry import (
     register,
     site,
 )
+from unfazed.contrib.admin.settings import AuthPlugin
 from unfazed.serializer import Serializer
 
 
@@ -56,10 +57,10 @@ def test_site() -> None:
     assert ret.debug is True
     assert ret.version == "0.1.0"
     assert ret.authPlugins == [
-        {
-            "icon_url": "https://developers.google.com/identity/images/g-logo.png",
-            "platform": "google",
-        },
+        AuthPlugin(
+            icon_url="https://developers.google.com/identity/images/g-logo.png",
+            platform="google",
+        )
     ]
     assert ret.extra == {}
 
