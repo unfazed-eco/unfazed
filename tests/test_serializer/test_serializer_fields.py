@@ -1,3 +1,4 @@
+import typing as t
 from datetime import timedelta
 from enum import IntEnum, StrEnum
 
@@ -220,6 +221,45 @@ def test_create_common_fields() -> None:
 
     _, f12_field = create_common_field(f12)
     assert MaxLen(max_length=255) in f12_field.metadata
+
+    # test nullable field handling
+    # Test that null=True fields return Optional[python_type]
+    nullable_int = fields.IntField(null=True)
+    nullable_str = fields.CharField(max_length=255, null=True)
+    nullable_float = fields.FloatField(null=True)
+    nullable_bool = fields.BooleanField(null=True)
+
+    nullable_int_type, nullable_int_field = create_common_field(nullable_int)
+    nullable_str_type, nullable_str_field = create_common_field(nullable_str)
+    nullable_float_type, nullable_float_field = create_common_field(nullable_float)
+    nullable_bool_type, nullable_bool_field = create_common_field(nullable_bool)
+
+    # Check that types are Optional
+    assert t.get_origin(nullable_int_type) is t.Union
+    assert t.get_args(nullable_int_type) == (int, type(None))
+
+    assert t.get_origin(nullable_str_type) is t.Union
+    assert t.get_args(nullable_str_type) == (str, type(None))
+
+    assert t.get_origin(nullable_float_type) is t.Union
+    assert t.get_args(nullable_float_type) == (float, type(None))
+
+    assert t.get_origin(nullable_bool_type) is t.Union
+    assert t.get_args(nullable_bool_type) == (bool, type(None))
+
+    # Test that null=False fields do NOT return Optional
+    non_nullable_int = fields.IntField(null=False)
+    non_nullable_str = fields.CharField(max_length=255, null=False)
+
+    non_nullable_int_type, _ = create_common_field(non_nullable_int)
+    non_nullable_str_type, _ = create_common_field(non_nullable_str)
+
+    # Check that types are NOT Optional (get_origin returns None for non-generic types)
+    assert t.get_origin(non_nullable_int_type) is None
+    assert non_nullable_int_type is int
+
+    assert t.get_origin(non_nullable_str_type) is None
+    assert non_nullable_str_type is str
 
 
 def test_create_relational_fields_with_enable_relations() -> None:
