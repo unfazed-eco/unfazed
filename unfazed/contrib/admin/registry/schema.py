@@ -265,6 +265,18 @@ class AdminSite(BaseModel):
         default_factory=list,
         description="auth plugins of this admin site",
     )
+    defaultLoginType: bool = Field(
+        default=False,
+        description="default login type of this admin site",
+    )
+    websitePrefix: str = Field(
+        default="/admin",
+        description="website prefix of this admin site",
+    )
+    apiPrefix: str = Field(
+        default="/api/contrib/admin",
+        description="api prefix of this admin site",
+    )
 
 
 class ActionKwargs(BaseModel):
