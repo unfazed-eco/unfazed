@@ -130,7 +130,10 @@ class AdminBaseAttrs(BaseModel):
         default=True,
         description="the data can be edited inlines",
     )
-
+    can_multiple_select: bool = Field(
+        default=False,
+        description="whether to allow multiple selection in frontend admin",
+    )
     # list related
     can_show_all: bool = Field(
         default=True,
@@ -155,17 +158,26 @@ class AdminBaseAttrs(BaseModel):
         default_factory=list,
         description="list of fields to order in frontend admin, frontend behavior",
     )
+    list_editable: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to edit in frontend admin, frontend behavior",
+    )
 
 
 class AdminAttrs(AdminBaseAttrs):
     # detail related
-    editable: bool = Field(
-        default=True,
-        description="whether to edit the data in frontend admin",
+    detail_editable: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to edit in frontend admin, frontend behavior",
     )
     detail_display: t.List[str] = Field(
         default_factory=list,
         description="list of fields to display in frontend admin, frontend behavior",
+    )
+
+    detail_order: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to order in frontend admin, frontend behavior",
     )
 
 
