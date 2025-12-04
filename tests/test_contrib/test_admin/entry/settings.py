@@ -28,3 +28,5 @@ UNFAZED_SETTINGS = {
         "info": {"title": "myproject", "version": "1.0.0", "description": "desc"},
     },
 }
+
+UNFAZED_CONTRIB_ADMIN_SETTINGS = {}  # type: ignore

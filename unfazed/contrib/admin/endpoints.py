@@ -19,7 +19,7 @@ async def list_route(
     return JsonResponse(s.RouteResp(data=ret))
 
 
-@login_required
+# @login_required
 def settings(
     request: HttpRequest,
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.SiteSettingsResp)]:

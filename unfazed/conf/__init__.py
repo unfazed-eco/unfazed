@@ -2,7 +2,14 @@ import typing as t
 
 from pydantic import BaseModel, Field
 
-from unfazed.schema import Cache, Cors, Database, GZip, OpenAPI, TrustedHost
+from unfazed.schema import (
+    Cache,
+    Cors,
+    Database,
+    GZip,
+    OpenAPI,
+    TrustedHost,
+)
 from unfazed.type import CanBeImported
 
 from .base import settings

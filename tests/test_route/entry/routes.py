@@ -17,6 +17,7 @@ def get_static_dir() -> str:
 patterns = [
     path("/path", routes=include("route_common.routes")),
     static("/static", get_static_dir()),
+    static("/static_html", get_static_dir(), html=True),
     mount(
         "/mount/app",
         app=Unfazed(routes=[Route("/bar", endpoint=hello)]),

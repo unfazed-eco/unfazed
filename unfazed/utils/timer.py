@@ -12,14 +12,15 @@ class Timer:
 
     Example:
         ```python
-        with Timer("setup_unfazed"):
+        with Timer("setup_unfazed"): # if silent is True, the timer will not print the time taken
             self.setup_logging()
         ```
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, *, silent: bool = False) -> None:
         self.start_time = time.time()
         self.name = name
+        self.silent = silent
 
     def __enter__(self) -> None:
         self.start_time = time.time()
@@ -31,6 +32,7 @@ class Timer:
         traceback: TracebackType,
     ) -> None:
         self.end_time = time.time()
-        logger.debug(
-            f"{self.name} Time taken: {self.end_time - self.start_time} seconds"
-        )
+        if not self.silent:
+            logger.debug(
+                f"{self.name} Time taken: {self.end_time - self.start_time} seconds"
+            )

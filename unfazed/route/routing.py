@@ -139,7 +139,7 @@ class Static(Route):
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             path + "/{path:path}"
         )
-        self.app = StaticFiles(directory=directory, html=html)
+        self.app: StaticFiles = StaticFiles(directory=directory, html=html)
 
         self.load_middlewares(middlewares or [])
 
@@ -158,6 +158,8 @@ class Static(Route):
             root_path = scope.get("root_path", "")
             route_path = get_route_path(scope)
             match = self.path_regex.match(route_path)
+            if not match and route_path.strip("/") == self.path.strip("/"):
+                match = self.path_regex.match(route_path + "/")
             if match:
                 matched_params = match.groupdict()
                 for key, value in matched_params.items():

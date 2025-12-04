@@ -46,3 +46,5 @@ UNFAZED_CONTRIB_SESSION_SETTINGS = {
     "COOKIE_DOMAIN": "http://testserver",
     "COOKIE_SECURE": True,
 }
+
+UNFAZED_CONTRIB_ADMIN_SETTINGS = {}  # type: ignore

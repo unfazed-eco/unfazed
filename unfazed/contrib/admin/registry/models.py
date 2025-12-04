@@ -8,6 +8,7 @@ from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
 
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.contrib.admin.settings import UnfazedContribAdminSettings
 from unfazed.http import HttpRequest
 from unfazed.protocol import AdminAuthProtocol
 from unfazed.schema import AdminRoute
@@ -33,10 +34,10 @@ from .utils import convert_field_type
 
 class BaseAdmin:
     help_text: str = ""
-    route_label: str | None = None
+    route_label: str | None = "Basic Model"
 
     # route config
-    component: str = ""
+    component: str = "ModelAdmin"
     icon: str = ""
     hideInMenu: bool = False
     hideChildrenInMenu: bool = False
@@ -128,7 +129,7 @@ class SiteSettings(BaseAdmin):
     layout: str = "mix"
     contentWidth: str = "Fluid"
     fixedHeader: bool = False
-    fixSiderbar: bool = False
+    fixSiderbar: bool = True
     colorWeak: bool = False
     title: str = "Unfazed Admin"
     pwa: bool = False
@@ -137,6 +138,8 @@ class SiteSettings(BaseAdmin):
     pageSize: int = 20
     timeZone: str = "UTC"
     showWatermark: bool = True
+    defaultLoginType: bool = False
+    websitePrefix: str = "/admin"
 
     # antd will call backend api use this prefix
     # for example, if apiPrefix is /api/contrib/admin
@@ -145,7 +148,12 @@ class SiteSettings(BaseAdmin):
 
     # auth type
     # TODO
-    authPlugins: t.List[t.Dict[str, t.Any]] = []
+    authPlugins: t.List[t.Dict[str, t.Any]] = [
+        {
+            "icon_url": "https://developers.google.com/identity/images/g-logo.png",
+            "platform": "google",
+        },
+    ]
 
     # custom settings
     # If the frontend is integrated with other non-unfazed-admin,
@@ -156,10 +164,19 @@ class SiteSettings(BaseAdmin):
         return
 
     def to_serialize(self) -> AdminSite:
+        unfazed_contrib_admin_settings: UnfazedContribAdminSettings = settings[
+            "UNFAZED_CONTRIB_ADMIN_SETTINGS"
+        ]
+
         unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+
         ret = AdminSite.model_validate(
             {
-                "title": self.title,
+                "title": (
+                    unfazed_contrib_admin_settings.title
+                    if unfazed_contrib_admin_settings
+                    else self.title
+                ),
                 "navTheme": self.navTheme,
                 "colorPrimary": self.colorPrimary,
                 "layout": self.layout,
@@ -168,16 +185,54 @@ class SiteSettings(BaseAdmin):
                 "fixSiderbar": self.fixSiderbar,
                 "colorWeak": self.colorWeak,
                 "pwa": self.pwa,
-                "logo": self.logo,
+                "logo": (
+                    unfazed_contrib_admin_settings.logo
+                    if unfazed_contrib_admin_settings
+                    else self.logo
+                ),
                 "pageSize": self.pageSize,
-                "timeZone": self.timeZone,
-                "apiPrefix": self.apiPrefix,
+                "timeZone": (
+                    unfazed_contrib_admin_settings.timeZone
+                    if unfazed_contrib_admin_settings
+                    else self.timeZone
+                ),
+                "apiPrefix": (
+                    unfazed_contrib_admin_settings.apiPrefix
+                    if unfazed_contrib_admin_settings
+                    else self.apiPrefix
+                ),
                 "debug": unfazed_settings.DEBUG,
                 "version": unfazed_settings.VERSION or "0.0.1",
-                "authPlugins": self.authPlugins,
-                "extra": self.extra,
-                "iconfontUrl": self.iconfontUrl,
-                "showWatermark": self.showWatermark,
+                "authPlugins": (
+                    unfazed_contrib_admin_settings.authPlugins
+                    if unfazed_contrib_admin_settings.authPlugins
+                    else self.authPlugins
+                ),
+                "extra": (
+                    unfazed_contrib_admin_settings.extra
+                    if unfazed_contrib_admin_settings
+                    else self.extra
+                ),
+                "iconfontUrl": (
+                    unfazed_contrib_admin_settings.iconfontUrl
+                    if unfazed_contrib_admin_settings
+                    else self.iconfontUrl
+                ),
+                "showWatermark": (
+                    unfazed_contrib_admin_settings.showWatermark
+                    if unfazed_contrib_admin_settings
+                    else self.showWatermark
+                ),
+                "defaultLoginType": (
+                    unfazed_contrib_admin_settings.defaultLoginType
+                    if unfazed_contrib_admin_settings
+                    else self.defaultLoginType
+                ),
+                "websitePrefix": (
+                    unfazed_contrib_admin_settings.websitePrefix
+                    if unfazed_contrib_admin_settings
+                    else self.websitePrefix
+                ),
             }
         )
 
@@ -216,7 +271,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     search_fields: t.List[str] = []
 
     # route label
-    route_label: str = "Data Management"
+    route_label: str = "Basic Model"
 
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:

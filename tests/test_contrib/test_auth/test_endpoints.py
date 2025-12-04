@@ -29,7 +29,13 @@ async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
         )
 
         assert resp_login.status_code == 200
-        assert "id" in resp_login.json()
+        res = resp_login.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"]["account"] == "admin"
+        assert res["data"]["email"] == ""
+        assert res["data"]["is_superuser"] == 0
+        assert res["data"]["platform"] == "default"
 
         request.headers.setdefault("Cookie", resp_login.headers.get("Set-Cookie"))
 
@@ -38,7 +44,10 @@ async def test_endpoints(setup_auth_unfazed: Unfazed) -> None:
         )
 
         assert resp_logout.status_code == 200
-        assert resp_logout.json() == {}
+        res = resp_logout.json()
+        assert res["code"] == 0
+        assert res["message"] == "success"
+        assert res["data"] == {}
 
         with pytest.raises(ValueError):
             await request.get(

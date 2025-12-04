@@ -26,17 +26,25 @@ class Command(BaseCommand):
                 default="update",
                 show_default=True,
             ),
+            Option(
+                ["--app", "-a"],
+                help="app name.",
+                type=str,
+                default="models",
+                show_default=True,
+            ),
         ]
 
     async def handle(self, **options: t.Any) -> None:
         location = options["location"]
         name = options["name"]
+        app = options.get("app", "models")
         assert (
             self.unfazed.settings.DATABASE is not None
         ), "No database found in settings"
 
         db_conf = self.unfazed.settings.DATABASE.model_dump(exclude_none=True)
-        aerich_cmd = AerichCommand(db_conf, location=location)
+        aerich_cmd = AerichCommand(db_conf, app=app, location=location)
         await aerich_cmd.init()
 
         ret = await aerich_cmd.migrate(name)
