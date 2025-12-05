@@ -1,3 +1,4 @@
+import re
 import typing as t
 
 from unfazed.schema import Condition
@@ -62,3 +63,13 @@ def convert_field_type(t: str) -> str:
     if t in SUPPORTED_FIELD_TYPES:
         return t
     return TYPE_MAPPING.get(t, "CharField")
+
+
+def smart_split(name: str) -> str:
+    pattern = r"""
+        (?<=[a-z])(?=[A-Z])        |   # aB
+        (?<=[A-Z])(?=[A-Z][a-z])   |   # HTMLP → HTML P
+        (?<=[A-Za-z])(?=\d)        |   # A1 → A 1
+        (?<=\d)(?=[A-Za-z])            # 1A → 1 A
+    """
+    return re.sub(pattern, " ", name, flags=re.X).strip()

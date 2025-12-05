@@ -109,10 +109,6 @@ class AdminBaseAttrs(BaseModel):
     )
 
     # search panel
-    can_search: bool = Field(
-        default=True,
-        description="can search in frontend admin, the search will call the model_data endpoint",
-    )
     search_fields: t.List[str] = Field(
         default_factory=list, description="list of fields to search in frontend admin"
     )
@@ -130,21 +126,20 @@ class AdminBaseAttrs(BaseModel):
         default=True,
         description="the data can be edited inlines",
     )
-    can_multiple_select: bool = Field(
-        default=False,
-        description="whether to allow multiple selection in frontend admin",
-    )
-    # list related
-    can_show_all: bool = Field(
-        default=True,
-        description="whether to show all items in frontend admin",
-    )
     list_per_page: int = Field(
         default=20, description="number of items to display per page in frontend admin"
+    )
+    list_per_page_options: t.List[int] = Field(
+        default=[10, 20, 50, 100],
+        description="list of options for number of items to display per page in frontend admin",
     )
     list_search: t.List[str] = Field(
         default_factory=list,
         description="list of fields to search in frontend admin, frontend behavior",
+    )
+    list_range_search: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to range search in frontend admin, frontend behavior",
     )
     list_filter: t.List[str] = Field(
         default_factory=list,
@@ -190,6 +185,10 @@ class AdminInlineAttrs(AdminBaseAttrs):
     min_num: int = Field(
         default=0,
         description="min number of items to edit in frontend admin",
+    )
+    label: str = Field(
+        default="",
+        description="label of this inline, displayed in frontend admin",
     )
 
 
@@ -276,6 +275,18 @@ class AdminSite(BaseModel):
     authPlugins: t.List[AuthPlugin] = Field(
         default_factory=list,
         description="auth plugins of this admin site",
+    )
+    defaultLoginType: bool = Field(
+        default=False,
+        description="default login type of this admin site",
+    )
+    websitePrefix: str = Field(
+        default="/admin",
+        description="website prefix of this admin site",
+    )
+    apiPrefix: str = Field(
+        default="/api/contrib/admin",
+        description="api prefix of this admin site",
     )
 
 
