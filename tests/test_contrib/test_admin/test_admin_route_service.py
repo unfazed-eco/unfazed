@@ -102,14 +102,14 @@ async def test_route_service(setup_route_service_env: t.AsyncGenerator) -> None:
     # Assert ModelAdmin route exists and has correct properties
     assert model_admin_route is not None
     assert model_admin_route.name == "T1UserAdmin"
-    assert model_admin_route.label == "T1useradmin"
+    assert model_admin_route.label == "T 1 User Admin"
     assert model_admin_route.path == "/T1UserAdmin"
     assert model_admin_route.routes == []
 
     # Assert CustomAdmin route exists and has correct properties
     assert custom_admin_route is not None
     assert custom_admin_route.name == "T1CustomAdmin"
-    assert custom_admin_route.label == "T1customadmin"
+    assert custom_admin_route.label == "T 1 Custom Admin"
     assert custom_admin_route.path == "/T1CustomAdmin"
     assert custom_admin_route.routes == []
 

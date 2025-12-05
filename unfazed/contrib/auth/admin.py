@@ -25,7 +25,6 @@ class UserAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "account", "email", "is_superuser", "password"]
     readonly_fields = ["id"]
     search_fields = ["account", "email"]
-    can_search = True
 
     inlines = [
         AdminRelation(
@@ -81,7 +80,6 @@ class GroupAdmin(ModelAdmin, AuthMixin):
     search_fields = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
-    can_search = True
 
     inlines = [
         AdminRelation(
@@ -137,7 +135,6 @@ class RoleAdmin(ModelAdmin, AuthMixin):
     search_fields = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
-    can_search = True
 
     inlines = [
         AdminRelation(
@@ -171,7 +168,6 @@ class InlineRolePermissionUnderRoleAdmin(ModelInlineAdmin):
 class PermissionAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "access", "remark"]
     search_fields = ["access"]
-    can_search = True
     readonly_fields = ["id"]
 
     @action(
