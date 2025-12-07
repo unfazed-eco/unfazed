@@ -108,11 +108,6 @@ class AdminBaseAttrs(BaseModel):
         description="help text for this attribute, frontend admin will show the help text",
     )
 
-    # search panel
-    search_fields: t.List[str] = Field(
-        default_factory=list, description="list of fields to search in frontend admin"
-    )
-
     # action related
     can_add: bool = Field(
         default=True,

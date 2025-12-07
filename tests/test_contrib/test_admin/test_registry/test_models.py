@@ -284,9 +284,6 @@ def test_model_admin() -> None:
         list_order = ["price", "length", "height"]
         list_editable = ["alias", "price"]
 
-        # BaseModelAdmin properties - search panel
-        search_fields = ["alias", "brand", "description"]
-
         # ModelAdmin properties - detail page configuration
         detail_display = ["alias", "brand", "price", "year"]
         detail_order = ["id", "alias", "brand"]
@@ -311,9 +308,6 @@ def test_model_admin() -> None:
     assert attrs.list_sort == ["id", "price"]
     assert attrs.list_order == ["price", "length", "height"]
     assert attrs.list_editable == ["alias", "price"]
-
-    # Test search panel - search_fields is not passed to attrs in current implementation
-    assert attrs.search_fields == []
 
     # Test detail page configuration
     assert attrs.detail_display == ["alias", "brand", "price", "year"]
@@ -366,9 +360,6 @@ def test_model_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test search_fields - not implemented in current version, always empty
-    assert attrs_default.search_fields == []
 
     # Test validation - invalid field names
     class CarAdminInvalid(ModelAdmin):
@@ -726,9 +717,6 @@ def test_inline_admin() -> None:
         list_order = ["title", "owner_id"]
         list_editable = ["title"]
 
-        # BaseModelAdmin properties - search panel
-        search_fields = ["title"]
-
         # ModelInlineAdmin properties
         max_num = 10
         min_num = 1
@@ -752,9 +740,6 @@ def test_inline_admin() -> None:
     assert attrs.list_sort == ["id", "title"]
     assert attrs.list_order == ["title", "owner_id"]
     assert attrs.list_editable == ["title"]
-
-    # Test search panel - search_fields is not passed to attrs in current implementation
-    assert attrs.search_fields == []
 
     # Test ModelInlineAdmin specific properties
     assert attrs.max_num == 10
@@ -788,9 +773,6 @@ def test_inline_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test search_fields - not implemented in current version, always empty
-    assert attrs_default.search_fields == []
 
     # Test validation - invalid field names
     class BookAdminInvalid(ModelInlineAdmin):

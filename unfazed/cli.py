@@ -36,11 +36,12 @@ def _main() -> None:
     loop = asyncio.get_event_loop()
 
     if maybeapp is None:
-        app = Unfazed()
+        app = Unfazed(silent=True)
         loop.run_until_complete(app.setup_cli())
         app.execute_command_from_cli()
     else:
         app = maybeapp
+        app.silent = True
         loop.run_until_complete(app.setup())
         app.execute_command_from_argv()
 

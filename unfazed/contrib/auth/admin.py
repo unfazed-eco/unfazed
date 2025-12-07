@@ -24,7 +24,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
     list_display = ["id", "account", "email", "is_superuser"]
     detail_display = ["id", "account", "email", "is_superuser", "password"]
     readonly_fields = ["id"]
-    search_fields = ["account", "email"]
+    list_search = ["account", "email"]
 
     inlines = [
         AdminRelation(
@@ -77,7 +77,7 @@ class InlineUserRoleUnderUserAdmin(ModelInlineAdmin):
 
 @register(s.GroupSerializer)
 class GroupAdmin(ModelAdmin, AuthMixin):
-    search_fields = ["name"]
+    list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
 
@@ -132,7 +132,7 @@ class InlineGroupRoleUnderGroupAdmin(ModelInlineAdmin):
 
 @register(s.RoleSerializer)
 class RoleAdmin(ModelAdmin, AuthMixin):
-    search_fields = ["name"]
+    list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
 
@@ -167,7 +167,7 @@ class InlineRolePermissionUnderRoleAdmin(ModelInlineAdmin):
 @register(s.PermissionSerializer)
 class PermissionAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "access", "remark"]
-    search_fields = ["access"]
+    list_search = ["access"]
     readonly_fields = ["id"]
 
     @action(
