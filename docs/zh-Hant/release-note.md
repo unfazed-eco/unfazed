@@ -1,3 +1,11 @@
+v0.0.17
+======
+
+- [issue #69](https://github.com/unfazed-eco/unfazed/issues/69) 解决 serializer 没有正确处理 null=true 的情况
+- [issue #71](https://github.com/unfazed-eco/unfazed/issues/71) 解决 AdminSite model 缺少的字段
+- [issue #73](https://github.com/unfazed-eco/unfazed/issues/73) Auth 模块增加 create-superuser 命令
+- [issue #76](https://github.com/unfazed-eco/unfazed/issues/76) 重新整理所有 admin 相关的字段和属性
+
 v0.0.16
 ======
 

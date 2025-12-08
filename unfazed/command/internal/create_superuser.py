@@ -1,10 +1,12 @@
-import sys
-import typing as t
 import secrets
 import string
+import sys
+import typing as t
+
 from click import Option
-from unfazed.contrib.auth.models import AbstractUser
+
 from unfazed.command import BaseCommand
+from unfazed.contrib.auth.models import AbstractUser
 
 
 class Command(BaseCommand):
