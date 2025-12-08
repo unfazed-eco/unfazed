@@ -24,6 +24,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
     list_display = ["id", "account", "email", "is_superuser"]
     detail_display = ["id", "account", "email", "is_superuser", "password"]
     readonly_fields = ["id"]
+    datetime_fields = ["created_at", "updated_at"]
     list_search = ["account", "email"]
 
     inlines = [
@@ -80,6 +81,7 @@ class GroupAdmin(ModelAdmin, AuthMixin):
     list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
+    datetime_fields = ["created_at", "updated_at"]
 
     inlines = [
         AdminRelation(
@@ -135,6 +137,7 @@ class RoleAdmin(ModelAdmin, AuthMixin):
     list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
+    datetime_fields = ["created_at", "updated_at"]
 
     inlines = [
         AdminRelation(
@@ -169,6 +172,7 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "access", "remark"]
     list_search = ["access"]
     readonly_fields = ["id"]
+    datetime_fields = ["created_at", "updated_at"]
 
     @action(
         name="sync_permission",

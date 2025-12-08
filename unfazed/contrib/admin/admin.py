@@ -4,4 +4,4 @@ from .serializers import LogEntrySerializer
 
 @register(LogEntrySerializer)
 class LogEntryAdmin(ModelAdmin):
-    pass
+    datetime_fields = ["created_at"]
