@@ -57,11 +57,9 @@ def test_site() -> None:
     assert ret.debug is True
     assert ret.version == "0.1.0"
     assert ret.authPlugins == [
-        AuthPlugin.model_validate(
-            {
-                "icon_url": "https://developers.google.com/identity/images/g-logo.png",
-                "platform": "google",
-            }
+        AuthPlugin(
+            ICON_URL="https://developers.google.com/identity/images/g-logo.png",
+            PLATFORM="google",
         )
     ]
     assert ret.extra == {}

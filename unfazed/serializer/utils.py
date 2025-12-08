@@ -155,6 +155,10 @@ def create_common_field(field: Field) -> t.Tuple[t.Any, FieldInfo]:
         **description["constraints"],
     )
 
+    # handle nullable
+    if field.null:
+        python_type = t.Optional[python_type]
+
     return python_type, field_info
 
 

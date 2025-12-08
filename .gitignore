@@ -10,3 +10,4 @@ dist
 .mypy_cache
 .vscode
 site
+.idea/*
