@@ -29,12 +29,11 @@ from .schema import (
     AdminSite,
     AutoFill,
 )
-from .utils import convert_field_type
+from .utils import convert_field_type, smart_split
 
 
 class BaseAdmin:
     help_text: str = ""
-    route_label: str | None = "Basic Model"
 
     # route config
     component: str = "ModelAdmin"
@@ -45,12 +44,10 @@ class BaseAdmin:
     # register behavior
     override: bool = False
 
-    @property
-    def name(self) -> str:
-        return self.__class__.__name__
+    _label: str | None = None
 
     @property
-    def title(self) -> str:
+    def name(self) -> str:
         return self.__class__.__name__
 
     @property
@@ -59,7 +56,9 @@ class BaseAdmin:
 
     @property
     def label(self) -> str:
-        return self.name.capitalize()
+        if self._label:
+            return self._label
+        return smart_split(self.name)
 
     async def has_view_perm(
         self, request: HttpRequest, *args: t.Any, **kw: t.Any
@@ -254,24 +253,49 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     json_fields: t.List[str] = []
 
     # behaviors on list page
+
+    # decide which fields to display
     list_display: t.List[str] = []
+
+    # sort by fields -> click on the column header
     list_sort: t.List[str] = []
+
+    # filter by fields
     list_filter: t.List[str] = []
+
+    # search by fields
     list_search: t.List[str] = []
+
+    # range search fields(must be in list_search)
+    list_range_search: t.List[str] = []
+
+    # default number of items to display per page
     list_per_page: int = 20
+
+    # options for number of items to display per page
+    list_per_page_options: t.List[int] = [10, 20, 50, 100]
+
+    # order by fields -> display order of the items
     list_order: t.List[str] = []
 
-    # default actions
+    # can edit the items in the list page
+    list_editable: t.List[str] = []
+
+    # will show a Add button in frontend admin if can_add is True
     can_add: bool = True
+    # will show a Delete button in frontend admin if can_delete is True
     can_delete: bool = True
+    # the data can be edited inlines
     can_edit: bool = True
 
-    # search panel
-    can_search: bool = True
-    search_fields: t.List[str] = []
-
     # route label
-    route_label: str = "Basic Model"
+    _route_label: str | None = "Model"
+
+    @property
+    def route_label(self) -> str:
+        if self.app_label:
+            return self.app_label
+        return self._route_label or ""
 
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:
@@ -309,6 +333,15 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.create_permission,
         ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
+    @property
+    def app_label(self) -> str:
+        serializer_path: str = self.serializer.Meta.__module__
+        unfazed_settings: UnfazedSettings = settings["UNFAZED_SETTINGS"]
+        for app_full_name in unfazed_settings.INSTALLED_APPS:
+            if serializer_path.startswith(app_full_name):
+                return app_full_name.split(".")[-1]
+        return ""
+
     def get_fields(self) -> t.Dict[str, AdminField]:
         if not hasattr(self, "serializer"):
             raise ValueError(f"serializer is not set for {self.__class__.__name__}")
@@ -337,7 +370,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             if inspect.isclass(fieldinfo.annotation) and issubclass(
                 fieldinfo.annotation, Enum
             ):
-                choices = [(item.name, item.value) for item in fieldinfo.annotation]
+                choices = [(item.value, item.name) for item in fieldinfo.annotation]
             else:
                 choices = json_schema_extra.get("choices", None) or []
 
@@ -349,6 +382,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
                     "blank": True,
                     "choices": choices,
                     "help_text": fieldinfo.description or "",
+                    "name": name,
                     "default": fieldinfo.get_default(call_default_factory=True),
                 }
             )
@@ -406,13 +440,14 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
 
 class ModelAdmin(BaseModelAdmin):
     # behaviors on list page
-    can_show_all: bool = False
 
     # behaviors on detail page
+    # decide which fields to display
     detail_display: t.List[str] = []
-
-    # can access detail page
-    editable: bool = True
+    # order by fields -> display order of the items in detail page
+    detail_order: t.List[str] = []
+    # decide which fields can be edited
+    detail_editable: t.List[str] = []
 
     # relations
     # currently unfazed need developers define the relation clearly
@@ -516,31 +551,36 @@ class ModelAdmin(BaseModelAdmin):
         model: t.Type[TModel] = self.serializer.Meta.model
         detail_display = self.detail_display or list(model._meta.db_fields)
         for item in chain(
-            detail_display,
             self.list_filter,
             self.list_sort,
             self.list_order,
-            self.search_fields,
+            self.list_search,
+            self.list_range_search,
+            self.list_editable,
+            detail_display,
+            self.detail_order,
+            self.detail_editable,
         ):
             if item not in field_list:
                 raise ValueError(f"field {item} not found in {field_list}")
 
         attrs = AdminAttrs.model_validate(
             {
-                "editable": self.editable,
                 "help_text": self.help_text,
-                "can_show_all": self.can_show_all,
-                "can_search": self.can_search,
-                "search_fields": self.search_fields or detail_display,
-                "list_per_page": self.list_per_page,
-                "detail_display": detail_display,
-                "can_add": self.can_add,
-                "list_search": self.list_search,
-                "can_delete": self.can_delete,
-                "can_edit": self.can_edit,
+                "list_editable": self.list_editable,
                 "list_filter": self.list_filter,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
+                "list_search": self.list_search,
+                "list_range_search": self.list_range_search,
+                "list_per_page": self.list_per_page,
+                "list_per_page_options": self.list_per_page_options,
+                "can_add": self.can_add,
+                "can_delete": self.can_delete,
+                "can_edit": self.can_edit,
+                "detail_display": detail_display,
+                "detail_order": self.detail_order,
+                "detail_editable": self.detail_editable,
             }
         )
 
@@ -574,30 +614,33 @@ class ModelInlineAdmin(ModelAdmin):
 
         for item in chain(
             list_display,
-            self.list_filter,
             self.list_sort,
+            self.list_filter,
             self.list_order,
-            self.search_fields,
+            self.list_search,
+            self.list_range_search,
+            self.list_editable,
         ):
             if item not in field_list:
                 raise ValueError(f"field {item} not found in {field_list}")
 
         attrs = AdminInlineAttrs.model_validate(
             {
+                "label": self.label,
                 "help_text": self.help_text,
                 "max_num": self.max_num,
                 "min_num": self.min_num,
-                "can_show_all": self.can_show_all,
-                "can_search": self.can_search,
-                "search_fields": self.search_fields or list_display,
-                "list_per_page": self.list_per_page,
-                "can_add": self.can_add,
-                "list_search": self.list_search,
-                "can_delete": self.can_delete,
-                "can_edit": self.can_edit,
+                "list_editable": self.list_editable,
                 "list_filter": self.list_filter,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
+                "list_per_page": self.list_per_page,
+                "list_per_page_options": self.list_per_page_options,
+                "list_search": self.list_search,
+                "list_range_search": self.list_range_search,
+                "can_add": self.can_add,
+                "can_delete": self.can_delete,
+                "can_edit": self.can_edit,
             }
         )
 
