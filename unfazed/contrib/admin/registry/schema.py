@@ -257,7 +257,6 @@ class AdminSite(BaseModel):
     logo: str = Field(description="logo of this admin site")
     pageSize: int = Field(description="page size of this admin site")
     timeZone: str = Field(description="time zone of this admin site")
-    apiPrefix: str = Field(description="api prefix of this admin site")
     debug: bool = Field(description="debug of this admin site")
     version: str = Field(description="version of this admin site")
     showWatermark: bool = Field(description="show watermark of this admin site")
