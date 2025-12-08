@@ -24,8 +24,8 @@ class UserAdmin(ModelAdmin, AuthMixin):
     list_display = ["id", "account", "email", "is_superuser"]
     detail_display = ["id", "account", "email", "is_superuser", "password"]
     readonly_fields = ["id"]
-    search_fields = ["account", "email"]
-    can_search = True
+    datetime_fields = ["created_at", "updated_at"]
+    list_search = ["account", "email"]
 
     inlines = [
         AdminRelation(
@@ -78,10 +78,10 @@ class InlineUserRoleUnderUserAdmin(ModelInlineAdmin):
 
 @register(s.GroupSerializer)
 class GroupAdmin(ModelAdmin, AuthMixin):
-    search_fields = ["name"]
+    list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
-    can_search = True
+    datetime_fields = ["created_at", "updated_at"]
 
     inlines = [
         AdminRelation(
@@ -134,10 +134,10 @@ class InlineGroupRoleUnderGroupAdmin(ModelInlineAdmin):
 
 @register(s.RoleSerializer)
 class RoleAdmin(ModelAdmin, AuthMixin):
-    search_fields = ["name"]
+    list_search = ["name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
-    can_search = True
+    datetime_fields = ["created_at", "updated_at"]
 
     inlines = [
         AdminRelation(
@@ -170,9 +170,9 @@ class InlineRolePermissionUnderRoleAdmin(ModelInlineAdmin):
 @register(s.PermissionSerializer)
 class PermissionAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "access", "remark"]
-    search_fields = ["access"]
-    can_search = True
+    list_search = ["access"]
     readonly_fields = ["id"]
+    datetime_fields = ["created_at", "updated_at"]
 
     @action(
         name="sync_permission",

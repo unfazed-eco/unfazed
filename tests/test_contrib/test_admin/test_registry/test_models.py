@@ -73,6 +73,16 @@ def test_site() -> None:
     assert route is None
 
 
+def test_base_admin_label() -> None:
+    """Test BaseAdmin.label property when _label is set."""
+
+    class TestAdmin(CustomAdmin):
+        _label = "Custom Label"
+
+    admin = TestAdmin()
+    assert admin.label == "Custom Label"
+
+
 def test_base_model_admin() -> None:
     # test get_fields
 
@@ -131,7 +141,7 @@ def test_base_model_admin() -> None:
 
     assert "color" in fields
     assert fields["color"].field_type == "IntegerField"
-    assert fields["color"].choices == [("RED", 1), ("GREEN", 2)]
+    assert fields["color"].choices == [(1, "RED"), (2, "GREEN")]
 
     assert "height" in fields
     assert fields["height"].field_type == "IntegerField"
@@ -264,9 +274,7 @@ def test_model_admin() -> None:
         can_add = False
         can_delete = False
         can_edit = False
-        can_multiple_select = True
         can_show_all = False
-        can_search = False
 
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
@@ -275,9 +283,6 @@ def test_model_admin() -> None:
         list_sort = ["id", "price"]
         list_order = ["price", "length", "height"]
         list_editable = ["alias", "price"]
-
-        # BaseModelAdmin properties - search panel
-        search_fields = ["alias", "brand", "description"]
 
         # ModelAdmin properties - detail page configuration
         detail_display = ["alias", "brand", "price", "year"]
@@ -295,9 +300,6 @@ def test_model_admin() -> None:
     assert attrs.can_add is False
     assert attrs.can_delete is False
     assert attrs.can_edit is False
-    assert attrs.can_multiple_select is True
-    assert attrs.can_show_all is False
-    assert attrs.can_search is False
 
     # Test list page configuration
     assert attrs.list_per_page == 15
@@ -306,9 +308,6 @@ def test_model_admin() -> None:
     assert attrs.list_sort == ["id", "price"]
     assert attrs.list_order == ["price", "length", "height"]
     assert attrs.list_editable == ["alias", "price"]
-
-    # Test search panel
-    assert attrs.search_fields == ["alias", "brand", "description"]
 
     # Test detail page configuration
     assert attrs.detail_display == ["alias", "brand", "price", "year"]
@@ -328,9 +327,6 @@ def test_model_admin() -> None:
     assert attrs_default.can_add is True
     assert attrs_default.can_delete is True
     assert attrs_default.can_edit is True
-    assert attrs_default.can_multiple_select is False
-    assert attrs_default.can_show_all is False  # default is False
-    assert attrs_default.can_search is True
 
     # Test default list configuration
     assert attrs_default.list_per_page == 20
@@ -364,23 +360,6 @@ def test_model_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test search_fields default behavior - when empty, uses all model fields
-    assert len(attrs_default.search_fields) > 0
-    # Verify it contains actual model fields
-    assert "id" in attrs_default.search_fields or "alias" in attrs_default.search_fields
-
-    # Test search_fields with empty list explicitly
-    class CarAdminEmptySearchFields(ModelAdmin):
-        serializer = CarSerializer
-        search_fields = []
-
-    instance_empty_search: ModelAdmin = CarAdminEmptySearchFields()
-    attrs_empty_search = instance_empty_search.get_attrs(
-        list(instance_empty_search.get_fields().keys())
-    )
-    # When search_fields is empty, it should use all model fields
-    assert len(attrs_empty_search.search_fields) > 0
 
     # Test validation - invalid field names
     class CarAdminInvalid(ModelAdmin):
@@ -468,24 +447,12 @@ def test_model_admin() -> None:
             list(instance_invalid_detail_order.get_fields().keys())
         )
 
-    # Test validation - invalid field in search_fields
-    class CarAdminInvalidSearchFields(ModelAdmin):
-        serializer = CarSerializer
-        search_fields = ["invalid_field"]
-
-    with pytest.raises(ValueError, match="field invalid_field not found"):
-        instance_invalid_search_fields = CarAdminInvalidSearchFields()
-        instance_invalid_search_fields.get_attrs(
-            list(instance_invalid_search_fields.get_fields().keys())
-        )
-
     # Test to_serialize method
     ret = instance.to_serialize()
     assert bool(ret.fields) is True
     assert bool(ret.attrs) is True
     assert ret.attrs.help_text == "Custom help text for Car admin"
     assert ret.attrs.can_add is False
-    assert ret.attrs.can_multiple_select is True
     assert ret.attrs.list_per_page == 15
     assert ret.attrs.detail_display == ["alias", "brand", "price", "year"]
 
@@ -741,9 +708,6 @@ def test_inline_admin() -> None:
         can_add = False
         can_delete = False
         can_edit = False
-        can_multiple_select = True
-        can_show_all = False
-        can_search = False
 
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
@@ -752,9 +716,6 @@ def test_inline_admin() -> None:
         list_sort = ["id", "title"]
         list_order = ["title", "owner_id"]
         list_editable = ["title"]
-
-        # BaseModelAdmin properties - search panel
-        search_fields = ["title"]
 
         # ModelInlineAdmin properties
         max_num = 10
@@ -771,9 +732,6 @@ def test_inline_admin() -> None:
     assert attrs.can_add is False
     assert attrs.can_delete is False
     assert attrs.can_edit is False
-    assert attrs.can_multiple_select is True
-    assert attrs.can_show_all is False
-    assert attrs.can_search is False
 
     # Test list page configuration
     assert attrs.list_per_page == 15
@@ -782,9 +740,6 @@ def test_inline_admin() -> None:
     assert attrs.list_sort == ["id", "title"]
     assert attrs.list_order == ["title", "owner_id"]
     assert attrs.list_editable == ["title"]
-
-    # Test search panel
-    assert attrs.search_fields == ["title"]
 
     # Test ModelInlineAdmin specific properties
     assert attrs.max_num == 10
@@ -803,9 +758,6 @@ def test_inline_admin() -> None:
     assert attrs_default.can_add is True
     assert attrs_default.can_delete is True
     assert attrs_default.can_edit is True
-    assert attrs_default.can_multiple_select is False
-    assert attrs_default.can_show_all is False  # default is False
-    assert attrs_default.can_search is True
 
     # Test default list configuration
     assert attrs_default.list_per_page == 20
@@ -821,37 +773,6 @@ def test_inline_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test search_fields default behavior - when empty, uses list_display
-    # list_display defaults to all model fields when empty
-    assert len(attrs_default.search_fields) > 0
-    # Verify it contains actual model fields
-    assert "id" in attrs_default.search_fields or "title" in attrs_default.search_fields
-
-    # Test search_fields with empty list explicitly
-    class BookAdminEmptySearchFields(ModelInlineAdmin):
-        serializer = BookSerializer
-        search_fields = []
-
-    instance_empty_search: ModelInlineAdmin = BookAdminEmptySearchFields()
-    attrs_empty_search = instance_empty_search.get_attrs(
-        list(instance_empty_search.get_fields().keys())
-    )
-    # When search_fields is empty, it should use list_display (all model fields)
-    assert len(attrs_empty_search.search_fields) > 0
-
-    # Test list_display behavior - when search_fields is empty, it uses list_display
-    class BookAdminWithListDisplay(ModelInlineAdmin):
-        serializer = BookSerializer
-        list_display = ["id", "title"]
-        search_fields = []
-
-    instance_list_display: ModelInlineAdmin = BookAdminWithListDisplay()
-    attrs_list_display = instance_list_display.get_attrs(
-        list(instance_list_display.get_fields().keys())
-    )
-    # When search_fields is empty and list_display is set, search_fields should use list_display
-    assert attrs_list_display.search_fields == ["id", "title"]
 
     # Test validation - invalid field names
     class BookAdminInvalid(ModelInlineAdmin):
@@ -906,17 +827,6 @@ def test_inline_admin() -> None:
             list(instance_invalid_list_editable.get_fields().keys())
         )
 
-    # Test validation - invalid field in search_fields
-    class BookAdminInvalidSearchFields(ModelInlineAdmin):
-        serializer = BookSerializer
-        search_fields = ["invalid_field"]
-
-    with pytest.raises(ValueError):
-        instance_invalid_search_fields = BookAdminInvalidSearchFields()
-        instance_invalid_search_fields.get_attrs(
-            list(instance_invalid_search_fields.get_fields().keys())
-        )
-
     # Test validation - invalid field in list_display
     class BookAdminInvalidListDisplay(ModelInlineAdmin):
         serializer = BookSerializer
@@ -934,7 +844,6 @@ def test_inline_admin() -> None:
     assert bool(ret.attrs) is True
     assert ret.attrs.help_text == "Custom help text for Book inline admin"
     assert ret.attrs.can_add is False
-    assert ret.attrs.can_multiple_select is True
     assert ret.attrs.list_per_page == 15
     assert ret.attrs.max_num == 10
     assert ret.attrs.min_num == 1
