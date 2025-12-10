@@ -1,3 +1,4 @@
+import mimetypes
 from pathlib import Path
 from typing import Union
 
@@ -44,7 +45,10 @@ class StaticFiles:
     ) -> Union[FileResponse, HtmlResponse]:
         if html:
             return HtmlResponse(path.read_text(encoding="utf-8"))
-        return FileResponse(path)
+        media_type = mimetypes.guess_type(path.name)[0]
+        if media_type is None:
+            media_type = "text/plain"
+        return FileResponse(path, media_type=media_type)
 
     def lookup_path(self, scope: Scope) -> Path:
         # Combine path operations
