@@ -470,6 +470,7 @@ class FileResponse(StreamingResponse):
         chunk_size: int = 65536,
         headers: t.Dict[str, str] | None = None,
         background: BackgroundTask | None = None,
+        media_type: str = "application/octet-stream",
     ) -> None:
         handler = RangeFileHandler(path, filename, chunk_size)
 
@@ -484,7 +485,7 @@ class FileResponse(StreamingResponse):
             status_code,
             resp_headers,
             background=background,
-            media_type="application/octet-stream",
+            media_type=media_type,
         )
 
     def build_headers(self, handler: RangeFileHandler) -> t.Dict[str, str]:
