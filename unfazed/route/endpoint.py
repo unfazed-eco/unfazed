@@ -447,9 +447,6 @@ class EndPointDefinition(BaseModel):
 
             annotation, fieldinfo = define
 
-            # Save original annotation for issubclass check before potential modification
-            original_annotation: t.Type = annotation
-
             # Uploadfile need special json schema
             if issubclass(annotation, UploadFile):
                 new_json_schema_extra = {"type": "string", "format": "binary"}
@@ -461,7 +458,7 @@ class EndPointDefinition(BaseModel):
             if hasattr(fieldinfo, "media_type"):
                 json_schema_extra["media_type"] = fieldinfo.media_type
 
-            if issubclass(original_annotation, BaseModel):
+            if inspect.isclass(annotation) and issubclass(annotation, BaseModel):
                 for field_name, field in annotation.model_fields.items():
                     if field_name in fields:
                         raise ValueError(f"field {field_name} already exists")

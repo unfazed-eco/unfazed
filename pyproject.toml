@@ -8,6 +8,35 @@ authors = [
   { name="xin.zhou", email="zhouxin576@gmail.com" },
 ]
 license = { file="LICENSE" }
+keywords = [
+    "asgi",
+    "web-framework",
+    "async",
+    "fastapi-alternative",
+    "django-inspired",
+    "tortoise-orm",
+    "openapi",
+    "swagger",
+    "api-framework",
+    "production-ready",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: AsyncIO",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+
 dependencies = [
     "aerich>=0.8.1",
     "anyio>=4.7.0",
