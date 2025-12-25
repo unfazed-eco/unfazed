@@ -458,7 +458,7 @@ class EndPointDefinition(BaseModel):
             if hasattr(fieldinfo, "media_type"):
                 json_schema_extra["media_type"] = fieldinfo.media_type
 
-            if issubclass(annotation, BaseModel):
+            if inspect.isclass(annotation) and issubclass(annotation, BaseModel):
                 for field_name, field in annotation.model_fields.items():
                     if field_name in fields:
                         raise ValueError(f"field {field_name} already exists")
