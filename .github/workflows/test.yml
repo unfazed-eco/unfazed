@@ -2,7 +2,7 @@ name: Test Unfazed
 
 on:
   push:
-    branches: ["main", "feat-support-multipython-in-ci"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
