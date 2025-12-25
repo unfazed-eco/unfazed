@@ -1,3 +1,9 @@
+v0.0.18
+======
+- [issue #88](https://github.com/unfazed-eco/unfazed/issues/88) CI Test support multiple python versions
+- [issue #87](https://github.com/unfazed-eco/unfazed/issues/87) BUG: TypeError: issubclass() arg 1 must be a class
+- [issue #84](https://github.com/unfazed-eco/unfazed/issues/84) | [issue #82](https://github.com/unfazed-eco/unfazed/issues/82) fix: static & route
+
 v0.0.17
 ======
 
