@@ -277,7 +277,6 @@ def test_model_admin() -> None:
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["alias", "brand"]
-        list_filter = ["brand", "color"]
         list_sort = ["id", "price"]
         list_order = ["price", "length", "height"]
         list_editable = ["alias", "price"]
@@ -302,7 +301,6 @@ def test_model_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["alias", "brand"]
-    assert attrs.list_filter == ["brand", "color"]
     assert attrs.list_sort == ["id", "price"]
     assert attrs.list_order == ["price", "length", "height"]
     assert attrs.list_editable == ["alias", "price"]
@@ -329,7 +327,6 @@ def test_model_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -367,17 +364,6 @@ def test_model_admin() -> None:
     with pytest.raises(ValueError, match="field not_exist_field not found"):
         instance_invalid = CarAdminInvalid()
         instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
-
-    # Test validation - invalid field in list_filter
-    class CarAdminInvalidFilter(ModelAdmin):
-        serializer = CarSerializer
-        list_filter = ["invalid_field"]
-
-    with pytest.raises(ValueError, match="field invalid_field not found"):
-        instance_invalid_filter = CarAdminInvalidFilter()
-        instance_invalid_filter.get_attrs(
-            list(instance_invalid_filter.get_fields().keys())
-        )
 
     # Test validation - invalid field in list_editable
     class CarAdminInvalidEditable(ModelAdmin):
@@ -710,7 +696,6 @@ def test_inline_admin() -> None:
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["title"]
-        list_filter = ["owner_id"]
         list_sort = ["id", "title"]
         list_order = ["title", "owner_id"]
         list_editable = ["title"]
@@ -734,7 +719,6 @@ def test_inline_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["title"]
-    assert attrs.list_filter == ["owner_id"]
     assert attrs.list_sort == ["id", "title"]
     assert attrs.list_order == ["title", "owner_id"]
     assert attrs.list_editable == ["title"]
@@ -760,7 +744,6 @@ def test_inline_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -771,15 +754,6 @@ def test_inline_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test validation - invalid field names
-    class BookAdminInvalid(ModelInlineAdmin):
-        serializer = BookSerializer
-        list_filter = ["not_exist_field"]
-
-    with pytest.raises(ValueError, match="field not_exist_field not found"):
-        instance_invalid = BookAdminInvalid()
-        instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
 
     # Test validation - invalid field in list_search
     class BookAdminInvalidListSearch(ModelInlineAdmin):

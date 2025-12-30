@@ -103,6 +103,10 @@ class AdminField(BaseModel):
 
 
 class AdminBaseAttrs(BaseModel):
+    list_display: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to display in frontend admin, frontend behavior",
+    )
     help_text: str = Field(
         default="",
         description="help text for this attribute, frontend admin will show the help text",
@@ -135,10 +139,6 @@ class AdminBaseAttrs(BaseModel):
     list_range_search: t.List[str] = Field(
         default_factory=list,
         description="list of fields to range search in frontend admin, frontend behavior",
-    )
-    list_filter: t.List[str] = Field(
-        default_factory=list,
-        description="list of fields to filter in frontend admin, frontend behavior",
     )
     list_sort: t.List[str] = Field(
         default_factory=list,

@@ -260,9 +260,6 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     # sort by fields -> click on the column header
     list_sort: t.List[str] = []
 
-    # filter by fields
-    list_filter: t.List[str] = []
-
     # search by fields
     list_search: t.List[str] = []
 
@@ -331,7 +328,9 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -551,7 +550,6 @@ class ModelAdmin(BaseModelAdmin):
         model: t.Type[TModel] = self.serializer.Meta.model
         detail_display = self.detail_display or list(model._meta.db_fields)
         for item in chain(
-            self.list_filter,
             self.list_sort,
             self.list_order,
             self.list_search,
@@ -566,9 +564,9 @@ class ModelAdmin(BaseModelAdmin):
 
         attrs = AdminAttrs.model_validate(
             {
+                "list_display": self.list_display,
                 "help_text": self.help_text,
                 "list_editable": self.list_editable,
-                "list_filter": self.list_filter,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
                 "list_search": self.list_search,
@@ -615,7 +613,6 @@ class ModelInlineAdmin(ModelAdmin):
         for item in chain(
             list_display,
             self.list_sort,
-            self.list_filter,
             self.list_order,
             self.list_search,
             self.list_range_search,
@@ -631,7 +628,6 @@ class ModelInlineAdmin(ModelAdmin):
                 "max_num": self.max_num,
                 "min_num": self.min_num,
                 "list_editable": self.list_editable,
-                "list_filter": self.list_filter,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
                 "list_per_page": self.list_per_page,
@@ -674,7 +670,9 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:
