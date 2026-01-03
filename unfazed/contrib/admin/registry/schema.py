@@ -44,6 +44,10 @@ class AdminRelation(BaseModel):
         default=None, description="through model name"
     )
 
+    target_field_nullable: bool = Field(
+        default=False, description="whether target field is nullable (for bk_fk/bk_o2o)"
+    )
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 

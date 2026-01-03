@@ -38,9 +38,9 @@ SUPPORTED_FIELD_TYPES = [
 ]
 
 
-def parse_cond(condtion: t.List[Condition]) -> t.Dict[str, t.Any]:
-    ret = {}
-    for cond in condtion:
+def parse_cond(condition: t.List[Condition]) -> t.Dict[str, t.Any]:
+    ret: t.Dict[str, t.Any] = {}
+    for cond in condition:
         field = cond.field
         if cond.eq is not None:
             ret[field] = cond.eq
@@ -56,6 +56,8 @@ def parse_cond(condtion: t.List[Condition]) -> t.Dict[str, t.Any]:
             ret[f"{field}__icontains"] = cond.icontains
         if cond.contains is not None:
             ret[f"{field}__contains"] = cond.contains
+        if cond.in_ is not None:
+            ret[f"{field}__in"] = cond.in_
     return ret
 
 

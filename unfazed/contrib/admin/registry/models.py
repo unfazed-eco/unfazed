@@ -328,9 +328,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -538,6 +536,23 @@ class ModelAdmin(BaseModelAdmin):
                         f"field {admin_relation.target_field} not found in {inline_serializer.model_fields}"
                     )
 
+                # For bk_fk and bk_o2o, get field metadata
+                if admin_relation.relation in ["bk_fk", "bk_o2o"]:
+                    inline_model: t.Type[TModel] = inline_serializer.Meta.model
+                    target_field_name = admin_relation.target_field
+
+                    # Ensure target_field_name is a string (not AutoFill)
+                    if (
+                        isinstance(target_field_name, str)
+                        and target_field_name in inline_model._meta.fields_map
+                    ):
+                        target_field = inline_model._meta.fields_map[target_field_name]
+
+                        # Check if field is nullable
+                        admin_relation.target_field_nullable = getattr(
+                            target_field, "null", False
+                        )
+
             admin_inline_serialize_model: AdminInlineSerializeModel = (
                 inline.to_serialize()
             )
@@ -670,9 +685,7 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:

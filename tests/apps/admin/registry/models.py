@@ -150,3 +150,53 @@ class T2Book(Model):
 
     class Meta:
         table = "test_models_t2_book"
+
+
+# Models for testing nullable fields
+
+
+class T3User(Model):
+    id = f.BigIntField(primary_key=True)
+    name = f.CharField(max_length=100)
+
+    class Meta:
+        table = "test_models_t3_user"
+
+
+class T3Comment(Model):
+    id = f.BigIntField(primary_key=True)
+    content = f.TextField()
+    # Nullable foreign key field
+    user_id = f.BigIntField(null=True)
+
+    class Meta:
+        table = "test_models_t3_comment"
+
+
+# Models for testing fk and o2o relations
+
+
+class T4Author(Model):
+    id = f.BigIntField(primary_key=True)
+    name = f.CharField(max_length=100)
+
+    class Meta:
+        table = "test_models_t4_author"
+
+
+class T4Post(Model):
+    id = f.BigIntField(primary_key=True)
+    title = f.CharField(max_length=200)
+    author = ForeignKeyField("models.T4Author", related_name="posts")
+
+    class Meta:
+        table = "test_models_t4_post"
+
+
+class T4AuthorProfile(Model):
+    id = f.BigIntField(primary_key=True)
+    bio = f.TextField()
+    author = OneToOneField("models.T4Author", related_name="profile")
+
+    class Meta:
+        table = "test_models_t4_author_profile"

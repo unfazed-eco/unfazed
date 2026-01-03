@@ -459,6 +459,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_book_admin.relation.source_field == "id"
     assert t1_book_admin.relation.target_field == "owner_id"
     assert t1_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t1_book_admin.relation.target_field_nullable is False
 
     # o2o
     t1_profile_admin: AdminInlineSerializeModel = ret["T1ProfileAdmin"]
@@ -468,6 +470,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_profile_admin.relation.source_field == "id"
     assert t1_profile_admin.relation.target_field == "user_id"
     assert t1_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t1_profile_admin.relation.target_field_nullable is False
 
     # m2m
     t1_role_admin: AdminInlineSerializeModel = ret["T1RoleAdmin"]
@@ -480,6 +484,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_role_admin.relation.through.source_to_through_field == "user_id"
     assert t1_role_admin.relation.through.target_field == "id"
     assert t1_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t1_role_admin.relation.target_field_nullable is False
 
 
 def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None:
@@ -500,6 +506,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_book_admin.relation.source_field == "id"
     assert t2_book_admin.relation.target_field == "owner_id"
     assert t2_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t2_book_admin.relation.target_field_nullable is False
 
     # o2o
     t2_profile_admin: AdminInlineSerializeModel = ret["T2ProfileAdmin"]
@@ -509,6 +517,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_profile_admin.relation.source_field == "id"
     assert t2_profile_admin.relation.target_field == "user_id"
     assert t2_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t2_profile_admin.relation.target_field_nullable is False
 
     # m2m
 
@@ -522,6 +532,59 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_role_admin.relation.through.source_to_through_field == "user_id"
     assert t2_role_admin.relation.through.target_field == "id"
     assert t2_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t2_role_admin.relation.target_field_nullable is False
+
+
+def test_model_admin_inlines_with_nullable_field(setup_nullable_inline: None) -> None:
+    """Test that target_field_nullable is True when the field is nullable"""
+    assert "T3UserAdmin" in admin_collector
+    user_admin: ModelAdmin = admin_collector["T3UserAdmin"]
+
+    ret = user_admin.to_inlines()
+
+    assert "T3CommentAdmin" in ret
+
+    # bk_fk with nullable field
+    t3_comment_admin: AdminInlineSerializeModel = ret["T3CommentAdmin"]
+    assert t3_comment_admin.relation is not None
+
+    assert t3_comment_admin.relation.target == "T3CommentAdmin"
+    assert t3_comment_admin.relation.source_field == "id"
+    assert t3_comment_admin.relation.target_field == "user_id"
+    assert t3_comment_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for nullable bk_fk field
+    assert t3_comment_admin.relation.target_field_nullable is True
+
+
+def test_model_admin_inlines_with_forward_relations(
+    setup_forward_relation_inline: None,
+) -> None:
+    """Test that fk and o2o relations keep default target_field_nullable value"""
+    assert "T4PostAdmin" in admin_collector
+    assert "T4AuthorProfileAdmin" in admin_collector
+
+    # Test fk relation
+    post_admin: ModelAdmin = admin_collector["T4PostAdmin"]
+    post_inlines = post_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in post_inlines
+    post_author_inline: AdminInlineSerializeModel = post_inlines["T4AuthorAdmin"]
+    assert post_author_inline.relation is not None
+    assert post_author_inline.relation.relation == "fk"
+    # fk relations should keep default value for target_field_nullable
+    assert post_author_inline.relation.target_field_nullable is False
+
+    # Test o2o relation
+    profile_admin: ModelAdmin = admin_collector["T4AuthorProfileAdmin"]
+    profile_inlines = profile_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in profile_inlines
+    profile_author_inline: AdminInlineSerializeModel = profile_inlines["T4AuthorAdmin"]
+    assert profile_author_inline.relation is not None
+    assert profile_author_inline.relation.relation == "o2o"
+    # o2o relations should keep default value for target_field_nullable
+    assert profile_author_inline.relation.target_field_nullable is False
 
 
 def test_model_admin_failed() -> None:
