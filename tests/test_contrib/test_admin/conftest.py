@@ -15,6 +15,11 @@ from tests.apps.admin.registry.models import (
     T2Role,
     T2User,
     T2UserRole,
+    T3Comment,
+    T3User,
+    T4Author,
+    T4AuthorProfile,
+    T4Post,
 )
 from unfazed.conf import settings
 from unfazed.contrib.admin.registry import (
@@ -171,4 +176,77 @@ def setup_inline() -> None:
 
     @register(T2BookSerializer)
     class T2BookAdmin(ModelInlineAdmin):
+        pass
+
+
+@pytest.fixture
+def setup_nullable_inline() -> None:
+    """Test setup for nullable fields in bk_fk and bk_o2o relations"""
+    admin_collector.clear()
+
+    class T3UserSerializer(Serializer):
+        class Meta:
+            model = T3User
+
+    class T3CommentSerializer(Serializer):
+        class Meta:
+            model = T3Comment
+
+    @register(T3UserSerializer)
+    class T3UserAdmin(ModelAdmin):
+        inlines = [
+            AdminRelation(
+                target="T3CommentAdmin",
+                source_field="id",
+                target_field="user_id",
+                relation="bk_fk",
+            ),
+        ]
+
+    @register(T3CommentSerializer)
+    class T3CommentAdmin(ModelInlineAdmin):
+        pass
+
+
+@pytest.fixture
+def setup_forward_relation_inline() -> None:
+    """Test setup for fk and o2o forward relations"""
+    admin_collector.clear()
+
+    class T4AuthorSerializer(Serializer):
+        class Meta:
+            model = T4Author
+
+    class T4PostSerializer(Serializer):
+        class Meta:
+            model = T4Post
+
+    class T4AuthorProfileSerializer(Serializer):
+        class Meta:
+            model = T4AuthorProfile
+
+    @register(T4PostSerializer)
+    class T4PostAdmin(ModelAdmin):
+        inlines = [
+            AdminRelation(
+                target="T4AuthorAdmin",
+                source_field="author_id",
+                target_field="id",
+                relation="fk",
+            ),
+        ]
+
+    @register(T4AuthorProfileSerializer)
+    class T4AuthorProfileAdmin(ModelAdmin):
+        inlines = [
+            AdminRelation(
+                target="T4AuthorAdmin",
+                source_field="author_id",
+                target_field="id",
+                relation="o2o",
+            ),
+        ]
+
+    @register(T4AuthorSerializer)
+    class T4AuthorAdmin(ModelInlineAdmin):
         pass

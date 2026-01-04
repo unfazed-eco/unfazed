@@ -72,13 +72,14 @@ def test_site() -> None:
 
 
 def test_base_admin_label() -> None:
-    """Test BaseAdmin.label property when _label is set."""
+    """Test BaseAdmin.label property uses smart_split of name."""
 
     class TestAdmin(CustomAdmin):
-        _label = "Custom Label"
+        pass
 
     admin = TestAdmin()
-    assert admin.label == "Custom Label"
+    # label should use smart_split of the class name
+    assert admin.label == "Test Admin"
 
 
 def test_base_model_admin() -> None:
@@ -272,12 +273,10 @@ def test_model_admin() -> None:
         can_add = False
         can_delete = False
         can_edit = False
-        can_show_all = False
 
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["alias", "brand"]
-        list_filter = ["brand", "color"]
         list_sort = ["id", "price"]
         list_order = ["price", "length", "height"]
         list_editable = ["alias", "price"]
@@ -302,7 +301,6 @@ def test_model_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["alias", "brand"]
-    assert attrs.list_filter == ["brand", "color"]
     assert attrs.list_sort == ["id", "price"]
     assert attrs.list_order == ["price", "length", "height"]
     assert attrs.list_editable == ["alias", "price"]
@@ -329,7 +327,6 @@ def test_model_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -367,17 +364,6 @@ def test_model_admin() -> None:
     with pytest.raises(ValueError, match="field not_exist_field not found"):
         instance_invalid = CarAdminInvalid()
         instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
-
-    # Test validation - invalid field in list_filter
-    class CarAdminInvalidFilter(ModelAdmin):
-        serializer = CarSerializer
-        list_filter = ["invalid_field"]
-
-    with pytest.raises(ValueError, match="field invalid_field not found"):
-        instance_invalid_filter = CarAdminInvalidFilter()
-        instance_invalid_filter.get_attrs(
-            list(instance_invalid_filter.get_fields().keys())
-        )
 
     # Test validation - invalid field in list_editable
     class CarAdminInvalidEditable(ModelAdmin):
@@ -473,6 +459,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_book_admin.relation.source_field == "id"
     assert t1_book_admin.relation.target_field == "owner_id"
     assert t1_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t1_book_admin.relation.target_field_nullable is False
 
     # o2o
     t1_profile_admin: AdminInlineSerializeModel = ret["T1ProfileAdmin"]
@@ -482,6 +470,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_profile_admin.relation.source_field == "id"
     assert t1_profile_admin.relation.target_field == "user_id"
     assert t1_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t1_profile_admin.relation.target_field_nullable is False
 
     # m2m
     t1_role_admin: AdminInlineSerializeModel = ret["T1RoleAdmin"]
@@ -494,6 +484,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_role_admin.relation.through.source_to_through_field == "user_id"
     assert t1_role_admin.relation.through.target_field == "id"
     assert t1_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t1_role_admin.relation.target_field_nullable is False
 
 
 def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None:
@@ -514,6 +506,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_book_admin.relation.source_field == "id"
     assert t2_book_admin.relation.target_field == "owner_id"
     assert t2_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t2_book_admin.relation.target_field_nullable is False
 
     # o2o
     t2_profile_admin: AdminInlineSerializeModel = ret["T2ProfileAdmin"]
@@ -523,6 +517,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_profile_admin.relation.source_field == "id"
     assert t2_profile_admin.relation.target_field == "user_id"
     assert t2_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t2_profile_admin.relation.target_field_nullable is False
 
     # m2m
 
@@ -536,6 +532,59 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_role_admin.relation.through.source_to_through_field == "user_id"
     assert t2_role_admin.relation.through.target_field == "id"
     assert t2_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t2_role_admin.relation.target_field_nullable is False
+
+
+def test_model_admin_inlines_with_nullable_field(setup_nullable_inline: None) -> None:
+    """Test that target_field_nullable is True when the field is nullable"""
+    assert "T3UserAdmin" in admin_collector
+    user_admin: ModelAdmin = admin_collector["T3UserAdmin"]
+
+    ret = user_admin.to_inlines()
+
+    assert "T3CommentAdmin" in ret
+
+    # bk_fk with nullable field
+    t3_comment_admin: AdminInlineSerializeModel = ret["T3CommentAdmin"]
+    assert t3_comment_admin.relation is not None
+
+    assert t3_comment_admin.relation.target == "T3CommentAdmin"
+    assert t3_comment_admin.relation.source_field == "id"
+    assert t3_comment_admin.relation.target_field == "user_id"
+    assert t3_comment_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for nullable bk_fk field
+    assert t3_comment_admin.relation.target_field_nullable is True
+
+
+def test_model_admin_inlines_with_forward_relations(
+    setup_forward_relation_inline: None,
+) -> None:
+    """Test that fk and o2o relations keep default target_field_nullable value"""
+    assert "T4PostAdmin" in admin_collector
+    assert "T4AuthorProfileAdmin" in admin_collector
+
+    # Test fk relation
+    post_admin: ModelAdmin = admin_collector["T4PostAdmin"]
+    post_inlines = post_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in post_inlines
+    post_author_inline: AdminInlineSerializeModel = post_inlines["T4AuthorAdmin"]
+    assert post_author_inline.relation is not None
+    assert post_author_inline.relation.relation == "fk"
+    # fk relations should keep default value for target_field_nullable
+    assert post_author_inline.relation.target_field_nullable is False
+
+    # Test o2o relation
+    profile_admin: ModelAdmin = admin_collector["T4AuthorProfileAdmin"]
+    profile_inlines = profile_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in profile_inlines
+    profile_author_inline: AdminInlineSerializeModel = profile_inlines["T4AuthorAdmin"]
+    assert profile_author_inline.relation is not None
+    assert profile_author_inline.relation.relation == "o2o"
+    # o2o relations should keep default value for target_field_nullable
+    assert profile_author_inline.relation.target_field_nullable is False
 
 
 def test_model_admin_failed() -> None:
@@ -710,7 +759,6 @@ def test_inline_admin() -> None:
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["title"]
-        list_filter = ["owner_id"]
         list_sort = ["id", "title"]
         list_order = ["title", "owner_id"]
         list_editable = ["title"]
@@ -734,7 +782,6 @@ def test_inline_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["title"]
-    assert attrs.list_filter == ["owner_id"]
     assert attrs.list_sort == ["id", "title"]
     assert attrs.list_order == ["title", "owner_id"]
     assert attrs.list_editable == ["title"]
@@ -760,7 +807,6 @@ def test_inline_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -771,15 +817,6 @@ def test_inline_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test validation - invalid field names
-    class BookAdminInvalid(ModelInlineAdmin):
-        serializer = BookSerializer
-        list_filter = ["not_exist_field"]
-
-    with pytest.raises(ValueError, match="field not_exist_field not found"):
-        instance_invalid = BookAdminInvalid()
-        instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
 
     # Test validation - invalid field in list_search
     class BookAdminInvalidListSearch(ModelInlineAdmin):

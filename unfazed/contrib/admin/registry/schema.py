@@ -44,6 +44,10 @@ class AdminRelation(BaseModel):
         default=None, description="through model name"
     )
 
+    target_field_nullable: bool = Field(
+        default=False, description="whether target field is nullable (for bk_fk/bk_o2o)"
+    )
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
@@ -103,6 +107,10 @@ class AdminField(BaseModel):
 
 
 class AdminBaseAttrs(BaseModel):
+    list_display: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to display in frontend admin, frontend behavior",
+    )
     help_text: str = Field(
         default="",
         description="help text for this attribute, frontend admin will show the help text",
@@ -121,6 +129,10 @@ class AdminBaseAttrs(BaseModel):
         default=True,
         description="the data can be edited inlines",
     )
+    can_search: bool = Field(
+        default=True,
+        description="can search the items in the list page",
+    )
     list_per_page: int = Field(
         default=20, description="number of items to display per page in frontend admin"
     )
@@ -132,13 +144,13 @@ class AdminBaseAttrs(BaseModel):
         default_factory=list,
         description="list of fields to search in frontend admin, frontend behavior",
     )
-    list_range_search: t.List[str] = Field(
+    search_fields: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to show in search panel, frontend behavior",
+    )
+    search_range_fields: t.List[str] = Field(
         default_factory=list,
         description="list of fields to range search in frontend admin, frontend behavior",
-    )
-    list_filter: t.List[str] = Field(
-        default_factory=list,
-        description="list of fields to filter in frontend admin, frontend behavior",
     )
     list_sort: t.List[str] = Field(
         default_factory=list,
@@ -151,6 +163,10 @@ class AdminBaseAttrs(BaseModel):
     list_editable: t.List[str] = Field(
         default_factory=list,
         description="list of fields to edit in frontend admin, frontend behavior",
+    )
+    list_filter: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to filter in frontend admin, frontend behavior",
     )
 
 

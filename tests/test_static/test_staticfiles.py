@@ -90,3 +90,22 @@ def test_staticfiles_html_directory_and_missing_index(tmp_path: Path) -> None:
     static_files_no_index = StaticFiles(directory=no_index_dir, html=True)
     with pytest.raises(FileNotFoundError):
         static_files_no_index.lookup_path({"type": "http", "path": "missing.html"})
+
+
+def test_staticfiles_unknown_media_type(tmp_path: Path) -> None:
+    """Test that files with unknown extensions get text/plain as media_type"""
+    # Create a test directory with a file without extension
+    test_dir = tmp_path / "test"
+    test_dir.mkdir()
+
+    # Create a file without extension (mimetype will be None)
+    unknown_file = test_dir / "README"
+    unknown_file.write_text("test content", encoding="utf-8")
+
+    static_files = StaticFiles(directory=test_dir)
+
+    # Test get_response with unknown file type
+    response = static_files.get_response(unknown_file, html=False)
+
+    # Verify that the media_type is set to text/plain for unknown types
+    assert response.media_type == "text/plain"
