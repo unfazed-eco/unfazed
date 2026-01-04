@@ -252,19 +252,21 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     not_null_fields: t.List[str] = []
     json_fields: t.List[str] = []
 
+    # search panel
+    search_fields: t.List[str] = []
+    # range search fields(must be in search_fields)
+    search_range_fields: t.List[str] = []
+
     # behaviors on list page
 
     # decide which fields to display
     list_display: t.List[str] = []
 
-    # sort by fields -> click on the column header
+    # sort by fields -> click on the column header(current table)
     list_sort: t.List[str] = []
 
-    # search by fields
+    # search by fields(current table)
     list_search: t.List[str] = []
-
-    # range search fields(must be in list_search)
-    list_range_search: t.List[str] = []
 
     # default number of items to display per page
     list_per_page: int = 20
@@ -278,12 +280,17 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     # can edit the items in the list page
     list_editable: t.List[str] = []
 
+    # filter by fields -> show filter options in the list page
+    list_filter: t.List[str] = []
+
     # will show a Add button in frontend admin if can_add is True
     can_add: bool = True
     # will show a Delete button in frontend admin if can_delete is True
     can_delete: bool = True
     # the data can be edited inlines
     can_edit: bool = True
+    # can search the items in the list page
+    can_search: bool = True
 
     # route label
     _route_label: str | None = "Model"
@@ -328,7 +335,9 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -568,8 +577,10 @@ class ModelAdmin(BaseModelAdmin):
             self.list_sort,
             self.list_order,
             self.list_search,
-            self.list_range_search,
+            self.search_fields,
+            self.search_range_fields,
             self.list_editable,
+            self.list_filter,
             detail_display,
             self.detail_order,
             self.detail_editable,
@@ -581,16 +592,19 @@ class ModelAdmin(BaseModelAdmin):
             {
                 "list_display": self.list_display,
                 "help_text": self.help_text,
+                "search_fields": self.search_fields,
+                "search_range_fields": self.search_range_fields,
                 "list_editable": self.list_editable,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
                 "list_search": self.list_search,
-                "list_range_search": self.list_range_search,
                 "list_per_page": self.list_per_page,
                 "list_per_page_options": self.list_per_page_options,
+                "list_filter": self.list_filter,
                 "can_add": self.can_add,
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
+                "can_search": self.can_search,
                 "detail_display": detail_display,
                 "detail_order": self.detail_order,
                 "detail_editable": self.detail_editable,
@@ -630,8 +644,10 @@ class ModelInlineAdmin(ModelAdmin):
             self.list_sort,
             self.list_order,
             self.list_search,
-            self.list_range_search,
+            self.search_fields,
+            self.search_range_fields,
             self.list_editable,
+            self.list_filter,
         ):
             if item not in field_list:
                 raise ValueError(f"field {item} not found in {field_list}")
@@ -642,16 +658,19 @@ class ModelInlineAdmin(ModelAdmin):
                 "help_text": self.help_text,
                 "max_num": self.max_num,
                 "min_num": self.min_num,
+                "search_fields": self.search_fields,
+                "search_range_fields": self.search_range_fields,
                 "list_editable": self.list_editable,
                 "list_sort": self.list_sort,
                 "list_order": self.list_order,
                 "list_per_page": self.list_per_page,
                 "list_per_page_options": self.list_per_page_options,
                 "list_search": self.list_search,
-                "list_range_search": self.list_range_search,
+                "list_filter": self.list_filter,
                 "can_add": self.can_add,
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
+                "can_search": self.can_search,
             }
         )
 
@@ -685,7 +704,9 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:

@@ -129,6 +129,10 @@ class AdminBaseAttrs(BaseModel):
         default=True,
         description="the data can be edited inlines",
     )
+    can_search: bool = Field(
+        default=True,
+        description="can search the items in the list page",
+    )
     list_per_page: int = Field(
         default=20, description="number of items to display per page in frontend admin"
     )
@@ -140,7 +144,11 @@ class AdminBaseAttrs(BaseModel):
         default_factory=list,
         description="list of fields to search in frontend admin, frontend behavior",
     )
-    list_range_search: t.List[str] = Field(
+    search_fields: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to show in search panel, frontend behavior",
+    )
+    search_range_fields: t.List[str] = Field(
         default_factory=list,
         description="list of fields to range search in frontend admin, frontend behavior",
     )
@@ -155,6 +163,10 @@ class AdminBaseAttrs(BaseModel):
     list_editable: t.List[str] = Field(
         default_factory=list,
         description="list of fields to edit in frontend admin, frontend behavior",
+    )
+    list_filter: t.List[str] = Field(
+        default_factory=list,
+        description="list of fields to filter in frontend admin, frontend behavior",
     )
 
 
