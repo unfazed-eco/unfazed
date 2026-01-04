@@ -44,8 +44,6 @@ class BaseAdmin:
     # register behavior
     override: bool = False
 
-    _label: str | None = None
-
     @property
     def name(self) -> str:
         return self.__class__.__name__
@@ -56,8 +54,6 @@ class BaseAdmin:
 
     @property
     def label(self) -> str:
-        if self._label:
-            return self._label
         return smart_split(self.name)
 
     async def has_view_perm(
@@ -292,14 +288,9 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     # can search the items in the list page
     can_search: bool = True
 
-    # route label
-    _route_label: str | None = "Model"
-
     @property
     def route_label(self) -> str:
-        if self.app_label:
-            return self.app_label
-        return self._route_label or ""
+        return self.app_label
 
     @cached_property
     def model_description(self) -> t.Dict[str, t.Any]:
@@ -335,9 +326,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -704,9 +693,7 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:
