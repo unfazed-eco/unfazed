@@ -72,13 +72,14 @@ def test_site() -> None:
 
 
 def test_base_admin_label() -> None:
-    """Test BaseAdmin.label property when _label is set."""
+    """Test BaseAdmin.label property uses smart_split of name."""
 
     class TestAdmin(CustomAdmin):
-        _label = "Custom Label"
+        pass
 
     admin = TestAdmin()
-    assert admin.label == "Custom Label"
+    # label should use smart_split of the class name
+    assert admin.label == "Test Admin"
 
 
 def test_base_model_admin() -> None:
@@ -272,7 +273,6 @@ def test_model_admin() -> None:
         can_add = False
         can_delete = False
         can_edit = False
-        can_show_all = False
 
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
