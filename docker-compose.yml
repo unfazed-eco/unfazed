@@ -3,8 +3,6 @@ services:
   redis:
     image: redis:latest
     platform: linux/amd64
-    ports:
-      - "127.0.0.1:9528:6379"
   mysql:
     image: mysql:5.7
     platform: linux/amd64
@@ -20,7 +18,7 @@ services:
   web:
     build: .
     ports:
-      - "127.0.0.1:9527:9527"
+      - "127.0.0.1:9537:9527"
     depends_on:
       - redis
       - mysql

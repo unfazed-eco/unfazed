@@ -561,7 +561,11 @@ class ModelAdmin(BaseModelAdmin):
 
     def get_attrs(self, field_list: t.List[str]) -> AdminAttrs:
         model: t.Type[TModel] = self.serializer.Meta.model
-        detail_display = self.detail_display or list(model._meta.db_fields)
+        exclude_fields: t.Set[str] = set(self.serializer.Meta.exclude) or set()
+        original_detail_display: t.List[str] = list(
+            model._meta.db_fields - exclude_fields
+        )
+        detail_display = self.detail_display or original_detail_display
         for item in chain(
             self.list_sort,
             self.list_order,
@@ -626,7 +630,11 @@ class ModelInlineAdmin(ModelAdmin):
     @t.override
     def get_attrs(self, field_list: t.List[str]) -> AdminInlineAttrs:  # type: ignore
         model: t.Type[TModel] = self.serializer.Meta.model
-        list_display = self.list_display or list(model._meta.db_fields)
+        exclude_fields: t.Set[str] = set(self.serializer.Meta.exclude) or set()
+        original_list_display: t.List[str] = list(
+            model._meta.db_fields - exclude_fields
+        )
+        list_display = self.list_display or original_list_display
 
         for item in chain(
             list_display,
@@ -676,6 +684,7 @@ class ModelInlineAdmin(ModelAdmin):
 
 
 class CustomAdmin(BaseAdmin):
+    component: str = "ModelCustom"
     fields_set: t.List[CustomField] = []
     route_label: str = "Custom Pages"
 

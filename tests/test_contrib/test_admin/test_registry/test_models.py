@@ -920,3 +920,154 @@ def test_tool_admin() -> None:
     assert instance.action_permission("export") == "custom.exporttool.can_exec_export"
 
     assert len(instance.get_all_permissions()) == 2
+
+
+def test_model_admin_detail_display_with_serializer_exclude() -> None:
+    """Test that ModelAdmin.get_attrs() excludes fields from serializer Meta.exclude
+    when detail_display is not explicitly set."""
+    from tests.apps.admin.registry.models import T2User
+
+    class T2UserSerializerWithExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password"]
+
+    class T2UserAdminWithExclude(ModelAdmin):
+        serializer = T2UserSerializerWithExclude
+
+    instance = T2UserAdminWithExclude()
+    field_list = list(instance.get_fields().keys())
+    attrs = instance.get_attrs(field_list)
+
+    assert "password" not in attrs.detail_display
+    assert "id" in attrs.detail_display
+    assert "name" in attrs.detail_display
+    assert "email" in attrs.detail_display
+
+    class T2UserSerializerWithMultipleExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password", "email"]
+
+    class T2UserAdminWithMultipleExclude(ModelAdmin):
+        serializer = T2UserSerializerWithMultipleExclude
+
+    instance2 = T2UserAdminWithMultipleExclude()
+    field_list2 = list(instance2.get_fields().keys())
+    attrs2 = instance2.get_attrs(field_list2)
+
+    assert "password" not in attrs2.detail_display
+    assert "email" not in attrs2.detail_display
+    assert "id" in attrs2.detail_display
+    assert "name" in attrs2.detail_display
+
+    class T2UserSerializerNoExclude(Serializer):
+        class Meta:
+            model = T2User
+
+    class T2UserAdminNoExclude(ModelAdmin):
+        serializer = T2UserSerializerNoExclude
+
+    instance3 = T2UserAdminNoExclude()
+    field_list3 = list(instance3.get_fields().keys())
+    attrs3 = instance3.get_attrs(field_list3)
+
+    assert "password" in attrs3.detail_display
+    assert "id" in attrs3.detail_display
+    assert "name" in attrs3.detail_display
+    assert "email" in attrs3.detail_display
+
+
+def test_model_inline_admin_list_display_with_serializer_exclude() -> None:
+    """Test that ModelInlineAdmin.get_attrs() excludes fields from serializer Meta.exclude
+    when list_display is not explicitly set.
+
+    When a field is excluded in serializer.Meta.exclude, it won't be in the serializer's
+    model_fields (field_list), so if it were included in the default list_display
+    (from model._meta.db_fields), the validation would fail. The exclude logic ensures
+    that excluded fields are not included in the default list_display calculation,
+    preventing validation errors.
+    """
+    from tests.apps.admin.registry.models import T2User
+
+    class T2UserInlineSerializerWithExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password"]
+
+    class T2UserInlineAdminWithExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerWithExclude
+
+    instance = T2UserInlineAdminWithExclude()
+    field_list = list(instance.get_fields().keys())
+
+    assert "password" not in field_list
+    assert "id" in field_list
+    assert "name" in field_list
+    assert "email" in field_list
+
+    attrs = instance.get_attrs(field_list)
+    assert attrs is not None
+
+    class T2UserInlineSerializerWithMultipleExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password", "email"]
+
+    class T2UserInlineAdminWithMultipleExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerWithMultipleExclude
+
+    instance2 = T2UserInlineAdminWithMultipleExclude()
+    field_list2 = list(instance2.get_fields().keys())
+
+    assert "password" not in field_list2
+    assert "email" not in field_list2
+    assert "id" in field_list2
+    assert "name" in field_list2
+
+    attrs2 = instance2.get_attrs(field_list2)
+    assert attrs2 is not None
+
+    class T2UserInlineSerializerNoExclude(Serializer):
+        class Meta:
+            model = T2User
+
+    class T2UserInlineAdminNoExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerNoExclude
+
+    instance3 = T2UserInlineAdminNoExclude()
+    field_list3 = list(instance3.get_fields().keys())
+
+    assert "password" in field_list3
+    assert "id" in field_list3
+    assert "name" in field_list3
+    assert "email" in field_list3
+
+    attrs3 = instance3.get_attrs(field_list3)
+    assert attrs3 is not None
+
+
+def test_custom_admin_component_attribute() -> None:
+    """Test that CustomAdmin has component attribute set to 'ModelCustom'."""
+    instance = CustomAdmin()
+    assert instance.component == "ModelCustom"
+
+    class MyCustomAdmin(CustomAdmin):
+        pass
+
+    instance2 = MyCustomAdmin()
+    assert instance2.component == "ModelCustom"
+
+    class MyCustomAdminOverride(CustomAdmin):
+        component = "CustomComponent"
+
+    instance3 = MyCustomAdminOverride()
+    assert instance3.component == "CustomComponent"
+
+    route = instance.to_route()
+    assert route is not None
+    assert route.component == "ModelCustom"
+
+    route3 = instance3.to_route()
+    assert route3 is not None
+    assert route3.component == "CustomComponent"
