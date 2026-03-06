@@ -1,3 +1,9 @@
+v0.0.19
+=====
+- [issue 97](https://github.com/unfazed-eco/unfazed/issues/97) BUG: serializer 中 exclude 了某些字段，如果在 detail_display 中未去除会报错
+- [issue 96](https://github.com/unfazed-eco/unfazed/issues/96) BUG: customAdmin 无法使用
+
+
 v0.0.18
 ======
 - [issue #88](https://github.com/unfazed-eco/unfazed/issues/88) CI Test support multiple python versions
