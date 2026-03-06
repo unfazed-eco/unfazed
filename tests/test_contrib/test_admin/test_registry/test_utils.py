@@ -23,3 +23,16 @@ def test_parse_cond() -> None:
         "name__contains": "test",
         "name2": 1,
     }
+
+
+def test_parse_cond_with_in() -> None:
+    """Test parse_cond with in_ condition"""
+    cond = Condition(
+        field="status",
+        in_=[1, 2, 3],
+    )
+
+    ret = parse_cond([cond])
+    assert ret == {
+        "status__in": [1, 2, 3],
+    }

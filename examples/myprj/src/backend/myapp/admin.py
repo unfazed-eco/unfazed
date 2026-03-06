@@ -1,10 +1,15 @@
 from unfazed.contrib.admin.registry import (
+    ActionKwargs,
+    ActionOutput,
     AdminRelation,
     AdminThrough,
     ModelAdmin,
     ModelInlineAdmin,
+    CustomAdmin,
+    action,
     register,
 )
+from unfazed.contrib.admin.registry.models import CustomField
 
 from . import serializers as s
 
@@ -46,3 +51,25 @@ class BookAdmin(ModelInlineAdmin):
 @register(s.ProfileSerializer)
 class ProfileAdmin(ModelInlineAdmin):
     pass
+
+
+@register()
+class BookSerializer(CustomAdmin):
+    fields_set = [
+        CustomField(name="id", label="ID", type="number"),
+        CustomField(name="name", label="Name", type="text"),
+        CustomField(name="owner", label="Owner", type="text"),
+    ]
+
+    @action(
+        name="get_owner",
+        label="Get Owner",
+        description="Get owner of the book",
+        confirm=True,
+        output=ActionOutput.Display,
+    )
+    async def get_owner(self, ctx: ActionKwargs):
+        return {
+            "success": True,
+            "message": "Owner retrieved successfully",
+        }

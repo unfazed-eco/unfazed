@@ -117,7 +117,7 @@ class AdminModelService:
         if not await admin_ins.has_view_perm(request):
             raise PermissionDenied(message="Permission Denied")
 
-        cond = parse_cond(condtion=cond)
+        cond = parse_cond(condition=cond)
         serializer_cls: t.Type[Serializer] = admin_ins.serializer
         queryset = serializer_cls.get_queryset(cond, fetch_relations=False)
         result: Result = await serializer_cls.list(queryset, page, size)
@@ -140,7 +140,7 @@ class AdminModelService:
             raise PermissionDenied(message="Permission Denied")
 
         method = getattr(admin_ins, ctx.action)
-        cond_dict = parse_cond(condtion=ctx.search_condition)
+        cond_dict = parse_cond(condition=ctx.search_condition)
 
         ctx = ActionKwargs(
             search_condition=cond_dict,

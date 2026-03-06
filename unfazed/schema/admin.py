@@ -24,6 +24,11 @@ class Condition(BaseModel):
         description="greater than or equal to this value",
         examples=["age__gte=18"],
     )
+    in_: list[int | str] | None = Field(
+        default=None,
+        description="in this list",
+        examples=[{"name__in": [1, 2, 3]}],
+    )
     contains: str | None = Field(
         default=None,
         description="contains this value",

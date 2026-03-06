@@ -72,13 +72,14 @@ def test_site() -> None:
 
 
 def test_base_admin_label() -> None:
-    """Test BaseAdmin.label property when _label is set."""
+    """Test BaseAdmin.label property uses smart_split of name."""
 
     class TestAdmin(CustomAdmin):
-        _label = "Custom Label"
+        pass
 
     admin = TestAdmin()
-    assert admin.label == "Custom Label"
+    # label should use smart_split of the class name
+    assert admin.label == "Test Admin"
 
 
 def test_base_model_admin() -> None:
@@ -272,12 +273,10 @@ def test_model_admin() -> None:
         can_add = False
         can_delete = False
         can_edit = False
-        can_show_all = False
 
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["alias", "brand"]
-        list_filter = ["brand", "color"]
         list_sort = ["id", "price"]
         list_order = ["price", "length", "height"]
         list_editable = ["alias", "price"]
@@ -302,7 +301,6 @@ def test_model_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["alias", "brand"]
-    assert attrs.list_filter == ["brand", "color"]
     assert attrs.list_sort == ["id", "price"]
     assert attrs.list_order == ["price", "length", "height"]
     assert attrs.list_editable == ["alias", "price"]
@@ -329,7 +327,6 @@ def test_model_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -367,17 +364,6 @@ def test_model_admin() -> None:
     with pytest.raises(ValueError, match="field not_exist_field not found"):
         instance_invalid = CarAdminInvalid()
         instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
-
-    # Test validation - invalid field in list_filter
-    class CarAdminInvalidFilter(ModelAdmin):
-        serializer = CarSerializer
-        list_filter = ["invalid_field"]
-
-    with pytest.raises(ValueError, match="field invalid_field not found"):
-        instance_invalid_filter = CarAdminInvalidFilter()
-        instance_invalid_filter.get_attrs(
-            list(instance_invalid_filter.get_fields().keys())
-        )
 
     # Test validation - invalid field in list_editable
     class CarAdminInvalidEditable(ModelAdmin):
@@ -473,6 +459,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_book_admin.relation.source_field == "id"
     assert t1_book_admin.relation.target_field == "owner_id"
     assert t1_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t1_book_admin.relation.target_field_nullable is False
 
     # o2o
     t1_profile_admin: AdminInlineSerializeModel = ret["T1ProfileAdmin"]
@@ -482,6 +470,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_profile_admin.relation.source_field == "id"
     assert t1_profile_admin.relation.target_field == "user_id"
     assert t1_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t1_profile_admin.relation.target_field_nullable is False
 
     # m2m
     t1_role_admin: AdminInlineSerializeModel = ret["T1RoleAdmin"]
@@ -494,6 +484,8 @@ def test_model_admin_inlines_with_relation_fields(setup_inline: None) -> None:
     assert t1_role_admin.relation.through.source_to_through_field == "user_id"
     assert t1_role_admin.relation.through.target_field == "id"
     assert t1_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t1_role_admin.relation.target_field_nullable is False
 
 
 def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None:
@@ -514,6 +506,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_book_admin.relation.source_field == "id"
     assert t2_book_admin.relation.target_field == "owner_id"
     assert t2_book_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for bk_fk
+    assert t2_book_admin.relation.target_field_nullable is False
 
     # o2o
     t2_profile_admin: AdminInlineSerializeModel = ret["T2ProfileAdmin"]
@@ -523,6 +517,8 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_profile_admin.relation.source_field == "id"
     assert t2_profile_admin.relation.target_field == "user_id"
     assert t2_profile_admin.relation.relation == "bk_o2o"
+    # Check target_field_nullable for bk_o2o
+    assert t2_profile_admin.relation.target_field_nullable is False
 
     # m2m
 
@@ -536,6 +532,59 @@ def test_model_admin_inlines_without_relation_fields(setup_inline: None) -> None
     assert t2_role_admin.relation.through.source_to_through_field == "user_id"
     assert t2_role_admin.relation.through.target_field == "id"
     assert t2_role_admin.relation.through.target_to_through_field == "role_id"
+    # m2m relations should keep default value for target_field_nullable
+    assert t2_role_admin.relation.target_field_nullable is False
+
+
+def test_model_admin_inlines_with_nullable_field(setup_nullable_inline: None) -> None:
+    """Test that target_field_nullable is True when the field is nullable"""
+    assert "T3UserAdmin" in admin_collector
+    user_admin: ModelAdmin = admin_collector["T3UserAdmin"]
+
+    ret = user_admin.to_inlines()
+
+    assert "T3CommentAdmin" in ret
+
+    # bk_fk with nullable field
+    t3_comment_admin: AdminInlineSerializeModel = ret["T3CommentAdmin"]
+    assert t3_comment_admin.relation is not None
+
+    assert t3_comment_admin.relation.target == "T3CommentAdmin"
+    assert t3_comment_admin.relation.source_field == "id"
+    assert t3_comment_admin.relation.target_field == "user_id"
+    assert t3_comment_admin.relation.relation == "bk_fk"
+    # Check target_field_nullable for nullable bk_fk field
+    assert t3_comment_admin.relation.target_field_nullable is True
+
+
+def test_model_admin_inlines_with_forward_relations(
+    setup_forward_relation_inline: None,
+) -> None:
+    """Test that fk and o2o relations keep default target_field_nullable value"""
+    assert "T4PostAdmin" in admin_collector
+    assert "T4AuthorProfileAdmin" in admin_collector
+
+    # Test fk relation
+    post_admin: ModelAdmin = admin_collector["T4PostAdmin"]
+    post_inlines = post_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in post_inlines
+    post_author_inline: AdminInlineSerializeModel = post_inlines["T4AuthorAdmin"]
+    assert post_author_inline.relation is not None
+    assert post_author_inline.relation.relation == "fk"
+    # fk relations should keep default value for target_field_nullable
+    assert post_author_inline.relation.target_field_nullable is False
+
+    # Test o2o relation
+    profile_admin: ModelAdmin = admin_collector["T4AuthorProfileAdmin"]
+    profile_inlines = profile_admin.to_inlines()
+
+    assert "T4AuthorAdmin" in profile_inlines
+    profile_author_inline: AdminInlineSerializeModel = profile_inlines["T4AuthorAdmin"]
+    assert profile_author_inline.relation is not None
+    assert profile_author_inline.relation.relation == "o2o"
+    # o2o relations should keep default value for target_field_nullable
+    assert profile_author_inline.relation.target_field_nullable is False
 
 
 def test_model_admin_failed() -> None:
@@ -710,7 +759,6 @@ def test_inline_admin() -> None:
         # BaseModelAdmin properties - list page configuration
         list_per_page = 15
         list_search = ["title"]
-        list_filter = ["owner_id"]
         list_sort = ["id", "title"]
         list_order = ["title", "owner_id"]
         list_editable = ["title"]
@@ -734,7 +782,6 @@ def test_inline_admin() -> None:
     # Test list page configuration
     assert attrs.list_per_page == 15
     assert attrs.list_search == ["title"]
-    assert attrs.list_filter == ["owner_id"]
     assert attrs.list_sort == ["id", "title"]
     assert attrs.list_order == ["title", "owner_id"]
     assert attrs.list_editable == ["title"]
@@ -760,7 +807,6 @@ def test_inline_admin() -> None:
     # Test default list configuration
     assert attrs_default.list_per_page == 20
     assert attrs_default.list_search == []
-    assert attrs_default.list_filter == []
     assert attrs_default.list_sort == []
     assert attrs_default.list_order == []
     assert attrs_default.list_editable == []
@@ -771,15 +817,6 @@ def test_inline_admin() -> None:
 
     # Test default help_text
     assert attrs_default.help_text == ""
-
-    # Test validation - invalid field names
-    class BookAdminInvalid(ModelInlineAdmin):
-        serializer = BookSerializer
-        list_filter = ["not_exist_field"]
-
-    with pytest.raises(ValueError, match="field not_exist_field not found"):
-        instance_invalid = BookAdminInvalid()
-        instance_invalid.get_attrs(list(instance_invalid.get_fields().keys()))
 
     # Test validation - invalid field in list_search
     class BookAdminInvalidListSearch(ModelInlineAdmin):
@@ -883,3 +920,154 @@ def test_tool_admin() -> None:
     assert instance.action_permission("export") == "custom.exporttool.can_exec_export"
 
     assert len(instance.get_all_permissions()) == 2
+
+
+def test_model_admin_detail_display_with_serializer_exclude() -> None:
+    """Test that ModelAdmin.get_attrs() excludes fields from serializer Meta.exclude
+    when detail_display is not explicitly set."""
+    from tests.apps.admin.registry.models import T2User
+
+    class T2UserSerializerWithExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password"]
+
+    class T2UserAdminWithExclude(ModelAdmin):
+        serializer = T2UserSerializerWithExclude
+
+    instance = T2UserAdminWithExclude()
+    field_list = list(instance.get_fields().keys())
+    attrs = instance.get_attrs(field_list)
+
+    assert "password" not in attrs.detail_display
+    assert "id" in attrs.detail_display
+    assert "name" in attrs.detail_display
+    assert "email" in attrs.detail_display
+
+    class T2UserSerializerWithMultipleExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password", "email"]
+
+    class T2UserAdminWithMultipleExclude(ModelAdmin):
+        serializer = T2UserSerializerWithMultipleExclude
+
+    instance2 = T2UserAdminWithMultipleExclude()
+    field_list2 = list(instance2.get_fields().keys())
+    attrs2 = instance2.get_attrs(field_list2)
+
+    assert "password" not in attrs2.detail_display
+    assert "email" not in attrs2.detail_display
+    assert "id" in attrs2.detail_display
+    assert "name" in attrs2.detail_display
+
+    class T2UserSerializerNoExclude(Serializer):
+        class Meta:
+            model = T2User
+
+    class T2UserAdminNoExclude(ModelAdmin):
+        serializer = T2UserSerializerNoExclude
+
+    instance3 = T2UserAdminNoExclude()
+    field_list3 = list(instance3.get_fields().keys())
+    attrs3 = instance3.get_attrs(field_list3)
+
+    assert "password" in attrs3.detail_display
+    assert "id" in attrs3.detail_display
+    assert "name" in attrs3.detail_display
+    assert "email" in attrs3.detail_display
+
+
+def test_model_inline_admin_list_display_with_serializer_exclude() -> None:
+    """Test that ModelInlineAdmin.get_attrs() excludes fields from serializer Meta.exclude
+    when list_display is not explicitly set.
+
+    When a field is excluded in serializer.Meta.exclude, it won't be in the serializer's
+    model_fields (field_list), so if it were included in the default list_display
+    (from model._meta.db_fields), the validation would fail. The exclude logic ensures
+    that excluded fields are not included in the default list_display calculation,
+    preventing validation errors.
+    """
+    from tests.apps.admin.registry.models import T2User
+
+    class T2UserInlineSerializerWithExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password"]
+
+    class T2UserInlineAdminWithExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerWithExclude
+
+    instance = T2UserInlineAdminWithExclude()
+    field_list = list(instance.get_fields().keys())
+
+    assert "password" not in field_list
+    assert "id" in field_list
+    assert "name" in field_list
+    assert "email" in field_list
+
+    attrs = instance.get_attrs(field_list)
+    assert attrs is not None
+
+    class T2UserInlineSerializerWithMultipleExclude(Serializer):
+        class Meta:
+            model = T2User
+            exclude = ["password", "email"]
+
+    class T2UserInlineAdminWithMultipleExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerWithMultipleExclude
+
+    instance2 = T2UserInlineAdminWithMultipleExclude()
+    field_list2 = list(instance2.get_fields().keys())
+
+    assert "password" not in field_list2
+    assert "email" not in field_list2
+    assert "id" in field_list2
+    assert "name" in field_list2
+
+    attrs2 = instance2.get_attrs(field_list2)
+    assert attrs2 is not None
+
+    class T2UserInlineSerializerNoExclude(Serializer):
+        class Meta:
+            model = T2User
+
+    class T2UserInlineAdminNoExclude(ModelInlineAdmin):
+        serializer = T2UserInlineSerializerNoExclude
+
+    instance3 = T2UserInlineAdminNoExclude()
+    field_list3 = list(instance3.get_fields().keys())
+
+    assert "password" in field_list3
+    assert "id" in field_list3
+    assert "name" in field_list3
+    assert "email" in field_list3
+
+    attrs3 = instance3.get_attrs(field_list3)
+    assert attrs3 is not None
+
+
+def test_custom_admin_component_attribute() -> None:
+    """Test that CustomAdmin has component attribute set to 'ModelCustom'."""
+    instance = CustomAdmin()
+    assert instance.component == "ModelCustom"
+
+    class MyCustomAdmin(CustomAdmin):
+        pass
+
+    instance2 = MyCustomAdmin()
+    assert instance2.component == "ModelCustom"
+
+    class MyCustomAdminOverride(CustomAdmin):
+        component = "CustomComponent"
+
+    instance3 = MyCustomAdminOverride()
+    assert instance3.component == "CustomComponent"
+
+    route = instance.to_route()
+    assert route is not None
+    assert route.component == "ModelCustom"
+
+    route3 = instance3.to_route()
+    assert route3 is not None
+    assert route3.component == "CustomComponent"
