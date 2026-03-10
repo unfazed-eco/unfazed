@@ -180,6 +180,17 @@ def test_route() -> None:
     assert match == Match.NONE
 
 
+def test_update_path_no_redundant_endpoint_definition() -> None:
+    route = Route("/prefix/{id}", view, methods=["GET"], tags=["tag"])
+    original_definition = route.endpoint_definition
+
+    route.update_path("/new_prefix/{id}")
+    assert route.endpoint_definition is original_definition
+
+    route.update_path("/new_prefix/{id}/{detail_id}")
+    assert route.endpoint_definition is not original_definition
+
+
 class LangConvertor(Convertor):
     regex = r"[-_a-zA-Z]+"
 
