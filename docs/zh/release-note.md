@@ -1,3 +1,9 @@
+v0.0.20
+====
+- [issue 98](https://github.com/unfazed-eco/unfazed/issues/98) 启动时优化 setup_route 流程
+- [issue 100](https://github.com/unfazed-eco/unfazed/issues/100) Add concurrency features
+- 重新整理 docs 文档
+
 v0.0.19
 =====
 - [issue 97](https://github.com/unfazed-eco/unfazed/issues/97) BUG: serializer 中 exclude 了某些字段，如果在 detail_display 中未去除会报错
