@@ -34,6 +34,7 @@ Build a complete student course enrollment system from scratch:
 12. OpenAPI: [openapi](features/openapi.md)
 13. Command Line Design: [command](features/command.md)
 14. Test Client: [test_client](features/testclient.md)
+15. Concurrency: [concurrency](features/concurrency.md)
 
 
 ### Contrib

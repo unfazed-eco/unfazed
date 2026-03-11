@@ -34,6 +34,7 @@ Unfazed 是一个面向工程、异步优先、可测试且可扩展的 Python W
 12. OpenAPI：[openapi](features/openapi.md)
 13. 命令行设计：[command](features/command.md)
 14. 测试客户端：[test_client](features/testclient.md)
+15. 并发：[concurrency](features/concurrency.md)
 
 
 ### Contrib
