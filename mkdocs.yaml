@@ -1,36 +1,41 @@
 site_name: Unfazed
+site_description: Production Ready ASGI web framework
+site_url: https://unfazed-eco.github.io/unfazed/
+
+repo_url: https://github.com/unfazed-eco/unfazed
+repo_name: unfazed
+
 nav:
   - Home: index.md
   - Tutorial:
-    - Part 1 Install & Create Project: tutorial/part1.md
-    - Part 2 Create Application: tutorial/part2.md
-    - Part 3 Models and Serializer: tutorial/part3.md
-    - Part 4 Endpoint and Schema: tutorial/part4.md
-    - Part 5 Services: tutorial/part5.md
-    - Part 6 Test: tutorial/part6.md
+    - Part 1 Installation and Project Creation: tutorial/part1.md
+    - Part 2 Creating Applications and Hello World: tutorial/part2.md
+    - Part 3 Data Models and Serializers: tutorial/part3.md
+    - Part 4 API Interface Design and Schema Definition: tutorial/part4.md
+    - Part 5 Business Logic Implementation: tutorial/part5.md
+    - Part 6 Testing and Quality Assurance: tutorial/part6.md
   - Features:
-    - Settings: features/settings.md
     - App: features/app.md
+    - Settings: features/settings.md
     - Route: features/route.md
+    - Endpoint: features/endpoint.md
     - Middleware: features/middleware.md
     - Lifespan: features/lifespan.md
-    - Logging: features/logging.md
-    - Request: features/request.md
-    - Response: features/response.md
-    - Endpoint: features/endpoint.md
-    - Staticfiles: features/staticfiles.md
+    - Command: features/command.md
     - ORM: features/tortoise-orm.md
     - Serializer: features/serializer.md
+    - Request: features/request.md
+    - Response: features/response.md
+    - Logging: features/logging.md
     - Cache: features/cache.md
-    - Error: features/error.md
+    - Exceptions: features/exception.md
     - OPENAPI: features/openapi.md
-    - Command: features/command.md
     - Test Client: features/testclient.md
+    - Concurrency: features/concurrency.md
   - Contrib:
     - Admin: features/contrib/admin.md
     - Auth: features/contrib/auth.md
     - Session: features/contrib/session.md
-
   - ReleaseNote: release-note.md
 
 theme:
@@ -38,19 +43,97 @@ theme:
   logo: images/uz-logo.png
   icon:
     repo: fontawesome/brands/github
-
-repo_url: https://github.com/unfazed-eco/unfazed
-repo_name: unfazed
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.instant.progress
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
 
 plugins:
+  - search
   - i18n:
       docs_structure: folder
       languages:
-        - locale: zh-Hant
-          name: 中文
-          build: true
-          default: true
         - locale: en
           name: English
           build: true
-        
+          default: true
+        - locale: zh
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Tutorial: 教程
+            Part 1 Installation and Project Creation: 第一部分 安装与项目创建
+            Part 2 Creating Applications and Hello World: 第二部分 创建应用与 Hello World
+            Part 3 Data Models and Serializers: 第三部分 数据模型与 Serializer
+            Part 4 API Interface Design and Schema Definition: 第四部分 API 接口设计与 Schema 定义
+            Part 5 Business Logic Implementation: 第五部分 业务逻辑实现
+            Part 6 Testing and Quality Assurance: 第六部分 测试与质量保障
+            Features: 功能特性
+            App: 应用
+            Settings: 配置
+            Route: 路由
+            Endpoint: 视图函数
+            Middleware: 中间件
+            Lifespan: 生命周期
+            Command: 命令行
+            ORM: ORM
+            Serializer: 序列化器
+            Request: 请求
+            Response: 响应
+            Logging: 日志
+            Cache: 缓存
+            Exceptions: 异常处理
+            OPENAPI: OPENAPI
+            Test Client: 测试客户端
+            Concurrency: 并发
+            Contrib: 扩展模块
+            Admin: 管理后台
+            Auth: 认证
+            Session: 会话
+            ReleaseNote: 发布日志
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/unfazed-eco/unfazed

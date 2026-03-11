@@ -32,10 +32,17 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Framework :: AsyncIO",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
-    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Internet :: WWW/HTTP :: ASGI :: Application",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/unfazed-eco/unfazed"
+Documentation = "https://unfazed-eco.github.io/"
+Repository = "https://github.com/unfazed-eco/unfazed"
+Changelog = "https://github.com/unfazed-eco/unfazed/blob/main/docs/en/release-note.md"
+"Bug Tracker" = "https://github.com/unfazed-eco/unfazed/issues"
 
 dependencies = [
     "aerich>=0.8.1",
