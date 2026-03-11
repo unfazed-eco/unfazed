@@ -1,402 +1,255 @@
 # Part 4: API Interface Design and Schema Definition
 
-In the previous section, we successfully designed data models and serializers. Now we will create complete API interfaces, learn how to use Unfazed's parameter annotation system, define request/response models, and generate automated API documentation.
+In the previous part, we designed data models and serializers. Now we will create complete API endpoints, learn Unfazed's parameter annotation system, define request/response schemas, and see how OpenAPI documentation is generated automatically.
 
-We will create three core interfaces for the student course enrollment system, showcasing Unfazed's modern API development approach.
+## API Interface Planning
 
-## API Interface Design
+Based on our enrollment system's requirements, we need the following endpoints:
 
-### Interface Planning
+| Endpoint Path              | Method | Description            | Parameter Source      |
+| -------------------------- | ------ | ---------------------- | --------------------- |
+| `/api/enroll/student-list` | GET    | Get student list       | Query (pagination)    |
+| `/api/enroll/course-list`  | GET    | Get course list        | Query (pagination)    |
+| `/api/enroll/bind`         | POST   | Student enrolls course | JSON body             |
 
-Based on the business logic of student course enrollment, we need to design the following interfaces:
-
-| Interface Path         | HTTP Method | Function Description   | Parameter Type                |
-| ---------------------- | ----------- | ---------------------- | ----------------------------- |
-| `/enroll/student-list` | GET         | Get student list       | Query parameters (pagination) |
-| `/enroll/course-list`  | GET         | Get course list        | Query parameters (pagination) |
-| `/enroll/bind`         | POST        | Student course binding | JSON request body             |
-
-### API Design Principles
-
-Different teams have different design specifications. Taking the team where the unfazed author works as an example, we don't use RESTful style and follow these practices:
-
-- ✅ **HTTP Method**: Only use GET/POST methods
-- ✅ **URL**: /api/v1{version}/enroll{app-label}/student-list{resource-action}
-- ✅ **Status Code**: HTTP status codes are all 200, return code field in response body, code 0 means success, other values mean failure
-- ✅ **Response Body**: Unified response body structure, including message, data, code fields
-
+> **Note on API conventions**: Different teams have different design standards. In this tutorial, we follow a convention where only GET/POST methods are used, URLs follow the pattern `/api/{app}/{resource-action}`, and all responses use HTTP status 200 with a `code` field in the body (0 = success).
 
 ## Schema Definition
 
-Schema is the data contract of the API, defining the data structure of requests and responses.
+Schemas define the data contracts for your API — the shapes of requests and responses. They are Pydantic models that also drive OpenAPI documentation generation. See [OpenAPI](../features/openapi.md).
 
-### Creating Basic Schema
+### Creating Schema Models
 
-Edit the `enroll/schema.py` file:
+Edit `enroll/schema.py`:
 
 ```python
-# src/backend/enroll/schema.py
+# enroll/schema.py
 
 import typing as t
+
 from pydantic import BaseModel, Field
+
 from .serializers import StudentSerializer, CourseSerializer
 
+
 class BaseResponse[T](BaseModel):
-    """Unified response base class"""
-    code: int = Field(0, description="Response code")
+    """Unified response wrapper"""
+    code: int = Field(0, description="Response code, 0 = success")
     message: str = Field("", description="Response message")
     data: T = Field(description="Response data")
 
-class PaginationMeta(BaseModel):
-    """Pagination metadata"""
-    page: int = Field(description="Current page number")
-    size: int = Field(description="Items per page")
-    total: int = Field(description="Total records")
-    total_pages: int = Field(description="Total pages")
 
 class StudentListResponse(BaseResponse[t.List[StudentSerializer]]):
-    """Student list response"""
     pass
 
 
 class CourseListResponse(BaseResponse[t.List[CourseSerializer]]):
-    """Course list response"""
     pass
 
 
 class BindRequest(BaseModel):
-    """Course binding request"""
     student_id: int = Field(description="Student ID", gt=0)
     course_id: int = Field(description="Course ID", gt=0)
 
+
 class BindResponse(BaseResponse[t.Dict]):
-    """Course binding response"""
-    pass
-
-class StudentDetailResponse(BaseResponse[StudentSerializer]):
-    """Student detail response"""
-    pass
-
-class CourseDetailResponse(BaseResponse[CourseSerializer]):
-    """Course detail response"""
     pass
 ```
+
+Note that `StudentSerializer` and `CourseSerializer` can be used directly as response models since they extend Pydantic's `BaseModel`.
 
 ## Endpoint Implementation
 
-### Understanding Unfazed Parameter Annotations
+### Understanding Parameter Annotations
 
-Unfazed uses Python's `Annotated` type annotations to declare API parameters:
+Unfazed uses `typing.Annotated` with param markers to declare where each parameter comes from. See [Endpoint](../features/endpoint.md) for the full reference.
 
 ```python
 import typing as t
 from unfazed.route import params as p
 
-# Query parameters (URL query string)
-page: t.Annotated[int, p.Query(default=1)] 
+# Query parameters (from URL query string: ?page=1&size=10)
+page: t.Annotated[int, p.Query(default=1)]
 
-# Path parameters (URL path variables)
+# Path parameters (from URL path: /users/{user_id})
 user_id: t.Annotated[int, p.Path()]
 
-# JSON request body
-data: t.Annotated[UserCreateRequest, p.Json()]
+# JSON body (from request body)
+data: t.Annotated[CreateUser, p.Json()]
 
-# Form data
-form: t.Annotated[UserForm, p.Form()]
-
-# File upload
-file: t.Annotated[UploadFile, p.File()]
-
-# Response specification
+# Response spec (for OpenAPI documentation)
 -> t.Annotated[JsonResponse, p.ResponseSpec(model=UserResponse)]
 ```
 
-### Implementing View Functions
+Available param markers: `Path`, `Query`, `Header`, `Cookie`, `Json`, `Form`, `File`. All extend Pydantic's `FieldInfo` and accept the same keyword arguments (`default`, `description`, `ge`, `le`, etc.).
 
-Edit the `enroll/endpoints.py` file:
+### Writing the Endpoints
+
+Edit `enroll/endpoints.py`:
 
 ```python
-# src/backend/enroll/endpoints.py
+# enroll/endpoints.py
 
 import typing as t
-import time
+
 from unfazed.http import HttpRequest, JsonResponse, PlainTextResponse
 from unfazed.route import params as p
+
 from . import schema as s
 
-# Keep the previous hello function
 async def hello(request: HttpRequest) -> PlainTextResponse:
-    """Hello World interface"""
+    """Hello World endpoint"""
     return PlainTextResponse("Hello, World!")
+
 
 async def list_student(
     request: HttpRequest,
     page: t.Annotated[int, p.Query(default=1, description="Page number", ge=1)],
     size: t.Annotated[int, p.Query(default=10, description="Items per page", ge=1, le=100)],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.StudentListResponse)]:
-    """
-    Get student list
-    
-    - **page**: Page number, starting from 1
-    - **size**: Items per page, range 1-100
-    """
-    # Return empty data for now, will implement specific logic in next section
+    """Get paginated student list"""
     return JsonResponse({
-        "message": "Get student list successfully",
-        "data": [],
         "code": 0,
+        "message": "success",
+        "data": [],
     })
+
 
 async def list_course(
     request: HttpRequest,
     page: t.Annotated[int, p.Query(default=1, description="Page number", ge=1)],
     size: t.Annotated[int, p.Query(default=10, description="Items per page", ge=1, le=100)],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.CourseListResponse)]:
-    """
-    Get course list
-    
-    - **page**: Page number, starting from 1  
-    - **size**: Items per page, range 1-100
-    """
+    """Get paginated course list"""
     return JsonResponse({
-        "message": "Get course list successfully",
-        "data": [],
         "code": 0,
+        "message": "success",
+        "data": [],
     })
+
 
 async def bind(
     request: HttpRequest,
     ctx: t.Annotated[s.BindRequest, p.Json()],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.BindResponse)]:
-    """
-    Student course binding
-    
-    - **student_id**: Student ID
-    - **course_id**: Course ID
-    """
+    """Bind a student to a course"""
     return JsonResponse({
-        "message": f"Student {ctx.student_id} successfully enrolled in course {ctx.course_id}",
+        "code": 0,
+        "message": f"Student {ctx.student_id} enrolled in course {ctx.course_id}",
         "data": {
             "student_id": ctx.student_id,
-            "course_id": ctx.course_id
+            "course_id": ctx.course_id,
         },
-        "code": 0,
-    })
-
-async def get_student(
-    request: HttpRequest,
-    student_id: t.Annotated[int, p.Path(description="Student ID")],
-) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.StudentDetailResponse)]:
-    """
-    Get student details
-    
-    - **student_id**: Student ID
-    """
-    # Return mock data for now
-    return JsonResponse({
-        "code": 0,
-        "message": "Get student details successfully",
-        "data": {
-            "id": student_id,
-            "name": "Example Student",
-            "email": "student@example.com",
-            "age": 20,
-            "student_id": "2024001"
-        }
     })
 ```
 
-### Parameter Validation Features
+Key points:
 
-Unfazed provides powerful parameter validation capabilities:
+- Every non-`HttpRequest` parameter must declare its source via `Annotated[Type, p.Source()]`.
+- `p.Query(default=1, ge=1)` provides a default value and validation constraint.
+- `p.Json()` extracts the parameter from the JSON request body.
+- `p.ResponseSpec(model=...)` tells OpenAPI what the response looks like — it does not affect runtime behavior.
+- **No bare default values** — use `p.Query(default=...)` instead of `page: int = 1`. See [Endpoint — Gotchas](../features/endpoint.md#gotchas).
 
-**1. Type Validation**:
-```python
-page: t.Annotated[int, p.Query()]  # Automatically convert to integer
-```
+### Route Configuration
 
-**2. Range Constraints**:
-```python
-size: t.Annotated[int, p.Query(ge=1, le=100)]  # Value range 1-100
-```
-
-**3. Default Values**:
-```python
-page: t.Annotated[int, p.Query(default=1)]  # Default value is 1
-```
-
-**4. Required Parameters**:
-```python
-user_id: t.Annotated[int, p.Path()]  # Path parameters are required
-```
-
-## Route Configuration
-
-### Update Route Definition
-
-Edit the `enroll/routes.py` file:
+Edit `enroll/routes.py`:
 
 ```python
-# src/backend/enroll/routes.py
+# enroll/routes.py
 
-import typing as t
-from unfazed.route import Route, path
-from .endpoints import hello, list_student, list_course, bind, get_student
+from unfazed.route import path
 
-patterns: t.List[Route] = [
-    # Hello World interface
-    path("/hello", endpoint=hello, methods=["GET"], name="hello"),
-    
-    # Student related interfaces
-    path("/student-list", endpoint=list_student, methods=["GET"], name="list_students"),
+from .endpoints import hello, list_student, list_course, bind
 
-    # Course related interfaces  
-    path("/course-list", endpoint=list_course, methods=["GET"], name="list_courses"),
-    
-    # Course binding interface
+patterns = [
+    path("/hello", endpoint=hello, name="hello"),
+    path("/student-list", endpoint=list_student, name="list_students"),
+    path("/course-list", endpoint=list_course, name="list_courses"),
     path("/bind", endpoint=bind, methods=["POST"], name="bind_course"),
 ]
 ```
 
 ## Automatic API Documentation
 
-### OpenAPI Documentation Generation
+### OpenAPI Configuration
 
-Unfazed automatically generates OpenAPI 3.0 documentation based on your code, no additional configuration needed!
+To enable the documentation UI, add the `OPENAPI` setting:
 
-After starting the project, visit the following addresses:
-
-**Swagger UI (Interactive Documentation)**:
-```
-http://127.0.0.1:9527/openapi/docs
-```
-
-**ReDoc (Beautiful Documentation)**:
-```
-http://127.0.0.1:9527/openapi/redoc
-```
-
-### Documentation Features
-
-Unfazed generates API documentation including:
-
-1. **Complete Interface Information**:
-   - HTTP methods and paths
-   - Request/response parameters
-   - Data types and validation rules
-
-2. **Interactive Testing**:
-   - Test APIs directly in Swagger UI
-   - View actual request/response data
-
-3. **Code Examples**:
-   - Auto-generate call examples in multiple languages
-   - curl, Python, JavaScript, etc.
-
-4. **Data Models**:
-   - Complete Schema definitions
-   - Field descriptions and constraint information
-
-### Enhancing Documentation Quality
-
-**Adding Interface Tags**:
 ```python
-# Group interfaces
-path("/students", endpoint=list_student, tags=["Student Management"])
-path("/courses", endpoint=list_course, tags=["Course Management"])
+# entry/settings/__init__.py (add to UNFAZED_SETTINGS)
+
+UNFAZED_SETTINGS = {
+    # ... existing settings ...
+    "OPENAPI": {
+        "info": {
+            "title": "Tutorial Project API",
+            "version": "1.0.0",
+            "description": "Student Course Enrollment System API",
+        },
+        "servers": [
+            {"url": "http://127.0.0.1:9527", "description": "Local dev"},
+        ],
+        "allow_public": True,
+    },
+}
 ```
 
-**Improving Interface Descriptions**:
-```python
-async def list_student(request: HttpRequest, ...):
-    """
-    Get student list
-    
-    Get a paginated list of all students in the system, supports querying by page number and items per page.
-    
-    **Usage Instructions**:
-    - Page numbers start from 1
-    - Maximum 100 records per page
-    - Return results include complete pagination metadata
-    
-    **Return Data Includes**:
-    - Student basic information (name, email, age, etc.)
-    - Pagination information (current page, total, total pages, etc.)
-    """
-    pass
-```
+### Browse the Documentation
 
-## Testing API Interfaces
+After starting the server, visit:
 
-### Using curl for Testing
+- **Swagger UI** (interactive): `http://127.0.0.1:9527/openapi/docs`
+- **ReDoc** (readable): `http://127.0.0.1:9527/openapi/redoc`
+- **Raw JSON schema**: `http://127.0.0.1:9527/openapi/openapi.json`
+
+Unfazed generates the OpenAPI 3.1 schema from your endpoint type hints automatically — parameter types, defaults, validation rules, and response models are all included. See [OpenAPI](../features/openapi.md).
+
+## Testing the Endpoints
+
+### Using curl
 
 ```bash
-# Test student list interface
-curl "http://127.0.0.1:9527/enroll/students?page=1&size=5"
+# Student list (with default pagination)
+curl "http://127.0.0.1:9527/api/enroll/student-list"
 
-# Test student detail interface
-curl "http://127.0.0.1:9527/enroll/students/1"
+# Student list (with custom pagination)
+curl "http://127.0.0.1:9527/api/enroll/student-list?page=1&size=5"
 
-# Test course list interface
-curl "http://127.0.0.1:9527/enroll/courses"
+# Course list
+curl "http://127.0.0.1:9527/api/enroll/course-list"
 
-# Test course binding interface
-curl -X POST "http://127.0.0.1:9527/enroll/bind" \
+# Course binding
+curl -X POST "http://127.0.0.1:9527/api/enroll/bind" \
      -H "Content-Type: application/json" \
      -d '{"student_id": 1, "course_id": 1}'
 ```
 
-### Using Python requests for Testing
+### Using Python
 
 ```python
 import requests
-import json
 
-base_url = "http://127.0.0.1:9527/enroll"
+base_url = "http://127.0.0.1:9527/api/enroll"
 
 # Test student list
-response = requests.get(f"{base_url}/students", params={"page": 1, "size": 10})
-print("Student list:", response.json())
+resp = requests.get(f"{base_url}/student-list", params={"page": 1, "size": 10})
+print("Student list:", resp.json())
 
-# Test course binding
-bind_data = {"student_id": 1, "course_id": 1}
-response = requests.post(
-    f"{base_url}/bind", 
-    json=bind_data,
-    headers={"Content-Type": "application/json"}
+# Test binding
+resp = requests.post(
+    f"{base_url}/bind",
+    json={"student_id": 1, "course_id": 1},
 )
-print("Binding result:", response.json())
-```
-
-### Custom Error Responses
-
-```python
-from unfazed.exception import ValidationError
-
-async def bind(request: HttpRequest, ctx: s.BindRequest) -> JsonResponse:
-    """Course binding (with validation)"""
-    
-    # Custom business validation
-    if ctx.student_id == ctx.course_id:
-        raise ValidationError("Student ID and Course ID cannot be the same")
-    
-    # Normal processing logic
-    return JsonResponse({
-        "success": True,
-        "message": "Binding successful",
-        "data": {"student_id": ctx.student_id, "course_id": ctx.course_id}
-    })
+print("Bind result:", resp.json())
 ```
 
 ## Next Steps
 
-Excellent! You have successfully designed complete API interfaces and data models. In the next tutorial, we will:
+You have designed complete API endpoints with typed parameter annotations and automatic OpenAPI documentation. In the next part, we will:
 
-- Implement business logic services (Services)
-- Connect to database for actual CRUD operations
-- Learn advanced usage of serializers
-- Handle complex business scenarios
+- Implement the business logic in the Services layer
+- Connect endpoints to the database via serializers
+- Handle validation errors and edge cases
 
-Let's continue to **Part 5: Business Logic Implementation**!
-
----
+Continue to **[Part 5: Business Logic Implementation](part5.md)**.

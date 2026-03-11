@@ -1,9 +1,9 @@
-Unfazed Endpoints
-=================
+Unfazed Endpoint 详解
+=====================
 
-Endpoints in Unfazed are async (or sync) functions that handle HTTP requests. What makes them powerful is **automatic parameter resolution**: you declare typed parameters in your function signature using `typing.Annotated` and param markers (`Path`, `Query`, `Header`, `Cookie`, `Json`, `Form`, `File`), and Unfazed extracts, validates, and injects them from the incoming request automatically. All validation is powered by Pydantic.
+Unfazed 中的 endpoint 是处理 HTTP 请求的异步（或同步）函数。其强大之处在于**自动参数解析**：你使用 `typing.Annotated` 和参数标记（`Path`、`Query`、`Header`、`Cookie`、`Json`、`Form`、`File`）在函数签名中声明类型化参数，Unfazed 会自动从传入请求中提取、验证并注入它们。所有验证由 Pydantic 驱动。
 
-## Quick Start
+## 快速开始
 
 ```python
 # myapp/endpoints.py
@@ -29,7 +29,7 @@ async def create_user(
     request: HttpRequest,
     body: t.Annotated[CreateUserBody, p.Json()],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=UserResponse)]:
-    # body.name and body.email are already validated
+    # body.name 和 body.email 已通过验证
     return JsonResponse({"id": 1, "name": body.name, "email": body.email})
 ```
 
@@ -42,13 +42,13 @@ routes = [
 ]
 ```
 
-## Parameter Sources
+## 参数来源
 
-Every non-`HttpRequest` parameter in an endpoint signature must declare where its value comes from. You do this with `typing.Annotated[Type, p.Source()]`.
+endpoint 签名中每个非 `HttpRequest` 的参数都必须声明其值来源。使用 `typing.Annotated[Type, p.Source()]` 实现。
 
-### Path Parameters
+### 路径参数
 
-Extracted from URL path segments. The parameter name must match a `{name}` placeholder in the route path.
+从 URL 路径段提取。参数名必须与路由路径中的 `{name}` 占位符匹配。
 
 ```python
 async def get_user(
@@ -60,7 +60,7 @@ async def get_user(
 # Route: path("/users/{user_id}", endpoint=get_user)
 ```
 
-You can also use a Pydantic model to group multiple path parameters:
+也可以使用 Pydantic 模型分组多个路径参数：
 
 ```python
 class UserPath(BaseModel):
@@ -77,9 +77,9 @@ async def get_org_user(
 # Route: path("/orgs/{org_id}/users/{user_id}", endpoint=get_org_user)
 ```
 
-### Query Parameters
+### 查询参数
 
-Extracted from the URL query string (`?key=value`).
+从 URL 查询字符串（`?key=value`）提取。
 
 ```python
 class SearchQuery(BaseModel):
@@ -96,7 +96,7 @@ async def search_users(
     return JsonResponse({"keyword": q.keyword, "page": q.page})
 ```
 
-Scalar query params work too:
+标量查询参数同样支持：
 
 ```python
 async def search(
@@ -107,9 +107,9 @@ async def search(
     return JsonResponse({"keyword": keyword, "page": page})
 ```
 
-### Header Parameters
+### Header 参数
 
-Extracted from HTTP headers.
+从 HTTP headers 提取。
 
 ```python
 async def check_auth(
@@ -120,7 +120,7 @@ async def check_auth(
     return JsonResponse({"token": authorization})
 ```
 
-You can also group headers into a model:
+也可以将 headers 分组到模型中：
 
 ```python
 class AuthHeaders(BaseModel):
@@ -135,9 +135,9 @@ async def check_auth(
     return JsonResponse({"token": headers.authorization})
 ```
 
-### Cookie Parameters
+### Cookie 参数
 
-Extracted from request cookies.
+从请求 cookies 提取。
 
 ```python
 async def get_session(
@@ -149,7 +149,7 @@ async def get_session(
 
 ### JSON Body
 
-Extracted from the request body parsed as JSON. Use `p.Json()` or simply pass a `BaseModel` type (see [Auto-Detection](#auto-detection-rules)).
+从解析为 JSON 的请求体提取。使用 `p.Json()` 或直接传入 `BaseModel` 类型（参见 [自动检测规则](#auto-detection-rules)）。
 
 ```python
 class UpdateProfile(BaseModel):
@@ -164,7 +164,7 @@ async def update_profile(
     return JsonResponse({"name": data.display_name, "bio": data.bio})
 ```
 
-You can also mix model params with scalar params in the same body:
+也可以在同一 body 中混合模型参数与标量参数：
 
 ```python
 async def create_item(
@@ -175,9 +175,9 @@ async def create_item(
     return JsonResponse({"name": item.name, "priority": priority})
 ```
 
-### Form Data
+### 表单数据
 
-Extracted from `application/x-www-form-urlencoded` request bodies.
+从 `application/x-www-form-urlencoded` 请求体提取。
 
 ```python
 class LoginForm(BaseModel):
@@ -192,9 +192,9 @@ async def login(
     return JsonResponse({"user": form.username})
 ```
 
-### File Upload
+### 文件上传
 
-Extracted from `multipart/form-data` requests. Use `UploadFile` with `p.File()`:
+从 `multipart/form-data` 请求提取。使用 `UploadFile` 配合 `p.File()`：
 
 ```python
 from unfazed.file import UploadFile
@@ -213,36 +213,36 @@ async def upload_avatar(
     })
 ```
 
-File uploads can be combined with form fields in the same endpoint.
+文件上传可与同一 endpoint 中的表单字段组合使用。
 
-## Auto-Detection Rules
+## 自动检测规则
 
-When a parameter does **not** use `Annotated`, Unfazed infers its source automatically:
+当参数**未**使用 `Annotated` 时，Unfazed 会自动推断其来源：
 
-| Parameter type | Condition | Inferred source |
+| 参数类型 | 条件 | 推断来源 |
 |----------------|-----------|-----------------|
-| `str`, `int`, `float` | Name matches a `{placeholder}` in the route path | `Path` |
-| `str`, `int`, `float` | Name does NOT match a path placeholder | `Query` |
-| `BaseModel` subclass | Always | `Json` body |
+| `str`、`int`、`float` | 名称与路由路径中的 `{placeholder}` 匹配 | `Path` |
+| `str`、`int`、`float` | 名称与路径占位符不匹配 | `Query` |
+| `BaseModel` 子类 | 始终 | `Json` body |
 
 ```python
-# Equivalent to explicit annotations:
+# 等价于显式注解：
 async def get_user(
     request: HttpRequest,
-    user_id: int,           # auto-detected as Path (matches {user_id} in route)
-    include_posts: str,     # auto-detected as Query
-    body: UpdateProfile,    # auto-detected as Json body
+    user_id: int,           # 自动检测为 Path（与路由中的 {user_id} 匹配）
+    include_posts: str,     # 自动检测为 Query
+    body: UpdateProfile,    # 自动检测为 Json body
 ) -> JsonResponse:
     ...
 
 # Route: path("/users/{user_id}", endpoint=get_user, methods=["PUT"])
 ```
 
-While convenient, explicit `Annotated` annotations are recommended for clarity and to support defaults and OpenAPI metadata.
+虽然方便，但建议使用显式 `Annotated` 注解以提高清晰度，并支持默认值和 OpenAPI 元数据。
 
-## Response Typing
+## 响应类型
 
-Use `ResponseSpec` in the return type annotation to document the response for OpenAPI:
+在返回类型注解中使用 `ResponseSpec` 为 OpenAPI 记录响应：
 
 ```python
 class UserResponse(BaseModel):
@@ -257,7 +257,7 @@ async def get_user(
     return JsonResponse({"id": user_id, "name": "Alice"})
 ```
 
-You can specify multiple response models for different status codes:
+可为不同状态码指定多个响应模型：
 
 ```python
 class ErrorResponse(BaseModel):
@@ -275,18 +275,18 @@ async def get_user(
     return JsonResponse({"id": user_id, "name": "Alice"})
 ```
 
-`ResponseSpec` fields:
+`ResponseSpec` 字段：
 
-| Field | Type | Default | Description |
+| 字段 | 类型 | 默认值 | 描述 |
 |-------|------|---------|-------------|
-| `model` | `Type[BaseModel]` | required | Pydantic model for the response body. |
-| `code` | `str` | `"200"` | HTTP status code. |
-| `content_type` | `str` | `"application/json"` | Response content type. |
-| `description` | `str` | `""` | Description for OpenAPI docs. |
+| `model` | `Type[BaseModel]` | 必填 | 响应体的 Pydantic 模型。 |
+| `code` | `str` | `"200"` | HTTP 状态码。 |
+| `content_type` | `str` | `"application/json"` | 响应内容类型。 |
+| `description` | `str` | `""` | OpenAPI 文档描述。 |
 
-## Examples
+## 示例
 
-### Full CRUD endpoint with multiple param sources
+### 多参数来源的完整 CRUD endpoint
 
 ```python
 # myapp/endpoints.py
@@ -324,7 +324,7 @@ async def update_article(
     })
 ```
 
-### File upload with metadata
+### 带元数据的文件上传
 
 ```python
 from unfazed.file import UploadFile
@@ -354,69 +354,69 @@ async def upload_document(
     })
 ```
 
-## Gotchas
+## 注意事项
 
-**No bare default values.** Use `Annotated` with `Param(default=...)` instead:
+**不能使用裸默认值。** 应使用带 `Param(default=...)` 的 `Annotated`：
 
 ```python
-# Wrong — raises ValueError
+# 错误 — 会抛出 ValueError
 async def bad(request: HttpRequest, page: int = 1) -> JsonResponse: ...
 
-# Correct
+# 正确
 async def good(
     request: HttpRequest,
     page: t.Annotated[int, p.Query(default=1)],
 ) -> JsonResponse: ...
 ```
 
-**Cannot mix Json and Form** in the same endpoint. You will get a `ValueError` at startup if you try.
+**不能在同一 endpoint 中混用 Json 和 Form**。尝试时会在启动时抛出 `ValueError`。
 
-**All parameters require type hints.** Missing type hints raise `TypeHintRequired`.
+**所有参数都需要类型提示。** 缺少类型提示会抛出 `TypeHintRequired`。
 
-**Supported scalar types:** `str`, `int`, `float`, `list`, `BaseModel`, `UploadFile`. Other types (e.g. `bytes`, `dict`) are not supported as direct parameter types.
+**支持的标量类型：** `str`、`int`、`float`、`list`、`BaseModel`、`UploadFile`。其他类型（如 `bytes`、`dict`）不能作为直接参数类型。
 
-**Return type is required.** Every endpoint must have a return type annotation. If you don't need OpenAPI response models, just annotate with `-> JsonResponse`.
+**必须声明返回类型。** 每个 endpoint 必须具有返回类型注解。若不需要 OpenAPI 响应模型，可仅标注为 `-> JsonResponse`。
 
-## API Reference
+## API 参考
 
-### Param markers
+### 参数标记
 
-All param markers extend Pydantic's `FieldInfo` and accept the same keyword arguments (e.g. `default`, `alias`, `title`, `description`, `example`).
+所有参数标记继承自 Pydantic 的 `FieldInfo`，接受相同关键字参数（如 `default`、`alias`、`title`、`description`、`example`）。
 
 ```python
 class Path(**kwargs)
 ```
-Extract from URL path segments.
+从 URL 路径段提取。
 
 ```python
 class Query(**kwargs)
 ```
-Extract from query string.
+从查询字符串提取。
 
 ```python
 class Header(**kwargs)
 ```
-Extract from HTTP headers.
+从 HTTP headers 提取。
 
 ```python
 class Cookie(**kwargs)
 ```
-Extract from cookies.
+从 cookies 提取。
 
 ```python
 class Json(**kwargs)
 ```
-Extract from JSON request body. Sets `media_type="application/json"`.
+从 JSON 请求体提取。设置 `media_type="application/json"`。
 
 ```python
 class Form(**kwargs)
 ```
-Extract from form-encoded body. Sets `media_type="application/x-www-form-urlencoded"`.
+从 URL 编码表单体提取。设置 `media_type="application/x-www-form-urlencoded"`。
 
 ```python
 class File(**kwargs)
 ```
-Extract from multipart form data. Sets `media_type="multipart/form-data"`. Use with `UploadFile`.
+从 multipart 表单数据提取。设置 `media_type="multipart/form-data"`。与 `UploadFile` 配合使用。
 
 ### ResponseSpec
 
@@ -429,4 +429,4 @@ class ResponseSpec(BaseModel):
     headers: Dict[str, Header] | None = None
 ```
 
-Describes an endpoint's response for OpenAPI documentation. Place in the return type's `Annotated` metadata.
+描述 endpoint 的响应，用于 OpenAPI 文档。放在返回类型的 `Annotated` 元数据中。

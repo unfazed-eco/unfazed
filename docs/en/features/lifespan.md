@@ -1,191 +1,181 @@
-Unfazed Lifespan Management
-=========================
+Unfazed Lifespan
+================
 
-Unfazed's lifespan management system is based on the ASGI Lifespan protocol, providing hook mechanisms for application startup and shutdown. Through lifespan management, you can gracefully handle resource initialization, cleanup tasks, and state sharing.
-
-## System Overview
-
-### Core Components
-
-- **BaseLifeSpan**: Base class for lifespan components, defining standard interfaces
-- **LifeSpanHandler**: Lifespan handler managing all registered lifespan components
-- **State**: Application state container for sharing data between different components
-
-### Lifespan Events
-
-1. **Startup Event (on_startup)**: Executed when the application starts, used for resource initialization
-2. **Shutdown Event (on_shutdown)**: Executed when the application stops, used for resource cleanup
-
-### Workflow
-
-```
-App Start → Execute all on_startup → App Running → App Stop → Execute all on_shutdown → App Exit
-```
+Lifespan hooks let you run code when the server starts up and shuts down. Common uses include opening/closing database connections, warming caches, and releasing external resources. Unfazed follows the ASGI lifespan protocol — you subclass `BaseLifeSpan`, implement `on_startup` and/or `on_shutdown`, and register your class in settings.
 
 ## Quick Start
 
-### 1. Create Lifespan Component
+### 1. Create a lifespan class
 
 ```python
+# myapp/lifespan.py
 from unfazed.lifespan import BaseLifeSpan
-import typing as t
 
-class DatabaseLifeSpan(BaseLifeSpan):
-    """Database connection lifespan management"""
-    
-    def __init__(self, unfazed) -> None:
-        super().__init__(unfazed)
-        self.db_connection = None
-    
+
+class WarmCache(BaseLifeSpan):
     async def on_startup(self) -> None:
-        """Initialize database connection when app starts"""
-        print("Initializing database connection...")
-        # Simulate database connection initialization
-        self.db_connection = await self.create_database_connection()
-        print("Database connection initialization complete")
-    
+        print("Warming cache...")
+        # pre-populate frequently accessed data
+
     async def on_shutdown(self) -> None:
-        """Close database connection when app stops"""
-        print("Closing database connection...")
-        if self.db_connection:
-            await self.db_connection.close()
-        print("Database connection closed")
-    
-    async def create_database_connection(self):
-        """Create database connection (example)"""
-        # Actual database connection logic
-        return {"connection": "database_connection_object"}
-    
-    @property
-    def state(self) -> t.Dict[str, t.Any]:
-        """Return state to be shared"""
-        return {
-            "db_connection": self.db_connection,
-            "db_status": "connected" if self.db_connection else "disconnected"
-        }
+        print("Flushing cache...")
 ```
 
-### 2. Register Lifespan Component
-
-Register lifespan components in the configuration file:
+### 2. Register it in settings
 
 ```python
 # settings.py
 UNFAZED_SETTINGS = {
+    "PROJECT_NAME": "myproject",
     "LIFESPAN": [
-        "yourapp.lifespan.DatabaseLifeSpan",
-        "yourapp.lifespan.RedisLifeSpan",
-        "yourapp.lifespan.LoggingLifeSpan",
-    ]
+        "myapp.lifespan.WarmCache",
+    ],
 }
 ```
 
-### 3. Start Application
+When the server starts, `on_startup` is called. When the server stops, `on_shutdown` is called.
 
-```shell
-uvicorn asgi:application --host 0.0.0.0 --port 9527
-```
+## Usage Guide
 
-**Example Output:**
-```
-Initializing database connection...
-Database connection initialization complete
-Initializing Redis connection...
-Redis connection initialization complete
-Application startup complete
-```
+### Startup and Shutdown
 
-## State Sharing Mechanism
-
-### Accessing Shared State
-
-Lifespan components can expose shared data to the entire application through the `state` attribute. This data can be accessed during request processing:
+Override one or both methods. Both are optional — the base class provides no-op defaults.
 
 ```python
-from unfazed.http import HttpRequest, JsonResponse
-
-async def get_database_status(request: HttpRequest) -> JsonResponse:
-    """Get database connection status"""
-    
-    # Access shared state from lifespan components
-    db_connection = request.state.db_connection
-    db_status = request.state.db_status
-    
-    return JsonResponse({
-        "database_connected": db_status == "connected",
-        "connection_info": str(db_connection) if db_connection else None
-    })
-
-async def query_users(request: HttpRequest) -> JsonResponse:
-    """Query user list"""
-    
-    # Use shared database connection
-    db_connection = request.state.db_connection
-    
-    if not db_connection:
-        return JsonResponse({"error": "Database connection unavailable"}, status_code=500)
-    
-    # Use database connection to execute query
-    # users = await db_connection.fetch_all("SELECT * FROM users")
-    
-    return JsonResponse({
-        "users": [],  # Actual user data
-        "message": "Query successful"
-    })
-```
-
-## Practical Application Scenarios
-
-### External Service Connections
-
-```python
-import httpx
 from unfazed.lifespan import BaseLifeSpan
 
+
 class ExternalServiceLifeSpan(BaseLifeSpan):
-    """External service connection management"""
-    
-    def __init__(self, unfazed) -> None:
-        super().__init__(unfazed)
-        self.http_client = None
-        self.service_health = {}
-    
     async def on_startup(self) -> None:
-        """Initialize HTTP client and check external services"""
-        # Create HTTP client
-        self.http_client = httpx.AsyncClient(
-            timeout=30.0,
-            limits=httpx.Limits(max_keepalive_connections=50, max_connections=100)
-        )
-        
-        # Check external service health status
-        await self.check_external_services()
-        print("External service connections initialized")
-    
+        # runs once when the server starts
+        self.client = await create_client(self.unfazed.settings)
+
     async def on_shutdown(self) -> None:
-        """Close HTTP client"""
-        if self.http_client:
-            await self.http_client.aclose()
-            print("External service connections closed")
-    
-    async def check_external_services(self):
-        """Check external service health status"""
-        services = {
-            "payment_api": "https://api.payment.com/health",
-            "notification_api": "https://api.notification.com/health"
-        }
-        
-        for service_name, health_url in services.items():
-            try:
-                response = await self.http_client.get(health_url)
-                self.service_health[service_name] = response.status_code == 200
-            except Exception:
-                self.service_health[service_name] = False
-    
-    @property
-    def state(self) -> dict:
-        return {
-            "http_client": self.http_client,
-            "service_health": self.service_health
-        }
+        # runs once when the server stops
+        await self.client.close()
 ```
+
+Every lifespan class receives the `Unfazed` application instance as `self.unfazed`, so you can access settings, app center, and other framework components.
+
+### Sharing State via `request.state`
+
+A lifespan can expose data to request handlers by overriding the `state` property. The returned dict is merged into `request.state`, making the data accessible in every endpoint:
+
+```python
+# myapp/lifespan.py
+import typing as t
+
+from unfazed.lifespan import BaseLifeSpan
+
+
+class ConfigLoader(BaseLifeSpan):
+    async def on_startup(self) -> None:
+        self.feature_flags = {"dark_mode": True, "beta_api": False}
+
+    @property
+    def state(self) -> t.Dict[str, t.Any]:
+        return {"feature_flags": self.feature_flags}
+```
+
+```python
+# myapp/endpoints.py
+from unfazed.http import HttpRequest, JsonResponse
+
+
+async def get_flags(request: HttpRequest) -> JsonResponse:
+    flags = request.state.feature_flags
+    return JsonResponse(flags)
+```
+
+State from all registered lifespan classes is merged into a single dict. If multiple lifespans define the same key, later registrations overwrite earlier ones.
+
+### Multiple Lifespans
+
+You can register multiple lifespan classes. They execute in registration order on startup and in the same order on shutdown:
+
+```python
+"LIFESPAN": [
+    "myapp.lifespan.DatabaseInit",
+    "myapp.lifespan.CacheWarm",
+    "unfazed.cache.lifespan.CacheClear",
+]
+```
+
+### Error Handling
+
+If a lifespan's `on_startup` raises an exception, the error is logged and re-raised, which prevents the server from starting. The same applies to `on_shutdown` — errors are logged and propagated.
+
+## Examples
+
+### Database connection pool
+
+```python
+# myapp/lifespan.py
+import typing as t
+
+from unfazed.lifespan import BaseLifeSpan
+
+
+class DatabasePool(BaseLifeSpan):
+    async def on_startup(self) -> None:
+        from myapp.db import create_pool
+        self.pool = await create_pool(self.unfazed.settings.DATABASE_URL)
+
+    async def on_shutdown(self) -> None:
+        await self.pool.close()
+
+    @property
+    def state(self) -> t.Dict[str, t.Any]:
+        return {"db_pool": self.pool}
+```
+
+### Using the built-in CacheClear
+
+Unfazed ships with `CacheClear` which closes all cache backend connections on shutdown:
+
+```python
+"LIFESPAN": [
+    "unfazed.cache.lifespan.CacheClear",
+]
+```
+
+See the [Cache](cache.md) documentation for details.
+
+## API Reference
+
+### BaseLifeSpan
+
+```python
+class BaseLifeSpan:
+    def __init__(self, unfazed: Unfazed) -> None
+```
+
+Base class for lifespan hooks. Subclass and override `on_startup` / `on_shutdown`.
+
+**Attributes:**
+
+- `unfazed: Unfazed` — The application instance.
+
+**Methods:**
+
+- `async on_startup() -> None`: Called when the server starts. No-op by default.
+- `async on_shutdown() -> None`: Called when the server stops. No-op by default.
+
+**Properties:**
+
+- `state -> Dict[str, Any]`: Override to expose data to `request.state`. Returns `{}` by default.
+
+### LifeSpanHandler
+
+```python
+class LifeSpanHandler
+```
+
+Internal registry that manages all lifespan components. You do not interact with it directly — the framework populates it from your `LIFESPAN` setting.
+
+- `register(name: str, lifespan: BaseLifeSpan) -> None`: Register a component. Raises `ValueError` on duplicate names.
+- `get(name: str) -> BaseLifeSpan | None`: Look up a component by its dotted path.
+- `async on_startup() -> None`: Calls `on_startup` on all registered components.
+- `async on_shutdown() -> None`: Calls `on_shutdown` on all registered components.
+- `state -> State`: Merged state dict from all components.
+- `clear() -> None`: Remove all registered components.

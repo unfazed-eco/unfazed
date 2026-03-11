@@ -1,22 +1,22 @@
-# Part 5: Business Logic Implementation
+# 第五部分：业务逻辑实现
 
-In the previous part, we defined API endpoints and schema models. Now we will implement the core business logic in the Services layer, connect the endpoints to the database via serializers, and handle edge cases with custom exceptions.
+在上一部分中，我们定义了 API endpoint 和 schema 模型。现在将在 Services 层实现核心业务逻辑，通过 serializer 将 endpoint 与数据库连接，并使用自定义异常处理边界情况。
 
-## Services Layer
+## Services 层
 
-In Unfazed's layered architecture, the **Services layer** encapsulates business rules and provides data operations to the Endpoints layer:
+在 Unfazed 的分层架构中，**Services 层**封装业务规则，并向 Endpoints 层提供数据操作：
 
 ```
 Endpoints (Controller) → Services (Business Logic) → Serializers / Models (Data)
 ```
 
-This separation keeps endpoint functions thin (request parsing and response formatting only) and makes business logic independently testable.
+这种分离使 endpoint 函数保持精简（仅负责请求解析和响应格式化），并使业务逻辑可独立测试。
 
-## Defining Custom Exceptions
+## 定义自定义异常
 
-Unfazed's built-in exception hierarchy (see [Exceptions](../features/exception.md)) covers common cases like `PermissionDenied` and `MethodNotAllowed`. For application-specific errors, subclass `BaseUnfazedException`:
+Unfazed 内置异常层次（见 [Exceptions](../features/exception.md)）覆盖常见情况，如 `PermissionDenied` 和 `MethodNotAllowed`。对于应用特定错误，可继承 `BaseUnfazedException`：
 
-Create `enroll/exceptions.py`:
+创建 `enroll/exceptions.py`：
 
 ```python
 # enroll/exceptions.py
@@ -34,11 +34,11 @@ class ValidationError(BaseUnfazedException):
         super().__init__(message, code)
 ```
 
-These exceptions carry a `message` and a numeric `code`, which can be caught in middleware to build consistent error responses.
+这些异常携带 `message` 和数字 `code`，可在中间件中捕获并构建统一的错误响应。
 
-## Implementing EnrollService
+## 实现 EnrollService
 
-Edit `enroll/services.py`:
+编辑 `enroll/services.py`：
 
 ```python
 # enroll/services.py
@@ -201,16 +201,16 @@ class EnrollService:
         }
 ```
 
-Key points:
+要点：
 
-- `list_from_ctx(cond, page, size)` returns a `Result` with `.count` (total records) and `.data` (list of serializer instances). See [Serializer — list_from_ctx](../features/serializer.md#list_from_ctx).
-- `retrieve_from_ctx(ctx)` takes a `BaseModel` with an `id` field and returns a serializer instance. See [Serializer — retrieve_from_ctx](../features/serializer.md#retrieve_from_ctx).
-- `create_from_ctx(ctx)` creates a database record and returns the serialized instance.
-- Custom exceptions (`NotFound`, `ValidationError`) are used for business logic errors.
+- `list_from_ctx(cond, page, size)` 返回 `Result`，包含 `.count`（总记录数）和 `.data`（serializer 实例列表）。见 [Serializer — list_from_ctx](../features/serializer.md#list_from_ctx)。
+- `retrieve_from_ctx(ctx)` 接受带 `id` 字段的 `BaseModel`，返回 serializer 实例。见 [Serializer — retrieve_from_ctx](../features/serializer.md#retrieve_from_ctx)。
+- `create_from_ctx(ctx)` 创建数据库记录并返回序列化实例。
+- 自定义异常（`NotFound`、`ValidationError`）用于业务逻辑错误。
 
-## Updating Endpoints
+## 更新 Endpoint
 
-Now update the endpoints to call the service layer:
+现在将 endpoint 更新为调用服务层：
 
 ```python
 # enroll/endpoints.py
@@ -231,21 +231,21 @@ async def hello(request: HttpRequest) -> PlainTextResponse:
 
 async def list_student(
     request: HttpRequest,
-    page: t.Annotated[int, p.Query(default=1, description="Page number", ge=1)],
-    size: t.Annotated[int, p.Query(default=10, description="Items per page", ge=1, le=100)],
-    search: t.Annotated[str, p.Query(default="", description="Search by name")],
+    page: t.Annotated[int, p.Query(default=1, description="页码", ge=1)],
+    size: t.Annotated[int, p.Query(default=10, description="每页条数", ge=1, le=100)],
+    search: t.Annotated[str, p.Query(default="", description="按姓名搜索")],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.StudentListResponse)]:
-    """Get paginated student list with optional name search"""
+    """获取分页学生列表，支持按姓名搜索"""
     result = await EnrollService.list_student(page, size, search)
     return JsonResponse(result)
 
 
 async def list_course(
     request: HttpRequest,
-    page: t.Annotated[int, p.Query(default=1, description="Page number", ge=1)],
-    size: t.Annotated[int, p.Query(default=10, description="Items per page", ge=1, le=100)],
+    page: t.Annotated[int, p.Query(default=1, description="页码", ge=1)],
+    size: t.Annotated[int, p.Query(default=10, description="每页条数", ge=1, le=100)],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.CourseListResponse)]:
-    """Get paginated course list"""
+    """获取分页课程列表"""
     result = await EnrollService.list_course(page, size)
     return JsonResponse(result)
 
@@ -254,7 +254,7 @@ async def bind(
     request: HttpRequest,
     ctx: t.Annotated[s.BindRequest, p.Json()],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.BindResponse)]:
-    """Bind a student to a course"""
+    """学生选课"""
     result = await EnrollService.bind(ctx.student_id, ctx.course_id)
     return JsonResponse(result)
 
@@ -263,28 +263,28 @@ async def unbind(
     request: HttpRequest,
     ctx: t.Annotated[s.BindRequest, p.Json()],
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.BindResponse)]:
-    """Remove a student from a course"""
+    """学生退课"""
     result = await EnrollService.unbind(ctx.student_id, ctx.course_id)
     return JsonResponse(result)
 ```
 
-## Updating Schema
+## 更新 Schema
 
-Add the create-student request model to `enroll/schema.py`:
+在 `enroll/schema.py` 中添加创建学生的请求模型：
 
 ```python
 # Add to enroll/schema.py
 
 class CreateStudentRequest(BaseModel):
-    name: str = Field(description="Student name", min_length=1, max_length=100)
-    email: str = Field(description="Email address")
-    age: int = Field(description="Age", ge=16, le=100)
-    student_id: str = Field(description="Student number", min_length=1, max_length=20)
+    name: str = Field(description="学生姓名", min_length=1, max_length=100)
+    email: str = Field(description="邮箱地址")
+    age: int = Field(description="年龄", ge=16, le=100)
+    student_id: str = Field(description="学号", min_length=1, max_length=20)
 ```
 
-## Updating Routes
+## 更新路由
 
-Add the new endpoints to `enroll/routes.py`:
+在 `enroll/routes.py` 中添加新 endpoint：
 
 ```python
 # enroll/routes.py
@@ -304,12 +304,12 @@ patterns = [
 ]
 ```
 
-## Next Steps
+## 下一步
 
-You have implemented complete business logic with database operations and error handling. In the next part, we will:
+你已经实现了带数据库操作和错误处理的完整业务逻辑。下一部分我们将：
 
-- Write comprehensive test cases using `Requestfactory`
-- Test both the Services layer and the Endpoints layer
-- Use pytest fixtures and parameterized tests
+- 使用 `Requestfactory` 编写全面测试用例
+- 测试 Services 层和 Endpoints 层
+- 使用 pytest fixtures 和参数化测试
 
-Continue to **[Part 6: Testing and Quality Assurance](part6.md)**.
+继续阅读 **[第六部分：测试与质量保障](part6.md)**。

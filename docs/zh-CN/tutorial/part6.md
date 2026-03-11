@@ -1,22 +1,22 @@
-# Part 6: Testing and Quality Assurance
+# 第六部分：测试与质量保障
 
-In the previous parts, we built a complete student course enrollment system. Now we will write comprehensive test cases to ensure code quality and reliability. Unfazed provides `Requestfactory`, an async test client that makes API testing simple and efficient. See [Test Client](../features/testclient.md) for the full reference.
+在前几部分中，我们构建了完整的学生选课系统。现在将编写全面测试用例，确保代码质量和可靠性。Unfazed 提供 `Requestfactory`，一个异步测试客户端，使 API 测试简单高效。完整参考见 [Test Client](../features/testclient.md)。
 
-## Test Environment Setup
+## 测试环境配置
 
-### Installing Test Dependencies
+### 安装测试依赖
 
 ```bash
-# Using uv
+# 使用 uv
 uv add pytest pytest-asyncio pytest-cov
 
-# Using pip
+# 使用 pip
 pip install pytest pytest-asyncio pytest-cov
 ```
 
-### Pytest Configuration
+### Pytest 配置
 
-The generated project includes a `conftest.py` that sets up the `unfazed` fixture. This fixture creates and initializes the application instance, which is required for endpoint tests:
+生成的项目包含 `conftest.py`，用于设置 `unfazed` fixture。该 fixture 创建并初始化应用实例，endpoint 测试需要：
 
 ```python
 # conftest.py
@@ -39,13 +39,13 @@ async def unfazed() -> t.AsyncGenerator[Unfazed, None]:
     yield app
 ```
 
-This fixture mirrors the pattern described in [Test Client — Setting Up a Pytest Fixture](../features/testclient.md#setting-up-a-pytest-fixture).
+该 fixture 与 [Test Client — Setting Up a Pytest Fixture](../features/testclient.md#setting-up-a-pytest-fixture) 中描述的模式一致。
 
-## Writing Test Cases
+## 编写测试用例
 
-### Test Data Setup
+### 测试数据准备
 
-Edit `enroll/test_all.py`:
+编辑 `enroll/test_all.py`：
 
 ```python
 # enroll/test_all.py
@@ -64,7 +64,7 @@ from enroll.services import EnrollService
 
 @pytest.fixture(autouse=True)
 async def setup_enroll() -> t.AsyncGenerator[None, None]:
-    """Create clean test data before each test."""
+    """每个测试前创建干净的测试数据"""
     await m.Student.all().delete()
     await m.Course.all().delete()
 
@@ -98,24 +98,24 @@ async def setup_enroll() -> t.AsyncGenerator[None, None]:
     await m.Course.all().delete()
 ```
 
-### Services Layer Tests
+### Services 层测试
 
-Test the business logic directly, without going through HTTP:
+直接测试业务逻辑，不经过 HTTP：
 
 ```python
 class TestEnrollServices:
-    """Test EnrollService business logic"""
+    """测试 EnrollService 业务逻辑"""
 
     async def test_list_student(self):
         result = await EnrollService.list_student(page=1, size=10)
         assert result["code"] == 0
         assert len(result["data"]) == 10
 
-        # Second page
+        # 第二页
         result = await EnrollService.list_student(page=2, size=10)
         assert len(result["data"]) == 1
 
-        # Search by name
+        # 按姓名搜索
         result = await EnrollService.list_student(page=1, size=10, search="Alice")
         assert len(result["data"]) == 1
         assert result["data"][0]["name"] == "Alice"
@@ -132,7 +132,7 @@ class TestEnrollServices:
         assert result["code"] == 0
         assert result["data"]["name"] == "Alice"
 
-        # Non-existent student
+        # 不存在的学生
         with pytest.raises(NotFound):
             await EnrollService.get_student(99999)
 
@@ -147,11 +147,11 @@ class TestEnrollServices:
         assert result["code"] == 0
         assert result["data"]["name"] == "New Student"
 
-        # Duplicate student ID
+        # 重复学号
         with pytest.raises(ValidationError, match="already exists"):
             await EnrollService.create_student(ctx)
 
-        # Duplicate email
+        # 重复邮箱
         ctx2 = EnrollService.CreateStudentCtx(
             name="Another", email="alice@example.com", age=21, student_id="2024100"
         )
@@ -166,24 +166,24 @@ class TestEnrollServices:
         assert result["code"] == 0
         assert "enrolled" in result["message"]
 
-        # Verify the relationship
+        # 验证关联关系
         enrolled = await student.courses.all()
         assert len(enrolled) == 1
 
-        # Duplicate enrollment
+        # 重复选课
         with pytest.raises(ValidationError, match="already enrolled"):
             await EnrollService.bind(student.id, course.id)
 
-        # Fill the course (Math max_students=5)
+        # 填满课程（Math max_students=5）
         students = await m.Student.all()
         for i in range(1, 5):
             await EnrollService.bind(students[i].id, course.id)
 
-        # Course is now full
+        # 课程已满
         with pytest.raises(ValidationError, match="full"):
             await EnrollService.bind(students[5].id, course.id)
 
-        # Non-existent student/course
+        # 不存在的学生/课程
         with pytest.raises(NotFound):
             await EnrollService.bind(99999, course.id)
         with pytest.raises(NotFound):
@@ -193,10 +193,10 @@ class TestEnrollServices:
         student = await m.Student.get(name="Bob")
         course = await m.Course.get(name="Physics")
 
-        # Enroll first
+        # 先选课
         await EnrollService.bind(student.id, course.id)
 
-        # Withdraw
+        # 退课
         result = await EnrollService.unbind(student.id, course.id)
         assert result["code"] == 0
         assert "withdrew" in result["message"]
@@ -204,18 +204,18 @@ class TestEnrollServices:
         enrolled = await student.courses.all()
         assert len(enrolled) == 0
 
-        # Withdraw again — not enrolled
+        # 再次退课 — 未选课
         with pytest.raises(ValidationError, match="not enrolled"):
             await EnrollService.unbind(student.id, course.id)
 ```
 
-### Endpoints Layer Tests
+### Endpoints 层测试
 
-Test the full HTTP request-response cycle using `Requestfactory`:
+使用 `Requestfactory` 测试完整 HTTP 请求-响应流程：
 
 ```python
 class TestEnrollEndpoints:
-    """Test API endpoints via HTTP"""
+    """通过 HTTP 测试 API endpoint"""
 
     async def test_hello(self, unfazed: Unfazed):
         async with Requestfactory(unfazed) as client:
@@ -232,14 +232,14 @@ class TestEnrollEndpoints:
             assert data["code"] == 0
             assert len(data["data"]) == 10
 
-            # With pagination
+            # 带分页
             resp = await client.get(
                 "/api/enroll/student-list", params={"page": 2, "size": 5}
             )
             data = resp.json()
             assert len(data["data"]) == 5
 
-            # With search
+            # 带搜索
             resp = await client.get(
                 "/api/enroll/student-list", params={"search": "Alice"}
             )
@@ -269,26 +269,26 @@ class TestEnrollEndpoints:
             data = resp.json()
             assert data["code"] == 0
 
-            # Duplicate binding
+            # 重复绑定
             resp = await client.post(
                 "/api/enroll/bind",
                 json={"student_id": student.id, "course_id": course.id},
             )
             assert resp.status_code == 200
-            # The exception is caught and returned as an error response
+            # 异常被捕获并作为错误响应返回
 
     async def test_unbind(self, unfazed: Unfazed):
         student = await m.Student.get(name="David")
         course = await m.Course.get(name="Math")
 
         async with Requestfactory(unfazed) as client:
-            # Enroll first
+            # 先选课
             await client.post(
                 "/api/enroll/bind",
                 json={"student_id": student.id, "course_id": course.id},
             )
 
-            # Then withdraw
+            # 再退课
             resp = await client.post(
                 "/api/enroll/unbind",
                 json={"student_id": student.id, "course_id": course.id},
@@ -298,39 +298,39 @@ class TestEnrollEndpoints:
             assert data["code"] == 0
 ```
 
-## Running Tests
+## 运行测试
 
-### Basic Commands
+### 基本命令
 
 ```bash
-# Run all tests
+# 运行所有测试
 pytest
 
-# Run specific test file
+# 运行指定测试文件
 pytest enroll/test_all.py
 
-# Run a specific test class
+# 运行指定测试类
 pytest enroll/test_all.py::TestEnrollServices
 
-# Run a specific test method
+# 运行指定测试方法
 pytest enroll/test_all.py::TestEnrollServices::test_bind
 
-# Verbose output
+# 详细输出
 pytest -v
 
-# With coverage report
+# 带覆盖率报告
 pytest --cov=enroll --cov-report=term-missing
 ```
 
-### Using Makefile
+### 使用 Makefile
 
 ```bash
-make test          # Run all tests
+make test          # 运行所有测试
 ```
 
-## Test Coverage
+## 测试覆盖率
 
-After running tests with `--cov`, you will see output similar to:
+使用 `--cov` 运行测试后，你会看到类似输出：
 
 ```
 ---------- coverage ----------
@@ -347,16 +347,16 @@ enroll/routes.py            8      0   100%
 TOTAL                     160      2    99%
 ```
 
-To generate an HTML report:
+生成 HTML 报告：
 
 ```bash
 pytest --cov=enroll --cov-report=html
 open htmlcov/index.html
 ```
 
-## Testing Best Practices
+## 测试最佳实践
 
-### Use Descriptive Test Names
+### 使用描述性测试名称
 
 ```python
 async def test_bind_raises_when_course_is_full():
@@ -366,7 +366,7 @@ async def test_unbind_raises_when_not_enrolled():
     ...
 ```
 
-### Use Parameterized Tests
+### 使用参数化测试
 
 ```python
 @pytest.mark.parametrize("page,size,expected_count", [
@@ -380,7 +380,7 @@ async def test_student_pagination(page, size, expected_count):
     assert len(result["data"]) == expected_count
 ```
 
-### Use Fixtures for Common Setup
+### 使用 Fixture 进行通用准备
 
 ```python
 @pytest.fixture
@@ -402,38 +402,38 @@ async def test_unbind_with_fixture(enrolled_student):
     assert result["code"] == 0
 ```
 
-## Summary
+## 总结
 
-In this tutorial series, we built a complete student course enrollment system with Unfazed, covering:
+在本系列教程中，我们使用 Unfazed 构建了完整的学生选课系统，涵盖：
 
-1. **[Part 1](part1.md)**: Project creation and environment setup
-2. **[Part 2](part2.md)**: App creation and Hello World
-3. **[Part 3](part3.md)**: Data models (Tortoise ORM) and serializers
-4. **[Part 4](part4.md)**: API endpoints with typed parameter annotations and OpenAPI
-5. **[Part 5](part5.md)**: Business logic in the Services layer
-6. **[Part 6](part6.md)**: Testing with `Requestfactory` and pytest
+1. **[第一部分](part1.md)**：项目创建与环境配置
+2. **[第二部分](part2.md)**：应用创建与 Hello World
+3. **[第三部分](part3.md)**：数据模型（Tortoise ORM）与 serializer
+4. **[第四部分](part4.md)**：带类型化参数注解和 OpenAPI 的 API endpoint
+5. **[第五部分](part5.md)**：Services 层业务逻辑
+6. **[第六部分](part6.md)**：使用 `Requestfactory` 和 pytest 进行测试
 
-### Further Reading
+### 延伸阅读
 
-For deeper coverage of each feature, see the feature documentation:
+更多功能细节见功能文档：
 
-| Topic                | Documentation                                          |
-| -------------------- | ------------------------------------------------------ |
-| App System           | [App](../features/app.md)                              |
-| Routing              | [Routing](../features/route.md)                        |
-| Endpoints            | [Endpoint](../features/endpoint.md)                    |
+| 主题                | 文档                                          |
+| -------------------- | --------------------------------------------- |
+| App System           | [App](../features/app.md)                     |
+| Routing              | [Routing](../features/route.md)               |
+| Endpoints            | [Endpoint](../features/endpoint.md)            |
 | Request / Response   | [Request](../features/request.md), [Response](../features/response.md) |
-| Serializer           | [Serializer](../features/serializer.md)                |
-| Tortoise ORM         | [Tortoise ORM](../features/tortoise-orm.md)            |
-| OpenAPI              | [OpenAPI](../features/openapi.md)                      |
-| Exceptions           | [Exceptions](../features/exception.md)                 |
-| Test Client          | [Test Client](../features/testclient.md)               |
-| Settings             | [Settings](../features/settings.md)                    |
-| Middleware           | [Middleware](../features/middleware.md)                 |
-| Commands             | [Command](../features/command.md)                      |
-| Cache                | [Cache](../features/cache.md)                          |
-| Lifespan             | [Lifespan](../features/lifespan.md)                    |
-| Logging              | [Logging](../features/logging.md)                      |
-| Session              | [Session](../features/contrib/session.md)              |
-| Authentication       | [Auth](../features/contrib/auth.md)                    |
-| Admin Panel          | [Admin](../features/contrib/admin.md)                  |
+| Serializer           | [Serializer](../features/serializer.md)       |
+| Tortoise ORM         | [Tortoise ORM](../features/tortoise-orm.md)   |
+| OpenAPI              | [OpenAPI](../features/openapi.md)             |
+| Exceptions           | [Exceptions](../features/exception.md)        |
+| Test Client          | [Test Client](../features/testclient.md)      |
+| Settings             | [Settings](../features/settings.md)            |
+| Middleware           | [Middleware](../features/middleware.md)       |
+| Commands             | [Command](../features/command.md)              |
+| Cache                | [Cache](../features/cache.md)                 |
+| Lifespan             | [Lifespan](../features/lifespan.md)           |
+| Logging              | [Logging](../features/logging.md)             |
+| Session              | [Session](../features/contrib/session.md)     |
+| Authentication       | [Auth](../features/contrib/auth.md)           |
+| Admin Panel          | [Admin](../features/contrib/admin.md)         |
