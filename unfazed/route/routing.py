@@ -93,17 +93,20 @@ class Route(StartletteRoute):
 
     def update_path(self, new_path: str) -> None:
         self.path = new_path
+
+        original_param_convertor_keys = self.param_convertors.keys()
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             new_path
         )
 
-        self.endpoint_definition = EndPointDefinition(
-            endpoint=self.endpoint,
-            methods=self.methods,
-            tags=self.tags,
-            path_parm_names=self.param_convertors.keys(),
-            response_models=self.response_models,
-        )
+        if original_param_convertor_keys != self.param_convertors.keys():
+            self.endpoint_definition = EndPointDefinition(
+                endpoint=self.endpoint,
+                methods=self.methods,
+                tags=self.tags,
+                path_parm_names=self.param_convertors.keys(),
+                response_models=self.response_models,
+            )
 
         if self.operation_id:
             self.endpoint_definition.operation_id = self.operation_id
