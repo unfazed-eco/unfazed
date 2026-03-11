@@ -1,6 +1,7 @@
 import inspect
 import typing as t
 import warnings
+from contextvars import ContextVar
 from functools import wraps
 
 from starlette.concurrency import run_in_threadpool
@@ -8,6 +9,7 @@ from starlette.concurrency import run_in_threadpool
 from .handler import caches
 
 P = t.ParamSpec("P")
+_force_update_ctx: ContextVar[bool] = ContextVar("_force_update_ctx", default=False)
 
 
 def cached(
@@ -80,7 +82,7 @@ def cached(
                     stacklevel=2,
                 )
 
-            prefix = f"{func.__module__}:{func.__name__}"
+            prefix = f"{func.__module__}:{func.__qualname__}"
             if include:
                 suffix = ":".join(
                     [f"{k}_{str(v)}" for k, v in kwargs.items() if k in include]
@@ -91,7 +93,7 @@ def cached(
 
             key = f"{prefix}:{suffix}" if suffix else prefix
 
-            force_update = kwargs.pop("force_update", False)
+            force_update = bool(kwargs.pop("force_update", False)) or _force_update_ctx.get()
 
             cache = caches[using]
 
@@ -99,10 +101,14 @@ def cached(
             if value and not force_update:
                 return value
             else:
-                if inspect.iscoroutinefunction(func):
-                    result = await func(*args, **kwargs)
-                else:
-                    result = await run_in_threadpool(func, *args, **kwargs)
+                token = _force_update_ctx.set(force_update)
+                try:
+                    if inspect.iscoroutinefunction(func):
+                        result = await func(*args, **kwargs)
+                    else:
+                        result = await run_in_threadpool(func, *args, **kwargs)
+                finally:
+                    _force_update_ctx.reset(token)
                 await cache.set(key, result, timeout)
                 return result
 
