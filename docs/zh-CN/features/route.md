@@ -1,11 +1,11 @@
-Unfazed Routing
-===============
+Unfazed 路由
+============
 
-Unfazed's routing system maps URL paths to endpoint functions. Routes are defined using the `path()` helper, organized into `patterns` lists, and composed with `include()` for multi-app projects. The framework also supports static file serving via `static()`, mounting external ASGI apps via `mount()`, and per-route middleware.
+Unfazed 的路由系统将 URL 路径映射到 endpoint 函数。路由使用 `path()` 辅助函数定义，组织到 `patterns` 列表中，并通过 `include()` 组合用于多应用项目。框架还支持通过 `static()` 提供静态文件、通过 `mount()` 挂载外部 ASGI 应用，以及按路由配置中间件。
 
-## Quick Start
+## 快速开始
 
-### 1. Define routes in your app
+### 1. 在应用中定义路由
 
 ```python
 # myapp/routes.py
@@ -19,10 +19,10 @@ patterns = [
 ]
 ```
 
-### 2. Wire them into the root URL config
+### 2. 接入根 URL 配置
 
 ```python
-# routes.py (project root)
+# routes.py（项目根目录）
 from unfazed.route import path, include
 
 patterns = [
@@ -30,7 +30,7 @@ patterns = [
 ]
 ```
 
-### 3. Set ROOT_URLCONF in settings
+### 3. 在配置中设置 ROOT_URLCONF
 
 ```python
 # settings.py
@@ -40,11 +40,11 @@ UNFAZED_SETTINGS = {
 }
 ```
 
-The routes module must define a `patterns` list at module level.
+路由模块必须在模块级别定义 `patterns` 列表。
 
-## Defining Routes
+## 定义路由
 
-### Basic route
+### 基本路由
 
 ```python
 from unfazed.route import path
@@ -52,27 +52,27 @@ from unfazed.route import path
 path("/users", endpoint=list_users)
 ```
 
-When no `methods` are specified, the route defaults to `GET` and `HEAD`.
+未指定 `methods` 时，路由默认支持 `GET` 和 `HEAD`。
 
-### Specifying HTTP methods
+### 指定 HTTP 方法
 
 ```python
 path("/users", endpoint=create_user, methods=["POST"])
 path("/users/{user_id}", endpoint=update_user, methods=["PUT", "PATCH"])
 ```
 
-`HEAD` is automatically added when `GET` is specified.
+指定 `GET` 时会自动添加 `HEAD`。
 
-### Path parameters
+### 路径参数
 
-Use `{name}` or `{name:type}` placeholders in the path:
+在路径中使用 `{name}` 或 `{name:type}` 占位符：
 
 ```python
 path("/users/{user_id:int}", endpoint=get_user)
 path("/files/{path:path}", endpoint=serve_file)
 ```
 
-Built-in convertors: `str` (default), `int`, `float`, `path`. You can register custom convertors:
+内置转换器：`str`（默认）、`int`、`float`、`path`。可注册自定义转换器：
 
 ```python
 from unfazed.route import Convertor, register_url_convertor
@@ -90,13 +90,13 @@ class LangConvertor(Convertor):
 
 register_url_convertor("lang", LangConvertor())
 
-# Now use it:
+# 使用方式：
 path("/docs/{lang:lang}", endpoint=get_docs)
 ```
 
-### OpenAPI metadata
+### OpenAPI 元数据
 
-Routes accept metadata fields that appear in the generated OpenAPI spec:
+路由接受会出现在生成的 OpenAPI 规范中的元数据字段：
 
 ```python
 path(
@@ -112,13 +112,13 @@ path(
 )
 ```
 
-Set `include_in_schema=False` to hide a route from the OpenAPI spec.
+设置 `include_in_schema=False` 可将路由从 OpenAPI 规范中隐藏。
 
-## Composing Routes
+## 组合路由
 
-### Nesting with `routes`
+### 使用 `routes` 嵌套
 
-Use the `routes` parameter to prefix a group of routes:
+使用 `routes` 参数为路由组添加前缀：
 
 ```python
 user_routes = [
@@ -129,12 +129,12 @@ user_routes = [
 patterns = [
     path("/api/users", routes=user_routes),
 ]
-# Results in: /api/users/ and /api/users/{user_id}
+# 结果为：/api/users/ 和 /api/users/{user_id}
 ```
 
-### Including from another module with `include()`
+### 使用 `include()` 从其他模块引入
 
-`include()` imports a module's `patterns` list and automatically sets the `app_label`:
+`include()` 导入模块的 `patterns` 列表并自动设置 `app_label`：
 
 ```python
 from unfazed.route import path, include
@@ -145,7 +145,7 @@ patterns = [
 ]
 ```
 
-The target module must define a `patterns` list:
+目标模块必须定义 `patterns` 列表：
 
 ```python
 # blog/routes.py
@@ -158,9 +158,9 @@ patterns = [
 ]
 ```
 
-### Per-route middleware
+### 按路由配置中间件
 
-Apply middleware to specific routes or route groups:
+为特定路由或路由组应用中间件：
 
 ```python
 path(
@@ -169,7 +169,7 @@ path(
     middlewares=["myapp.middleware.AdminAuthMiddleware"],
 )
 
-# Or on a single route:
+# 或单个路由：
 path(
     "/secret",
     endpoint=secret_endpoint,
@@ -177,11 +177,11 @@ path(
 )
 ```
 
-Middleware is applied in reverse list order (same as the global `MIDDLEWARE` setting).
+中间件按列表逆序应用（与全局 `MIDDLEWARE` 配置相同）。
 
-## Static Files
+## 静态文件
 
-Serve static files from a directory:
+从目录提供静态文件：
 
 ```python
 from unfazed.route import static
@@ -192,17 +192,17 @@ patterns = [
 ]
 ```
 
-| Parameter | Description |
-|-----------|-------------|
-| `path` | URL prefix (e.g. `"/static"`). |
-| `directory` | Absolute path to the files directory. |
-| `html` | If `True`, serve `index.html` for directory requests. |
+| 参数 | 说明 |
+|------|------|
+| `path` | URL 前缀（如 `"/static"`）。 |
+| `directory` | 文件目录的绝对路径。 |
+| `html` | 若为 `True`，对目录请求提供 `index.html`。 |
 
-Static routes are excluded from the OpenAPI schema.
+静态路由会从 OpenAPI schema 中排除。
 
-## Mounting External Apps
+## 挂载外部应用
 
-Mount any ASGI application under a path prefix:
+在路径前缀下挂载任意 ASGI 应用：
 
 ```python
 from starlette.applications import Starlette
@@ -215,7 +215,7 @@ patterns = [
 ]
 ```
 
-You can also mount a sub-group of routes:
+也可以挂载路由子组：
 
 ```python
 patterns = [
@@ -225,9 +225,9 @@ patterns = [
 ]
 ```
 
-Mount routes are excluded from the OpenAPI schema.
+挂载路由会从 OpenAPI schema 中排除。
 
-## API Reference
+## API 参考
 
 ### path()
 
@@ -251,7 +251,7 @@ def path(
 ) -> Route | List[Route]
 ```
 
-Create a `Route` (when `endpoint` is given) or a list of prefixed routes (when `routes` is given). Exactly one of `endpoint` or `routes` must be provided.
+创建 `Route`（当提供 `endpoint` 时）或带前缀的路由列表（当提供 `routes` 时）。必须且只能提供 `endpoint` 或 `routes` 之一。
 
 ### include()
 
@@ -259,7 +259,7 @@ Create a `Route` (when `endpoint` is given) or a list of prefixed routes (when `
 def include(route_path: str) -> List[Route]
 ```
 
-Import a module's `patterns` list. The module must define `patterns` at module level.
+导入模块的 `patterns` 列表。模块必须在模块级别定义 `patterns`。
 
 ### static()
 
@@ -267,7 +267,7 @@ Import a module's `patterns` list. The module must define `patterns` at module l
 def static(path: str, directory: str, *, name: str = None, app_label: str = None, html: bool = False) -> Static
 ```
 
-Create a static file serving route.
+创建静态文件服务路由。
 
 ### mount()
 
@@ -275,7 +275,7 @@ Create a static file serving route.
 def mount(path: str, app: ASGIApp = None, routes: List[Route] = None, *, name: str = None, app_label: str = None, middlewares: List[str] = None) -> Mount
 ```
 
-Mount an ASGI app or route group under a path prefix.
+在路径前缀下挂载 ASGI 应用或路由组。
 
 ### Route
 
@@ -284,7 +284,7 @@ class Route(starlette.routing.Route):
     def __init__(self, path, endpoint, *, methods=None, name=None, middlewares=None, app_label=None, tags=None, include_in_schema=True, summary=None, description=None, externalDocs=None, deprecated=None, operation_id=None, response_models=None)
 ```
 
-A single URL-to-endpoint mapping. Paths must start with `/`.
+单个 URL 到 endpoint 的映射。路径必须以 `/` 开头。
 
 ### register_url_convertor()
 
@@ -292,4 +292,4 @@ A single URL-to-endpoint mapping. Paths must start with `/`.
 def register_url_convertor(key: str, convertor: Convertor) -> None
 ```
 
-Register a custom URL path convertor for use in `{name:type}` path parameters.
+注册自定义 URL 路径转换器，用于 `{name:type}` 路径参数。

@@ -1,476 +1,296 @@
 Unfazed Serializer
-=====
+==================
 
-Unfazed Serializer is a powerful serializer system based on Tortoise ORM models that automatically converts database models to Pydantic models and provides complete CRUD operations. This system perfectly integrates Tortoise ORM features, supporting relationship fields, field validation, pagination queries, and other advanced functionality.
-
-## System Overview
-
-### Core Features
-
-- **Automatic Model Conversion**: Automatically generates Pydantic serializers based on Tortoise ORM models
-- **Complete CRUD Operations**: Built-in create, read, update, delete methods
-- **Relationship Field Support**: Supports foreign keys, many-to-many, one-to-one, and other relationship fields
-- **Field Customization**: Supports field override, new fields, and field filtering
-- **Pagination Queries**: Built-in efficient pagination query mechanism
-- **Type Safety**: Complete type annotations and Pydantic validation
-
-### Core Components
-
-- **Serializer**: Base serializer class providing all core functionality
-- **MetaClass**: Metaclass responsible for automatically generating Pydantic models
-- **create_model_from_tortoise**: Core conversion function that converts Tortoise models to Pydantic models
-- **Relationship Field Handlers**: Specialized functions for handling various relationship fields
-
-### Design Philosophy
-
-1. **Convention over Configuration**: Most functionality works out of the box without complex configuration
-2. **Type Safety**: Comprehensive type checking and validation
-3. **High Performance**: Optimized query and serialization performance
-4. **Flexibility**: Supports field customization and behavior extension
+Unfazed's `Serializer` automatically generates a Pydantic model from a Tortoise ORM model and provides built-in async CRUD operations — create, retrieve, update, delete, and paginated list. It bridges the gap between your database models and your API layer, giving you validated data objects with zero boilerplate.
 
 ## Quick Start
 
-### Basic Usage
+### 1. Define a Tortoise model
 
 ```python
-# models.py
+# myapp/models.py
 from tortoise import Model, fields
 
-class Student(Model):
-    id = fields.BigIntField(primary_key=True)
-    name = fields.CharField(max_length=255, description="Student name")
-    age = fields.IntField(description="Age")
-    email = fields.CharField(max_length=255, null=True, description="Email")
-    is_active = fields.BooleanField(default=True, description="Is active")
+
+class Article(Model):
+    title = fields.CharField(max_length=255)
+    content = fields.TextField()
+    published = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-
-    class Meta:
-        table = "students"
-
-# serializers.py
-from unfazed.serializer import Serializer
-from .models import Student
-
-class StudentSerializer(Serializer):
-    class Meta:
-        model = Student
 ```
 
-### CRUD Operations
+### 2. Create a serializer
+
+```python
+# myapp/serializers.py
+from unfazed.serializer import Serializer
+from myapp.models import Article
+
+
+class ArticleSerializer(Serializer):
+    class Meta:
+        model = Article
+```
+
+`ArticleSerializer` now has Pydantic fields for `id`, `title`, `content`, `published`, and `created_at` — auto-generated from the model.
+
+### 3. Use CRUD operations
 
 ```python
 from pydantic import BaseModel
-from typing import Dict, Any
+from myapp.serializers import ArticleSerializer
 
-# 1. Create student
-class StudentCreateData(BaseModel):
-    name: str
-    age: int
-    email: str = None
 
-async def create_student():
-    create_data = StudentCreateData(name="John", age=20, email="john@example.com")
-    student = await StudentSerializer.create_from_ctx(create_data)
-    print(f"Created student: {student.name}, ID: {student.id}")
-    return student
+class CreateArticle(BaseModel):
+    title: str
+    content: str
 
-# 2. Query student
-class StudentRetrieveData(BaseModel):
+
+class UpdateArticle(BaseModel):
     id: int
+    title: str
 
-async def get_student(student_id: int):
-    retrieve_data = StudentRetrieveData(id=student_id)
-    student = await StudentSerializer.retrieve_from_ctx(retrieve_data)
-    print(f"Retrieved student: {student.name}, Age: {student.age}")
-    return student
 
-# 3. Update student
-class StudentUpdateData(BaseModel):
-    id: int
-    name: str = None
-    age: int = None
-    email: str = None
-
-async def update_student(student_id: int):
-    update_data = StudentUpdateData(id=student_id, age=21)
-    student = await StudentSerializer.update_from_ctx(update_data)
-    print(f"Updated student: {student.name}, New age: {student.age}")
-    return student
-
-# 4. Delete student
-class StudentDeleteData(BaseModel):
-    id: int
-
-async def delete_student(student_id: int):
-    delete_data = StudentDeleteData(id=student_id)
-    await StudentSerializer.destroy_from_ctx(delete_data)
-    print(f"Deleted student ID: {student_id}")
-
-# 5. Pagination query
-async def list_students():
-    # Query conditions
-    conditions: Dict[str, Any] = {"is_active": True}
-    
-    # Pagination parameters
-    page = 1
-    size = 10
-    
-    # Query options
-    result = await StudentSerializer.list_from_ctx(
-        cond=conditions,
-        page=page,
-        size=size,
-        order_by=["-created_at"],  # Order by creation time descending
-        fetch_relations=True
-    )
-    
-    print(f"Total: {result.count}")
-    print(f"Current page students: {len(result.data)}")
-    for student in result.data:
-        print(f"- {student.name} (ID: {student.id})")
-    
-    return result
-```
-
-## Field Customization
-
-### Field Override
-
-Can override field types or properties in models:
-
-```python
-from pydantic import Field
-from datetime import datetime
-
-class StudentSerializer(Serializer):
-    # Override field type
-    age: str = Field(..., description="Age (string format)")
-    
-    # Add new field
-    display_name: str = Field(default="", description="Display name")
-    
-    # Override field default value
-    is_active: bool = Field(default=False, description="Is active")
-
-    class Meta:
-        model = Student
-
-# Usage example
-student_data = {
-    "name": "Jane",
-    "age": "22",  # Now string type
-    "display_name": "Student Jane",
-    "email": "jane@example.com"
-}
-
-student = StudentSerializer(**student_data)
-print(f"Age type: {type(student.age)}")  # <class 'str'>
-```
-
-### Field Filtering
-
-Use `include` and `exclude` to control serialized fields:
-
-```python
-# Include only specific fields
-class StudentBasicSerializer(Serializer):
-    class Meta:
-        model = Student
-        include = ["id", "name", "age"]
-
-# Exclude specific fields
-class StudentPublicSerializer(Serializer):
-    class Meta:
-        model = Student
-        exclude = ["created_at", "updated_at"]
-
-# Usage example
-student = await StudentBasicSerializer.retrieve_from_ctx(
-    StudentRetrieveData(id=1)
+# Create
+article = await ArticleSerializer.create_from_ctx(
+    CreateArticle(title="Hello", content="World")
 )
-# Only includes id, name, age fields
-print(student.model_dump())  # {"id": 1, "name": "John", "age": 20}
+
+# Retrieve
+class ArticleId(BaseModel):
+    id: int
+
+article = await ArticleSerializer.retrieve_from_ctx(ArticleId(id=1))
+
+# Update
+updated = await ArticleSerializer.update_from_ctx(
+    UpdateArticle(id=1, title="Updated Title")
+)
+
+# Delete
+await ArticleSerializer.destroy_from_ctx(ArticleId(id=1))
+
+# List with pagination
+result = await ArticleSerializer.list_from_ctx(
+    cond={"published": True},
+    page=1,
+    size=20,
+)
+# result.count — total matching records
+# result.data  — list of ArticleSerializer instances
 ```
 
-## Relationship Field Handling
+## The Meta Class
 
-### Define Relationship Models
+Every serializer must define an inner `Meta` class with at least a `model` attribute:
 
 ```python
-# models.py
-class Course(Model):
-    id = fields.BigIntField(primary_key=True)
-    name = fields.CharField(max_length=255, description="Course name")
-    code = fields.CharField(max_length=50, description="Course code")
-    credits = fields.IntField(description="Credits")
-
-class StudentCourse(Model):
-    id = fields.BigIntField(primary_key=True)
-    student = fields.ForeignKeyField("models.Student", related_name="enrollments")
-    course = fields.ForeignKeyField("models.Course", related_name="enrollments")
-    score = fields.FloatField(null=True, description="Score")
-    enrolled_at = fields.DatetimeField(auto_now_add=True)
-
-class StudentProfile(Model):
-    id = fields.BigIntField(primary_key=True)
-    student = fields.OneToOneField("models.Student", related_name="profile")
-    phone = fields.CharField(max_length=20, null=True)
-    address = fields.TextField(null=True)
-    emergency_contact = fields.CharField(max_length=255, null=True)
-
-# Update Student model
-class Student(Model):
-    # ... existing fields ...
-    
-    # Relationship fields are automatically detected
-    # profile: StudentProfile (one-to-one)
-    # enrollments: List[StudentCourse] (one-to-many)
+class ArticleSerializer(Serializer):
+    class Meta:
+        model = Article
 ```
 
-### Relationship Field Serializers
+### Meta options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | `Type[Model]` | required | The Tortoise ORM model to serialize. |
+| `include` | `List[str]` | `[]` | Fields to include. If set, all other fields are excluded. |
+| `exclude` | `List[str]` | `[]` | Fields to exclude. Cannot be used together with `include`. |
+| `enable_relations` | `bool` | `False` | Generate fields for relation models (FK, M2M, O2O). |
+
+### Controlling fields
+
+By default all model fields are included. Use `include` or `exclude` (but not both) to control which fields appear:
 
 ```python
-class CourseSerializer(Serializer):
+class ArticleSummarySerializer(Serializer):
     class Meta:
-        model = Course
+        model = Article
+        include = ["id", "title", "published"]
 
-class StudentProfileSerializer(Serializer):
+
+class ArticleSerializer(Serializer):
     class Meta:
-        model = StudentProfile
-        exclude = ["student"]  # Avoid circular references
+        model = Article
+        exclude = ["created_at"]
+```
 
-class StudentCourseSerializer(Serializer):
+## CRUD Operations
+
+All CRUD methods are class methods that accept a Pydantic `BaseModel` context object. The context provides the data for the operation.
+
+### create_from_ctx
+
+```python
+article = await ArticleSerializer.create_from_ctx(ctx)
+```
+
+Creates a new database record from `ctx` and returns the serialized instance.
+
+### retrieve_from_ctx
+
+```python
+article = await ArticleSerializer.retrieve_from_ctx(ctx)
+```
+
+Retrieves a record by `ctx.id` and returns the serialized instance.
+
+### update_from_ctx
+
+```python
+article = await ArticleSerializer.update_from_ctx(ctx)
+```
+
+Finds the record by `ctx.id`, updates the fields present in `ctx`, saves, and returns the serialized instance.
+
+### destroy_from_ctx
+
+```python
+await ArticleSerializer.destroy_from_ctx(ctx)
+```
+
+Finds the record by `ctx.id` and deletes it.
+
+### list_from_ctx
+
+```python
+result = await ArticleSerializer.list_from_ctx(cond, page, size, order_by="-created_at")
+```
+
+Queries records matching `cond` (a dict of filter kwargs passed to Tortoise's `.filter()`), paginates the results, and returns a `Result` object.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `cond` | `Dict` | Tortoise ORM filter kwargs (e.g. `{"published": True}`). |
+| `page` | `int` | Page number (1-based). Pass `0` to disable pagination. |
+| `size` | `int` | Page size. |
+| `order_by` | `str \| List[str]` | Optional ordering field(s). Prefix with `-` for descending. |
+| `fetch_relations` | `bool` | Whether to prefetch related objects. Defaults to `True`. |
+
+Returns a `Result[T]` with `.count` (total) and `.data` (list of serializer instances).
+
+### list_from_queryset
+
+You can also pass a pre-built `QuerySet` instead of a condition dict:
+
+```python
+qs = Article.filter(published=True).order_by("-created_at")
+result = await ArticleSerializer.list_from_queryset(qs, page=1, size=10)
+```
+
+## Relation Support
+
+Set `enable_relations = True` in `Meta` to include relation fields (ForeignKey, ManyToMany, OneToOne, and their backward variants):
+
+```python
+class StudentSerializer(Serializer):
     class Meta:
-        model = StudentCourse
+        model = Student
+        enable_relations = True
+```
 
-# Student serializer with relationship fields enabled
-class StudentWithRelationsSerializer(Serializer):
+**Important:** Relations are only resolved after `Tortoise.init()` has been called. Avoid accessing serializers with `enable_relations = True` inside `app.ready()`. If you need early access, either override the relation field manually or exclude it:
+
+```python
+# Option 1: Override with a default
+class StudentSerializer(Serializer):
     class Meta:
         model = Student
         enable_relations = True
 
-# Manually define relationship fields (recommended approach)
-class StudentDetailSerializer(Serializer):
-    # Manually define relationship fields to avoid circular references
-    profile: StudentProfileSerializer = None
-    enrollments: List[StudentCourseSerializer] = []
+    courses: list = []
 
-    class Meta:
-        model = Student
-        exclude = ["created_at", "updated_at"]
-```
-
-### Relationship Queries
-
-```python
-async def get_student_with_relations():
-    # Query students and their related data
-    result = await StudentDetailSerializer.list_from_ctx(
-        cond={"is_active": True},
-        page=1,
-        size=10,
-        fetch_relations=True  # Automatically prefetch relationship fields
-    )
-    
-    for student in result.data:
-        print(f"Student: {student.name}")
-        if student.profile:
-            print(f"  Contact phone: {student.profile.phone}")
-        
-        print(f"  Course enrollments:")
-        for enrollment in student.enrollments:
-            print(f"    - Course: {enrollment.course.name}, Score: {enrollment.score}")
-
-# Find relationships
-async def find_student_course_relation():
-    relation = StudentSerializer.find_relation(CourseSerializer)
-    if relation:
-        print(f"Relation type: {relation.relation}")
-        print(f"Source field: {relation.source_field}")
-        print(f"Target field: {relation.target_field}")
-```
-
-## Advanced Queries
-
-### Complex Query Conditions
-
-```python
-from datetime import datetime, timedelta
-
-async def advanced_queries():
-    # 1. Complex filtering conditions
-    conditions = {
-        "age__gte": 18,  # Age greater than or equal to 18
-        "age__lt": 25,   # Age less than 25
-        "name__icontains": "John",  # Name contains "John"
-        "is_active": True,
-        "created_at__gte": datetime.now() - timedelta(days=30)  # Created in last 30 days
-    }
-    
-    result = await StudentSerializer.list_from_ctx(
-        cond=conditions,
-        page=1,
-        size=20,
-        order_by=["-age", "name"]  # Order by age descending, name ascending
-    )
-    
-    # 2. Use QuerySet for more complex queries
-    from tortoise.queryset import QuerySet
-    
-    queryset = Student.filter(
-        age__gte=18,
-        is_active=True
-    ).select_related("profile").prefetch_related("enrollments")
-    
-    result = await StudentSerializer.list_from_queryset(
-        queryset=queryset,
-        page=1,
-        size=10
-    )
-    
-    return result
-
-# Custom query methods
+# Option 2: Exclude the relation
 class StudentSerializer(Serializer):
     class Meta:
         model = Student
-    
-    @classmethod
-    async def get_active_students_by_age_range(
-        cls, 
-        min_age: int, 
-        max_age: int, 
-        page: int = 1, 
-        size: int = 10
-    ):
-        conditions = {
-            "age__gte": min_age,
-            "age__lte": max_age,
-            "is_active": True
-        }
-        
-        return await cls.list_from_ctx(
-            cond=conditions,
-            page=page,
-            size=size,
-            order_by=["age"]
-        )
+        exclude = ["courses"]
 ```
 
-### Batch Operations
+### find_relation
+
+Discover the relationship between two serializers:
 
 ```python
-async def batch_operations():
-    # 1. Batch create
-    students_data = [
-        {"name": "Student1", "age": 20, "email": "student1@example.com"},
-        {"name": "Student2", "age": 21, "email": "student2@example.com"},
-        {"name": "Student3", "age": 22, "email": "student3@example.com"},
-    ]
-    
-    created_students = []
-    for data in students_data:
-        create_data = StudentCreateData(**data)
-        student = await StudentSerializer.create_from_ctx(create_data)
-        created_students.append(student)
-    
-    # 2. Batch update
-    for student in created_students:
-        update_data = StudentUpdateData(
-            id=student.id,
-            age=student.age + 1
-        )
-        await StudentSerializer.update_from_ctx(update_data)
-    
-    # 3. Batch delete
-    for student in created_students:
-        delete_data = StudentDeleteData(id=student.id)
-        await StudentSerializer.destroy_from_ctx(delete_data)
+relation = StudentSerializer.find_relation(CourseSerializer)
+# Relation(target="CourseSerializer", source_field="...", target_field="...", relation="m2m")
 ```
 
-## Meta Configuration Details
+Returns a `Relation` object or `None` if no relationship exists. Supported relation types: `fk`, `m2m`, `o2o`, `bk_fk`, `bk_o2o`.
 
-### Configuration Options
+## Custom Fields
+
+You can add or override fields on a serializer:
 
 ```python
-class StudentSerializer(Serializer):
-    class Meta:
-        model = Student                    # Required: Associated Tortoise model
-        include = ["id", "name", "age"]   # Optional: List of included fields
-        exclude = ["created_at"]          # Optional: List of excluded fields (mutually exclusive with include)
-        enable_relations = True           # Optional: Whether to enable automatic relationship field handling
+from pydantic import Field
+from unfazed.serializer import Serializer
 
-# Field inclusion example
-class StudentMinimalSerializer(Serializer):
-    class Meta:
-        model = Student
-        include = ["id", "name"]  # Only serialize id and name
 
-# Field exclusion example  
-class StudentWithoutTimestampsSerializer(Serializer):
-    class Meta:
-        model = Student
-        exclude = ["created_at", "updated_at"]  # Exclude timestamp fields
+class CarSerializer(Serializer):
+    override: int = 100
+    computed: str = Field(default="custom_value")
 
-# Relationship field enablement example
-class StudentFullSerializer(Serializer):
     class Meta:
-        model = Student
-        enable_relations = True  # Automatically handle relationship fields
+        model = Car
 ```
 
-### Important Notes
+Custom fields are merged with the auto-generated fields. If a custom field has the same name as a model field, the custom definition takes precedence.
 
-**Relationship Field Initialization**:
-- When `enable_relations = True`, serializer automatically handles relationship fields
-- If `Tortoise._inited` is not initialized, relationship fields are skipped to avoid errors
-- Recommend avoiding accessing serializers in `app.ready()` method, or manually define relationship fields
+## API Reference
+
+### Serializer
 
 ```python
-# Recommended relationship field handling approach
-class StudentSafeSerializer(Serializer):
-    # Manually define relationship fields to avoid initialization issues
-    profile: StudentProfileSerializer = None
-    courses: List[CourseSerializer] = []
-
-    class Meta:
-        model = Student
-        # Don't enable automatic relationship field handling
-        enable_relations = False
+class Serializer(BaseModel, metaclass=MetaClass)
 ```
 
-## Best Practices
+Base class for all serializers. Automatically generates Pydantic fields from the Tortoise model defined in `Meta`.
 
-### 1. Serializer Organization
+**Class methods (CRUD):**
+
+- `async create_from_ctx(ctx: BaseModel, **kwargs) -> Self`: Create a record.
+- `async update_from_ctx(ctx: BaseModel, **kwargs) -> Self`: Update a record (looks up by `ctx.id`).
+- `async destroy_from_ctx(ctx: BaseModel, **kwargs) -> None`: Delete a record (looks up by `ctx.id`).
+- `async retrieve_from_ctx(ctx: BaseModel, **kwargs) -> Self`: Retrieve a single record.
+- `async list_from_ctx(cond: Dict, page: int, size: int, **kwargs) -> Result[Self]`: List with pagination.
+- `async list_from_queryset(queryset: QuerySet, page: int, size: int, **kwargs) -> Result[Self]`: List from a pre-built queryset.
+
+**Class methods (low-level):**
+
+- `from_instance(instance: Model) -> Self`: Create a serializer from a model instance.
+- `find_relation(other_cls: Type[Serializer]) -> Relation | None`: Discover relationship between two serializers.
+- `get_queryset(cond: Dict, **kwargs) -> QuerySet`: Build a queryset from conditions.
+- `get_fetch_fields() -> List[str]`: Return relation fields to prefetch.
+
+**Instance methods:**
+
+- `async create(**kwargs) -> Model`: Insert the serializer's data into the database.
+- `async update(instance: Model, **kwargs) -> Model`: Update an existing model instance.
+- `async retrieve(instance: Model, **kwargs) -> Self` *(classmethod)*: Fetch relations and return serialized instance.
+- `async destroy(instance: Model, **kwargs) -> None` *(classmethod)*: Delete a model instance.
+- `valid_data -> Dict`: The subset of fields that can be written to the database.
+- `get_write_fields() -> List[str]`: Return writable (non-pk, non-generated, non-auto) field names.
+
+### Result
 
 ```python
-# Organize serializers by functionality
-class StudentListSerializer(Serializer):
-    """Lightweight serializer for list display"""
-    class Meta:
-        model = Student
-        include = ["id", "name", "age", "is_active"]
-
-class StudentDetailSerializer(Serializer):
-    """Complete serializer for detail display"""
-    profile: StudentProfileSerializer = None
-    
-    class Meta:
-        model = Student
-        exclude = ["created_at", "updated_at"]
-
-class StudentCreateSerializer(Serializer):
-    """Serializer for creation"""
-    class Meta:
-        model = Student
-        exclude = ["id", "created_at", "updated_at"]
-
-class StudentUpdateSerializer(Serializer):
-    """Serializer for updates"""
-    class Meta:
-        model = Student
-        exclude = ["id", "created_at"]  # Allow updating updated_at
+class Result(BaseModel, Generic[T]):
+    count: int
+    data: List[T]
 ```
 
-Through Unfazed Serializer, you can quickly build powerful, type-safe data serialization and CRUD operation systems. This system perfectly combines Tortoise ORM's database functionality with Pydantic's validation capabilities, providing a solid foundation for building high-quality Web APIs.
+Pagination result returned by `list_from_ctx` and `list_from_queryset`.
+
+### Relation
+
+```python
+class Relation(BaseModel):
+    target: str
+    source_field: str
+    target_field: str
+    relation: Literal["fk", "m2m", "o2o", "bk_fk", "bk_o2o"]
+```
+
+Describes a relationship between two serializers.

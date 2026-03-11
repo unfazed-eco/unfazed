@@ -1,13 +1,13 @@
-Unfazed Command
-===============
+Unfazed 命令
+============
 
-Unfazed provides a CLI framework built on top of [Click](https://click.palletsprojects.com/). It ships with several built-in commands (project scaffolding, shell, database migrations, etc.) and automatically discovers custom commands placed in each app's `commands/` directory. Both sync and async command handlers are supported.
+Unfazed 提供基于 [Click](https://click.palletsprojects.com/) 构建的 CLI 框架。内置多个命令（项目脚手架、shell、数据库迁移等），并自动发现各应用 `commands/` 目录中的自定义命令。支持同步和异步命令处理器。
 
-## Quick Start
+## 快速开始
 
-### 1. Create a command file
+### 1. 创建命令文件
 
-Add a Python file in your app's `commands/` directory. The file name becomes the CLI command name (underscores are replaced with hyphens).
+在应用的 `commands/` 目录下添加 Python 文件。文件名即为 CLI 命令名（下划线会替换为连字符）。
 
 ```
 myapp/
@@ -17,9 +17,9 @@ myapp/
     └── greet.py
 ```
 
-### 2. Write the command
+### 2. 编写命令
 
-Every command file must define a `Command` class that extends `BaseCommand`:
+每个命令文件必须定义一个继承自 `BaseCommand` 的 `Command` 类：
 
 ```python
 # myapp/commands/greet.py
@@ -35,32 +35,32 @@ class Command(BaseCommand):
         print("Hello from Unfazed!")
 ```
 
-### 3. Run it
+### 3. 运行
 
 ```bash
 unfazed-cli greet
 # Hello from Unfazed!
 ```
 
-The command is discovered automatically — no extra registration is needed beyond having the app in `INSTALLED_APPS`.
+命令会被自动发现 —— 除将应用加入 `INSTALLED_APPS` 外无需额外注册。
 
-## Creating Custom Commands
+## 创建自定义命令
 
-### The basics
+### 基础
 
-A command is a `Command` class inside a file under `myapp/commands/`. Unfazed scans this directory at startup and registers every `.py` file whose name does not start with `_`.
+命令是 `myapp/commands/` 下文件中的 `Command` 类。Unfazed 在启动时扫描该目录，注册所有不以 `_` 开头的 `.py` 文件。
 
 ```
 myapp/commands/
 ├── __init__.py
-├── import_data.py      # registered as "import-data"
-├── send_report.py      # registered as "send-report"
-└── _helpers.py         # ignored (starts with _)
+├── import_data.py      # 注册为 "import-data"
+├── send_report.py      # 注册为 "send-report"
+└── _helpers.py         # 忽略（以 _ 开头）
 ```
 
-### Adding arguments
+### 添加参数
 
-Override `add_arguments()` to return a list of Click `Option` objects:
+重写 `add_arguments()` 返回 Click `Option` 对象列表：
 
 ```python
 # myapp/commands/import_data.py
@@ -106,25 +106,25 @@ unfazed-cli import-data --file data.csv --dry-run
 # [DRY RUN] Would import from data.csv
 ```
 
-### Sync vs async handlers
+### 同步与异步处理器
 
-The `handle()` method can be either async or sync. Unfazed detects which one you wrote and runs it accordingly:
+`handle()` 方法可以是异步或同步。Unfazed 会检测你使用的类型并相应执行：
 
 ```python
-# Async handler
+# 异步处理器
 class Command(BaseCommand):
     async def handle(self, **options: t.Any) -> None:
         await some_async_work()
 
-# Sync handler
+# 同步处理器
 class Command(BaseCommand):
     def handle(self, **options: t.Any) -> None:
         some_sync_work()
 ```
 
-### Accessing the Unfazed instance
+### 访问 Unfazed 实例
 
-Every command has access to `self.unfazed` (the application instance) and `self.app_label` (the label of the app the command belongs to):
+每个命令都可访问 `self.unfazed`（应用实例）和 `self.app_label`（命令所属应用的标签）：
 
 ```python
 class Command(BaseCommand):
@@ -133,80 +133,80 @@ class Command(BaseCommand):
         print(f"Debug mode: {self.unfazed.settings.DEBUG}")
 ```
 
-## Built-in Commands
+## 内置命令
 
-### `startproject` — Create a new project
+### `startproject` — 创建新项目
 
-Available without a project context (runs via `unfazed-cli` anywhere).
+无需项目上下文即可使用（可在任意位置通过 `unfazed-cli` 运行）。
 
 ```bash
 unfazed-cli startproject -n myproject
 unfazed-cli startproject -n myproject -l /path/to/parent
 ```
 
-| Flag | Description |
+| 标志 | 描述 |
 |------|-------------|
-| `-n`, `--project_name` | Name of the project. |
-| `-l`, `--location` | Parent directory (defaults to current directory). |
+| `-n`, `--project_name` | 项目名称。 |
+| `-l`, `--location` | 父目录（默认为当前目录）。 |
 
-### `startapp` — Create a new app
+### `startapp` — 创建新应用
 
-Run from inside a project directory:
+在项目目录内运行：
 
 ```bash
 unfazed-cli startapp -n blog
 unfazed-cli startapp -n blog -t standard
 ```
 
-| Flag | Description |
+| 标志 | 描述 |
 |------|-------------|
-| `-n`, `--app_name` | Name of the app (lowercase letters, numbers, underscores only). |
-| `-l`, `--location` | Parent directory (defaults to current directory). |
-| `-t`, `--template` | Template type: `simple` (default) or `standard`. |
+| `-n`, `--app_name` | 应用名称（仅小写字母、数字、下划线）。 |
+| `-l`, `--location` | 父目录（默认为当前目录）。 |
+| `-t`, `--template` | 模板类型：`simple`（默认）或 `standard`。 |
 
-The `simple` template creates flat files (`models.py`, `endpoints.py`, etc.). The `standard` template creates sub-packages (`models/`, `endpoints/`, `serializers/`, etc.).
+`simple` 模板创建扁平文件（`models.py`、`endpoints.py` 等）。`standard` 模板创建子包（`models/`、`endpoints/`、`serializers/` 等）。
 
-### `shell` — Interactive IPython shell
+### `shell` — 交互式 IPython shell
 
-Launches an IPython session with the `unfazed` application instance pre-loaded:
+启动预加载 `unfazed` 应用实例的 IPython 会话：
 
 ```bash
 unfazed-cli shell
 ```
 
-Requires `ipython` to be installed. The shell supports `await` directly.
+需要安装 `ipython`。shell 支持直接使用 `await`。
 
-### `create-superuser` — Create an admin superuser
+### `create-superuser` — 创建管理员超级用户
 
 ```bash
 unfazed-cli create-superuser --email admin@example.com
 ```
 
-| Flag | Description |
+| 标志 | 描述 |
 |------|-------------|
-| `-e`, `--email` | Email address for the superuser. |
+| `-e`, `--email` | 超级用户邮箱。 |
 
-Generates a random password and prints it to stdout. Requires `unfazed.contrib.auth` to be configured.
+生成随机密码并输出到 stdout。需要配置 `unfazed.contrib.auth`。
 
-### `export-openapi` — Export OpenAPI schema
+### `export-openapi` — 导出 OpenAPI 模式
 
 ```bash
 unfazed-cli export-openapi -l ./docs
 ```
 
-| Flag | Description |
+| 标志 | 描述 |
 |------|-------------|
-| `-l`, `--location` | Output directory (defaults to current directory). |
+| `-l`, `--location` | 输出目录（默认为当前目录）。 |
 
-Writes `openapi.yaml` to the specified directory. Requires the `pyyaml` package.
+将 `openapi.yaml` 写入指定目录。需要 `pyyaml` 包。
 
-### Tortoise ORM commands
+### Tortoise ORM 命令
 
-When using Tortoise ORM, additional database migration commands are available. See the [Tortoise ORM](tortoise-orm.md) documentation for details.
+使用 Tortoise ORM 时，会提供额外的数据库迁移命令。详情请参阅 [Tortoise ORM](tortoise-orm.md) 文档。
 
-## Examples
+## 示例
 
-### A data export command with multiple options
+### 带多个选项的数据导出命令
 
 ```python
 # myapp/commands/export_users.py
@@ -256,7 +256,7 @@ class Command(BaseCommand):
 unfazed-cli export-users -o users.json -f json --limit 500
 ```
 
-### A simple sync utility command
+### 简单的同步工具命令
 
 ```python
 # myapp/commands/check_config.py
@@ -284,7 +284,7 @@ unfazed-cli check-config
 # Configuration OK
 ```
 
-## API Reference
+## API 参考
 
 ### BaseCommand
 
@@ -293,18 +293,18 @@ class BaseCommand(click.Command, ABC):
     def __init__(self, unfazed: Unfazed, name: str, app_label: str, ...) -> None
 ```
 
-Abstract base class for all commands. Extends Click's `Command`.
+所有命令的抽象基类。继承自 Click 的 `Command`。
 
-**Attributes:**
+**属性：**
 
-- `help_text: str` — Default help text displayed for `--help`.
-- `unfazed: Unfazed` — The application instance.
-- `app_label: str` — Label of the app this command belongs to.
+- `help_text: str` — `--help` 显示的默认帮助文本。
+- `unfazed: Unfazed` — 应用实例。
+- `app_label: str` — 命令所属应用的标签。
 
-**Methods:**
+**方法：**
 
-- `add_arguments() -> List[click.Option]`: Override to declare CLI options. Returns `[]` by default.
-- `handle(**options: Any) -> Any`: *Abstract.* The command logic. Can be `async def` or `def`.
+- `add_arguments() -> List[click.Option]`：重写以声明 CLI 选项。默认返回 `[]`。
+- `handle(**options: Any) -> Any`：*抽象。* 命令逻辑。可为 `async def` 或 `def`。
 
 ### CommandCenter
 
@@ -313,13 +313,13 @@ class CommandCenter(click.Group):
     def __init__(self, unfazed: Unfazed, app_center: AppCenter, name: str) -> None
 ```
 
-Manages all project-level commands. Loads internal commands (startapp, shell, create-superuser, export-openapi) and commands from every installed app.
+管理所有项目级命令。加载内部命令（startapp、shell、create-superuser、export-openapi）及每个已安装应用的命令。
 
-**Methods:**
+**方法：**
 
-- `async setup() -> None`: Discovers and loads all commands.
-- `load_command(command: Command) -> None`: Loads a single command into the group. Raises `TypeError` if the class is not a `BaseCommand` subclass.
-- `list_internal_command() -> List[Command]`: Returns internal framework commands (excludes `startproject`).
+- `async setup() -> None`：发现并加载所有命令。
+- `load_command(command: Command) -> None`：将单个命令加载到组中。若类不是 `BaseCommand` 子类则抛出 `TypeError`。
+- `list_internal_command() -> List[Command]`：返回内部框架命令（不含 `startproject`）。
 
 ### CliCommandCenter
 
@@ -328,9 +328,9 @@ class CliCommandCenter(click.Group):
     def __init__(self, unfazed: Unfazed) -> None
 ```
 
-Lightweight command group used outside of a project context. Only loads the `startproject` command.
+在项目上下文外使用的轻量命令组。仅加载 `startproject` 命令。
 
-**Methods:**
+**方法：**
 
-- `setup() -> None`: Loads CLI-only commands.
-- `list_cli_command() -> List[Command]`: Returns the list of CLI commands.
+- `setup() -> None`：加载仅 CLI 命令。
+- `list_cli_command() -> List[Command]`：返回 CLI 命令列表。

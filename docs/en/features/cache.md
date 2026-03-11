@@ -1,523 +1,473 @@
-# Unfazed Cache System
+Unfazed Cache
+=============
 
-Unfazed provides a complete caching solution that supports multiple cache backends, including in-process memory cache and Redis cache. The cache system is flexibly designed and supports advanced features such as serialization, compression, key prefixes, and version control.
-
-For more advanced redis client, see [unfazed-redis](https://github.com/unfazed-eco/unfazed-redis)
-
-
-For redis client with monitoring, see [unfazed-prometheus](https://github.com/unfazed-eco/unfazed-prometheus)
-
-
-
-## Core Features
-
-- **Multiple Backend Support**: In-process memory cache and Redis cache
-- **Async Operations**: Fully async API design, supports high concurrency
-- **Serialization Support**: Automatic serialization of complex Python objects
-- **Compression Support**: Optional zlib compression to reduce storage space
-- **Key Management**: Support for key prefixes, version control, automatic expiration
-- **Decorator Support**: `@cached` decorator simplifies cache usage
-
-## Cache Handler
-
-The Unfazed cache system uses the `CacheHandler` class to manage multiple cache backends, providing a unified interface.
-
-### Core Components
-
-- **caches**: Global cache handler instance, manages all configured cache backends
-- **CacheHandler**: Inherits from `Storage[CacheBackend]`, provides cache lifecycle management
-
-
-### Usage
-
-```python
-from unfazed.cache import caches
-
-# Get default cache
-default_cache = caches["default"]
-
-# Get specific cache
-redis_cache = caches["redis"]
-
-```
+Unfazed ships with a pluggable caching framework that lets you store and retrieve data through a simple async API. You can configure multiple named cache backends — local memory for development, Redis for production — and switch between them with a single setting. A `@cached` decorator is also provided to cache function return values automatically.
 
 ## Quick Start
 
-### 1. Basic Configuration
+### 1. Add a cache backend to settings
 
 ```python
 # settings.py
 UNFAZED_SETTINGS = {
+    "PROJECT_NAME": "myproject",
     "CACHE": {
         "default": {
             "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
             "LOCATION": "default_cache",
             "OPTIONS": {
                 "MAX_ENTRIES": 1000,
-                "PREFIX": "default",
-                "VERSION": 1,
             },
         },
-        "redis": {
-            "BACKEND": "unfazed.cache.backends.redis.defaultclient.DefaultBackend",
-            "LOCATION": "redis://localhost:6379/0",
-            "OPTIONS": {
-                "PREFIX": "app_cache",
-                "MAX_CONNECTIONS": 10,
-                "HEALTH_CHECK_INTERVAL": 30,
-            },
-        },
-        "redis_serialized": {
-            "BACKEND": "unfazed.cache.backends.redis.serializedclient.SerializerBackend",
-            "LOCATION": "redis://localhost:6379/0",
-            "OPTIONS": {
-                "PREFIX": "serialized_cache",
-                "SERIALIZER": "unfazed.cache.serializers.pickle.PickleSerializer",
-                "COMPRESSOR": "unfazed.cache.compressors.zlib.ZlibCompressor",
-            },
-        },
-    }
+    },
+    "LIFESPAN": [
+        "unfazed.cache.lifespan.CacheClear",
+    ],
 }
 ```
 
-### 2. Basic Usage
+### 2. Use the cache
 
 ```python
 from unfazed.cache import caches
 
-async def basic_usage():
-    # Get cache instance
-    cache = caches["default"]
-    
-    # Set cache
-    await cache.set("user:1", "value", timeout=3600)
-    
-    # Get cache
-    user = await cache.get("user:1")
-    
-    # Check if key exists
-    exists = await cache.has_key("user:1")
-    
-    # Delete cache
-    await cache.delete("user:1")
-    
-    # Clear all cache
-    await cache.clear()
+cache = caches["default"]
+
+await cache.set("greeting", "hello", timeout=60)
+value = await cache.get("greeting")  # "hello"
 ```
 
-## In-Process Memory Cache
+## Configuration
 
-In-process memory cache (`LocMemCache`) is suitable for single-process applications, providing high-performance memory storage.
-
-### Features
-
-- **Thread Safe**: Uses asyncio Lock to ensure concurrency safety
-- **Automatic Cleanup**: Supports TTL and maximum entry limits
-- **LRU Strategy**: Uses OrderedDict to implement LRU cache eviction
-- **Version Control**: Supports key version management
-- **Key Prefix**: Supports key name prefix isolation
-
-### Configuration Options
+The `CACHE` setting is a dictionary where each key is a cache alias (e.g. `"default"`, `"sessions"`) and each value describes the backend:
 
 ```python
+"CACHE": {
+    "<alias>": {
+        "BACKEND": "<dotted.path.to.BackendClass>",
+        "LOCATION": "<backend-specific location>",
+        "OPTIONS": { ... },
+    },
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `BACKEND` | Dotted import path to the cache backend class. |
+| `LOCATION` | Backend-specific location. For LocMem: a unique name string. For Redis: a connection URL like `redis://localhost:6379/0`. |
+| `OPTIONS` | Dict of backend-specific options (see each backend below). |
+
+You can define as many named caches as you need and access them by alias:
+
+```python
+default = caches["default"]
+sessions = caches["sessions"]
+```
+
+## Built-in Backends
+
+### LocMemCache — Local Memory
+
+A simple in-process cache backed by an `OrderedDict`. Good for development and single-process deployments. Data is lost when the process restarts.
+
+**Backend path:** `unfazed.cache.backends.locmem.LocMemCache`
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `PREFIX` | `str` | location value | Key prefix for namespace isolation. |
+| `VERSION` | `int` | `None` | Default version appended to keys. |
+| `MAX_ENTRIES` | `int` | `300` | Maximum number of entries. Oldest entries are evicted when full. |
+
+**Configuration example:**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+        "LOCATION": "my_cache",
+        "OPTIONS": {
+            "MAX_ENTRIES": 500,
+            "PREFIX": "myapp",
+        },
+    },
+}
+```
+
+### DefaultBackend — Raw Redis
+
+A thin wrapper around `redis.asyncio.Redis` that adds key prefixing and connection management. All standard Redis commands are available through attribute proxying — you call Redis methods directly on the backend instance.
+
+**Backend path:** `unfazed.cache.backends.redis.DefaultBackend`
+
+**Configuration example:**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.redis.DefaultBackend",
+        "LOCATION": "redis://localhost:6379/0",
+        "OPTIONS": {
+            "PREFIX": "myapp",
+            "max_connections": 20,
+            "decode_responses": True,
+        },
+    },
+}
+```
+
+### SerializerBackend — Redis with Serialization
+
+Extends Redis with automatic serialization and optional compression, so you can store complex Python objects (dicts, lists, dataclasses, etc.) transparently. Uses Pickle + Zlib by default.
+
+**Backend path:** `unfazed.cache.backends.redis.SerializerBackend`
+
+**Configuration example:**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
+        "LOCATION": "redis://localhost:6379/0",
+        "OPTIONS": {
+            "PREFIX": "myapp",
+            "SERIALIZER": "unfazed.cache.serializers.pickle.PickleSerializer",
+            "COMPRESSOR": "unfazed.cache.compressors.zlib.ZlibCompressor",
+        },
+    },
+}
+```
+
+**Redis OPTIONS reference** (applies to both `DefaultBackend` and `SerializerBackend`):
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `PREFIX` | `str` | `None` | Key prefix for namespace isolation. |
+| `SERIALIZER` | `str` | `PickleSerializer` | Dotted path to serializer class (SerializerBackend only). |
+| `COMPRESSOR` | `str` | `ZlibCompressor` | Dotted path to compressor class (SerializerBackend only). Requires a serializer. |
+| `max_connections` | `int` | `10` | Maximum connections in the pool. |
+| `decode_responses` | `bool` | `False` | Decode Redis bytes to strings. Not supported by SerializerBackend. |
+| `socket_timeout` | `int` | `None` | Socket timeout in seconds. |
+| `socket_connect_timeout` | `int` | `None` | Connection timeout in seconds. |
+| `health_check_interval` | `int` | `30` | Seconds between health checks. |
+| `retry_on_timeout` | `bool` | `False` | Retry on timeout errors. |
+| `ssl` | `bool` | `False` | Enable SSL/TLS. |
+
+## Examples
+
+### LocMem: Basic Operations
+
+```python
+from unfazed.cache import caches
+
+cache = caches["default"]
+
+# Set a value with a 5-minute TTL
+await cache.set("user:1:name", "Alice", timeout=300)
+
+# Get a value (returns None if missing or expired)
+name = await cache.get("user:1:name")
+
+# Get with a fallback default
+name = await cache.get("user:1:name", default="Anonymous")
+
+# Check existence
+if await cache.has_key("user:1:name"):
+    print("Key exists")
+
+# Delete a key
+await cache.delete("user:1:name")
+
+# Counters
+await cache.set("hits", 0)
+await cache.incr("hits")      # 1
+await cache.incr("hits")      # 2
+await cache.decr("hits")      # 1
+
+# Clear everything
+await cache.clear()
+```
+
+### Redis DefaultBackend: Full Redis API
+
+Because `DefaultBackend` proxies all attribute access to the underlying `redis.asyncio.Redis` client, you can use any Redis command directly. Just remember to call `make_key()` for prefix support:
+
+```python
+from unfazed.cache import caches
+
+cache = caches["default"]  # a DefaultBackend instance
+
+# String operations
+await cache.set(cache.make_key("token"), "abc123", ex=3600)
+token = await cache.get(cache.make_key("token"))
+
+# Hash operations
+await cache.hset(cache.make_key("user:1"), mapping={"name": "Alice", "role": "admin"})
+user = await cache.hgetall(cache.make_key("user:1"))
+
+# List operations
+await cache.rpush(cache.make_key("queue"), "task1", "task2")
+task = await cache.lpop(cache.make_key("queue"))
+
+# Set operations
+await cache.sadd(cache.make_key("tags"), "python", "async")
+tags = await cache.smembers(cache.make_key("tags"))
+```
+
+### Redis SerializerBackend: Storing Python Objects
+
+`SerializerBackend` wraps string commands with automatic serialization, so you can store and retrieve Python objects directly:
+
+```python
+from unfazed.cache import caches
+
+cache = caches["default"]  # a SerializerBackend instance
+
+# Store a dict — automatically serialized + compressed
+await cache.set("user:1", {"name": "Alice", "roles": ["admin", "editor"]}, ex=3600)
+
+# Retrieve it — automatically decompressed + deserialized
+user = await cache.get("user:1")  # {"name": "Alice", "roles": ["admin", "editor"]}
+
+# Integer/float values pass through without serialization
+await cache.set("counter", 0)
+await cache.incr("counter")   # 1
+await cache.decr("counter")   # 0
+
+# Bulk operations
+await cache.mset({"key1": {"a": 1}, "key2": [1, 2, 3]})
+values = await cache.mget(["key1", "key2"])
+
+# Check TTL and existence
+await cache.set("temp", "data", ex=60)
+ttl = await cache.ttl("temp")       # seconds remaining
+exists = await cache.exists("temp")  # 1 if exists
+```
+
+### Multi-Backend Setup
+
+A typical production configuration uses LocMem for ephemeral data and Redis for shared state:
+
+```python
+# settings.py
 UNFAZED_SETTINGS = {
     "CACHE": {
         "default": {
+            "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
+            "LOCATION": "redis://redis-host:6379/0",
+            "OPTIONS": {
+                "PREFIX": "myapp",
+                "max_connections": 20,
+            },
+        },
+        "local": {
             "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
-            "LOCATION": "app_cache",  # Unique identifier for cache instance
-            "OPTIONS": {
-                "PREFIX": "app",      # Key prefix
-                "VERSION": 1,         # Default version number
-                "MAX_ENTRIES": 1000,  # Maximum cache entries
-            },
+            "LOCATION": "local_cache",
+            "OPTIONS": {"MAX_ENTRIES": 500},
         },
-    }
+    },
+    "LIFESPAN": ["unfazed.cache.lifespan.CacheClear"],
 }
 ```
 
-### Advanced Usage
-
 ```python
 from unfazed.cache import caches
-from unfazed.cache.backends.locmem import LocMemCache
 
-async def advanced_locmem_usage():
-    cache: LocMemCache = caches["default"]
-    
-    # Counter operations
-    await cache.set("counter", 0)
-    await cache.incr("counter")      # Increment by 1
-    await cache.incr("counter", 5)   # Increment by 5
-    await cache.decr("counter", 2)   # Decrement by 2
-    
-    # Version control
-    await cache.set("key", "value", version=1)
-    await cache.set("key", "new_value", version=2)
-    
-    # Check if key exists
-    if await cache.has_key("key"):
-        value = await cache.get("key")
+redis_cache = caches["default"]
+local_cache = caches["local"]
 ```
 
+## The `@cached` Decorator
 
-## Redis Cache
-
-Unfazed provides two Redis cache backends: native client and serialized client.
-
-### Native Redis Client
-
-The native Redis client (`DefaultBackend`) completely inherits from `redis-py`'s `Redis` class, supporting all Redis commands.
-
-#### Features
-
-- **Complete Redis Support**: Supports all Redis commands and features
-- **Connection Pool Management**: Automatic connection pool and health checks
-- **SSL/TLS Support**: Supports secure connections
-- **Retry Mechanism**: Automatic retry and error handling
-- **Key Prefix**: Manual key prefix management
-
-#### Configuration
+The `@cached` decorator caches function return values automatically. It works with both async and sync functions.
 
 ```python
-UNFAZED_SETTINGS = {
-    "CACHE": {
-        "redis": {
-            "BACKEND": "unfazed.cache.backends.redis.defaultclient.DefaultBackend",
-            "LOCATION": "redis://username:password@localhost:6379/0",
-            "OPTIONS": {
-                "PREFIX": "app_cache",
-                "MAX_CONNECTIONS": 20,
-                "HEALTH_CHECK_INTERVAL": 30,
-                "SOCKET_TIMEOUT": 5.0,
-                "SOCKET_CONNECT_TIMEOUT": 2.0,
-                "RETRY_ON_TIMEOUT": True,
-                "RETRY_ON_ERROR": True,
-                "SSL": False,
-            },
-        },
-    }
-}
+from unfazed.cache import cached
+
+
+@cached(timeout=300)
+async def get_user_profile(user_id: int) -> dict:
+    # expensive database query
+    ...
 ```
 
-#### Usage Example
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `using` | `str` | `"default"` | Cache alias to use. |
+| `timeout` | `int` | `60` | TTL in seconds. |
+| `include` | `List[str]` | `None` | Parameter names to include in the cache key. If `None`, all keyword arguments are used. |
+
+**Cache key format:** `module_name:function_name:param1_value:param2_value`
+
+**Selecting key parameters** — use `include` when some arguments shouldn't affect the cache key:
 
 ```python
-from unfazed.cache import caches
-from unfazed.cache.backends.redis.defaultclient import DefaultBackend
-
-async def redis_usage():
-    cache: DefaultBackend = caches["redis"]
-    
-    # Basic operations
-    await cache.set("key", "value")
-    value = await cache.get("key")
-    
-    # Use key prefix
-    prefixed_key = cache.make_key("user:1")
-    await cache.set(prefixed_key, {"name": "John"})
-    
-    # Redis specific features
-    await cache.client.hset("user:1", "name", "Jane")
-    await cache.client.hset("user:1", "age", "30")
-    user_data = await cache.client.hgetall("user:1")
-    
-    # List operations
-    await cache.client.lpush("queue", "item1")
-    await cache.client.lpush("queue", "item2")
-    item = await cache.client.rpop("queue")
-    
-    # Set operations
-    await cache.client.sadd("users", "user1", "user2")
-    users = await cache.client.smembers("users")
-    
-    # Sorted sets
-    await cache.client.zadd("scores", {"alice": 100, "bob": 90})
-    top_scores = await cache.client.zrevrange("scores", 0, 2, withscores=True)
+@cached(timeout=120, include=["user_id"])
+async def get_dashboard(user_id: int, request_time: str) -> dict:
+    # Only user_id is part of the cache key; request_time is ignored
+    ...
 ```
 
-#### Notes
-
-- **Key Isolation**: Manual key prefix management needed in production to avoid key conflicts
-- **Serialization**: Only supports string and byte data, complex objects need manual serialization
-- **Connection Management**: Supports async context manager for automatic connection management
-
-### Serialized Redis Client
-
-The serialized Redis client (`SerializerBackend`) is a wrapper around the native client, providing automatic serialization and compression features.
-
-#### Features
-
-- **Automatic Serialization**: Support for storing Python objects (dict, list, set, tuple, etc.)
-- **Compression Support**: Optional zlib compression to reduce storage space
-- **Type Preservation**: Maintains original data types
-- **Key Prefix**: Automatic key prefix management
-- **Counter Support**: Support for incr/decr operations
-
-#### Configuration
+**Using a specific backend:**
 
 ```python
-UNFAZED_SETTINGS = {
-    "CACHE": {
-        "redis_serialized": {
-            "BACKEND": "unfazed.cache.backends.redis.serializedclient.SerializerBackend",
-            "LOCATION": "redis://localhost:6379/0",
-            "OPTIONS": {
-                "PREFIX": "app_cache",
-                "SERIALIZER": "unfazed.cache.serializers.pickle.PickleSerializer",
-                "COMPRESSOR": "unfazed.cache.compressors.zlib.ZlibCompressor",
-                "MAX_CONNECTIONS": 10,
-                "HEALTH_CHECK_INTERVAL": 30,
-            },
-        },
-    }
-}
+@cached(using="local", timeout=60)
+async def get_config(key: str) -> str:
+    ...
 ```
 
-#### Usage Example
+**Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result:
 
 ```python
-from unfazed.cache import caches
-from unfazed.cache.backends.redis.serializedclient import SerializerBackend
-
-async def serialized_redis_usage():
-    cache: SerializerBackend = caches["redis_serialized"]
-    
-    # Store complex objects
-    user_data = {
-        "name": "John",
-        "age": 28,
-        "hobbies": ["reading", "swimming", "programming"],
-        "profile": {
-            "email": "john@example.com",
-            "phone": "13800138000"
-        }
-    }
-    
-    await cache.set("user:1", user_data, timeout=3600)
-    
-    # Store lists
-    await cache.set("numbers", [1, 2, 3, 4, 5])
-    
-    # Store sets
-    await cache.set("tags", {"python", "fastapi", "redis"})
-    
-    # Counter operations
-    await cache.set("visits", 0)
-    await cache.incr("visits")
-    await cache.incr("visits", 5)
-    
-    # Get data
-    user = await cache.get("user:1")
-    numbers = await cache.get("numbers")
-    tags = await cache.get("tags")
-    visits = await cache.get("visits")
-    
-    # Check if key exists
-    if await cache.has_key("user:1"):
-        print("User data exists")
-    
-    # Delete key
-    await cache.delete("user:1")
+result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-#### Notes
+**Important:** the decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
 
-- **Concurrency Safety**: Recommend using with locking mechanisms in production
-- **Serialization Limitations**: Doesn't support certain special objects (like file handles, network connections)
-- **Performance Considerations**: Serialization and compression add CPU overhead
-- **Storage Space**: Compression can significantly reduce storage space, especially for repetitive data
+## Custom Serializers & Compressors
 
-## Serialization and Compression
+You can replace the default Pickle/Zlib implementations by writing classes that follow the `SerializerBase` or `CompressorBase` protocols.
 
-### Serializers
-
-Unfazed provides an extensible serializer interface, defaulting to Pickle serializer.
-
-#### Built-in Serializers
+**Custom serializer:**
 
 ```python
-# Pickle serializer (default)
-from unfazed.cache.serializers.pickle import PickleSerializer
-
-# Custom serializer
-from unfazed.protocol import SerializerBase
+# myapp/cache_serializer.py
 import json
 
-class JSONSerializer(SerializerBase):
-    def dumps(self, value):
-        return json.dumps(value).encode('utf-8')
-    
-    def loads(self, value):
-        return json.loads(value.decode('utf-8'))
+
+class JsonSerializer:
+    def dumps(self, value: any) -> bytes:
+        return json.dumps(value).encode("utf-8")
+
+    def loads(self, value: bytes) -> any:
+        return json.loads(value.decode("utf-8"))
 ```
 
-#### Configuring Custom Serializers
+**Custom compressor:**
 
 ```python
-UNFAZED_SETTINGS = {
-    "CACHE": {
-        "custom": {
-            "BACKEND": "unfazed.cache.backends.redis.serializedclient.SerializerBackend",
-            "LOCATION": "redis://localhost:6379/0",
-            "OPTIONS": {
-                "SERIALIZER": "myapp.serializers.JSONSerializer",
-                "PREFIX": "custom_cache",
-            },
+# myapp/cache_compressor.py
+import lzma
+
+
+class LzmaCompressor:
+    def compress(self, value: bytes) -> bytes:
+        return lzma.compress(value)
+
+    def decompress(self, value: bytes) -> bytes:
+        return lzma.decompress(value)
+```
+
+**Register them in settings:**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
+        "LOCATION": "redis://localhost:6379/0",
+        "OPTIONS": {
+            "SERIALIZER": "myapp.cache_serializer.JsonSerializer",
+            "COMPRESSOR": "myapp.cache_compressor.LzmaCompressor",
         },
-    }
+    },
 }
 ```
 
-### Compressors
+## Shutdown Cleanup
 
-Unfazed provides an extensible compressor interface, defaulting to zlib compressor.
-
-#### Built-in Compressors
+Add the built-in `CacheClear` lifespan to your settings to ensure all cache connections are properly closed when the server shuts down:
 
 ```python
-# Zlib compressor (default)
-from unfazed.cache.compressors.zlib import ZlibCompressor
-
-# Custom compressor
-from unfazed.protocol import CompressorBase
-import lz4
-
-class LZ4Compressor(CompressorBase):
-    def compress(self, value):
-        return lz4.compress(value)
-    
-    def decompress(self, value):
-        return lz4.decompress(value)
+"LIFESPAN": [
+    "unfazed.cache.lifespan.CacheClear",
+]
 ```
 
-#### Configuring Custom Compressors
+This calls `await caches.close()` during the shutdown phase, which closes every registered backend.
+
+## API Reference
+
+### CacheHandler (singleton: `caches`)
 
 ```python
-UNFAZED_SETTINGS = {
-    "CACHE": {
-        "compressed": {
-            "BACKEND": "unfazed.cache.backends.redis.serializedclient.SerializerBackend",
-            "LOCATION": "redis://localhost:6379/0",
-            "OPTIONS": {
-                "SERIALIZER": "unfazed.cache.serializers.pickle.PickleSerializer",
-                "COMPRESSOR": "myapp.compressors.LZ4Compressor",
-                "PREFIX": "compressed_cache",
-            },
-        },
-    }
-}
+class CacheHandler(Storage[CacheBackend])
 ```
 
-## Cache Decorators
+Global registry of cache backends. Access it via the `caches` singleton.
 
-Unfazed provides a powerful `@cached` decorator that supports both async and sync function caching.
+- `caches["alias"]` — get a backend by alias (`KeyError` if missing).
+- `caches["alias"] = backend` — register a backend.
+- `del caches["alias"]` — remove a backend.
+- `"alias" in caches` — check existence.
+- `async close() -> None`: Close all registered backends.
 
-### Basic Usage
+### LocMemCache
 
 ```python
-from unfazed.cache.decorators import cached
-
-# Basic caching
-@cached(timeout=300)
-async def get_user_info(user_id: int) -> dict:
-    # Simulate database query
-    return {"user_id": user_id, "name": "John", "age": 25}
-
-# Use specific cache backend
-@cached(using="redis", timeout=600)
-async def get_product_info(product_id: int) -> dict:
-    return {"product_id": product_id, "name": "Product A", "price": 99.99}
-
-# Specify cache key parameters
-@cached(timeout=1800, include=["user_id", "category"])
-async def get_user_preferences(user_id: int, category: str, page: int = 1) -> list:
-    return [{"pref_id": 1, "category": category, "user_id": user_id}]
+class LocMemCache(location: str, options: Dict[str, Any] | None = None)
 ```
 
-### Advanced Usage
+In-process cache with automatic eviction.
+
+- `async get(key: str, default: Any = None, version: int | None = None) -> Any`
+- `async set(key: str, value: Any, timeout: float | None = None, version: int | None = None) -> None`
+- `async delete(key: str, version: int | None = None) -> bool`
+- `async has_key(key: str, version: int | None = None) -> bool`
+- `async incr(key: str, delta: int = 1, version: int | None = None) -> int`
+- `async decr(key: str, delta: int = -1, version: int | None = None) -> int`
+- `async clear() -> None`
+- `async close() -> None`
+- `make_key(key: str, version: int | None = None) -> str`
+
+### DefaultBackend
 
 ```python
-from unfazed.cache.decorators import cached
-
-# Multi-layer cache strategy
-@cached(using="local_memory", timeout=60)      # Local cache 1 minute
-@cached(using="redis", timeout=3600)           # Redis cache 1 hour
-async def get_expensive_data(key: str) -> dict:
-    # Simulate expensive computation or database query
-    return {"key": key, "data": "expensive_result", "timestamp": time.time()}
-
-# Conditional caching
-@cached(timeout=300)
-async def get_conditional_data(user_id: int, force_refresh: bool = False) -> dict:
-    if force_refresh:
-        # Force cache refresh
-        return await get_conditional_data(user_id, force_update=True)
-    
-    return {"user_id": user_id, "data": "cached_result"}
-
-# Custom cache keys
-@cached(timeout=600, include=["user_id", "role"])
-async def get_user_permissions(user_id: int, role: str, context: str = "default") -> list:
-    # context parameter won't affect cache key
-    return [f"permission_{role}_{context}"]
+class DefaultBackend(location: str, options: Dict[str, Any] | None = None)
 ```
 
-### Decorator Features
+Raw Redis backend. Proxies all Redis commands through `__getattr__`, so any `redis.asyncio.Redis` method is available directly.
 
-- **Async Support**: Full support for async functions
-- **Sync Support**: Automatically wraps sync functions as async (using `run_in_threadpool`)
-- **Parameter Filtering**: Option to select specific parameters as cache keys
-- **Force Update**: Support `force_update=True` to bypass cache
-- **Key Generation**: Automatically generate cache keys based on function signatures (format: `module:function_name:param1_value:param2_value`)
-- **Error Handling**: Graceful handling of cache errors
-- **Warning Prompts**: Issue warnings for positional argument usage, recommend using keyword arguments
+- `make_key(key: str) -> str`: Prepend the configured prefix.
+- `async close() -> None`: Close the Redis connection.
+- Supports `async with` context manager.
 
-## Best Practices
-
-### 1. Cache Strategy Design
+### SerializerBackend
 
 ```python
-# Layered cache strategy
-@cached(using="local_memory", timeout=30)    # Hot data local cache
-@cached(using="redis", timeout=3600)         # Stable data Redis cache
-async def get_user_profile(user_id: int) -> dict:
-    return await fetch_user_from_database(user_id)
-
-# Cache prewarming
-async def warm_up_cache():
-    user_ids = [1, 2, 3, 4, 5]
-    for user_id in user_ids:
-        await get_user_profile(user_id)
+class SerializerBackend(location: str, options: Dict[str, Any] | None = None)
 ```
 
+Redis backend with transparent serialization and compression.
 
-### 2. Performance Optimization
+**String commands** (serialized): `get`, `set`, `getdel`, `getex`, `getset`, `mget`, `mset`, `msetnx`, `setex`, `setnx`, `psetex`.
+
+**Numeric commands** (pass-through): `incr`, `incrby`, `incrbyfloat`, `decr`, `decrby`.
+
+**General commands**: `exists`, `expire`, `touch`, `ttl`, `delete`, `flushdb`.
+
+- `make_key(key: str) -> str`: Prepend the configured prefix.
+- `encode(value: Any) -> int | float | bytes`: Serialize and optionally compress a value.
+- `decode(value: bytes | None) -> Any`: Decompress and deserialize a value.
+- `async close() -> None`: Close the Redis connection.
+- Supports `async with` context manager.
+
+### cached
 
 ```python
-# Batch operations
-async def batch_cache_operations():
-    cache = caches["redis"]
-    
-    # Batch set
-    pipeline = cache.client.pipeline()
-    for i in range(100):
-        pipeline.set(f"key_{i}", f"value_{i}")
-    await pipeline.execute()
-    
-    # Batch get
-    keys = [f"key_{i}" for i in range(100)]
-    values = await cache.client.mget(keys)
-
-# Async concurrency
-import asyncio
-
-async def concurrent_cache_operations():
-    cache = caches["default"]
-    
-    # Concurrent set multiple keys
-    tasks = [
-        cache.set(f"key_{i}", f"value_{i}")
-        for i in range(10)
-    ]
-    await asyncio.gather(*tasks)
+def cached(using: str = "default", timeout: int = 60, include: List[str] | None = None) -> Callable
 ```
+
+Decorator that caches function return values. Works with both async and sync functions.
+
+### CacheClear
+
+```python
+class CacheClear(BaseLifeSpan)
+```
+
+Lifespan hook that calls `await caches.close()` on shutdown.
+
+- `async on_shutdown() -> None`: Closes all cache backends.

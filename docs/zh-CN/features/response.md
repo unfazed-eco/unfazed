@@ -1,9 +1,9 @@
-Unfazed HTTP Responses
-======================
+Unfazed HTTP 响应
+=================
 
-Unfazed provides a family of response classes built on Starlette's `Response`. Each class targets a different content type — plain text, HTML, JSON, redirects, streaming, and file downloads with range-request support. All responses are ASGI callables and can be returned directly from endpoints.
+Unfazed 提供一系列基于 Starlette `Response` 的响应类。每个类对应不同的内容类型 — 纯文本、HTML、JSON、重定向、流式传输以及支持范围请求的文件下载。所有响应都是 ASGI 可调用对象，可直接从 endpoint 返回。
 
-## Quick Start
+## 快速开始
 
 ```python
 from unfazed.http import HttpRequest, JsonResponse
@@ -13,11 +13,11 @@ async def get_user(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"id": 1, "name": "Alice"}, status_code=200)
 ```
 
-## Response Types
+## 响应类型
 
-### HttpResponse — Plain Text
+### HttpResponse — 纯文本
 
-The base response class. Sends `text/plain` content by default.
+基础响应类。默认发送 `text/plain` 内容。
 
 ```python
 from unfazed.http import HttpResponse
@@ -28,7 +28,7 @@ async def hello(request: HttpRequest) -> HttpResponse:
 
 ### PlainTextResponse
 
-Alias for `HttpResponse` with `text/plain` media type. Functionally identical.
+`HttpResponse` 的别名，媒体类型为 `text/plain`。功能相同。
 
 ```python
 from unfazed.http import PlainTextResponse
@@ -39,7 +39,7 @@ async def health(request: HttpRequest) -> PlainTextResponse:
 
 ### HtmlResponse
 
-Sends `text/html` content.
+发送 `text/html` 内容。
 
 ```python
 from unfazed.http import HtmlResponse
@@ -50,7 +50,7 @@ async def page(request: HttpRequest) -> HtmlResponse:
 
 ### JsonResponse
 
-Sends `application/json` content. Accepts dicts, lists, and Pydantic models. Uses `orjson` for serialization.
+发送 `application/json` 内容。接受 dict、list 和 Pydantic 模型。使用 `orjson` 进行序列化。
 
 ```python
 from pydantic import BaseModel
@@ -63,22 +63,22 @@ class User(BaseModel):
 
 
 async def get_user(request: HttpRequest) -> JsonResponse:
-    # From a dict
+    # 从 dict
     return JsonResponse({"name": "Alice", "age": 30})
 
-    # From a list
+    # 从 list
     return JsonResponse([1, 2, 3])
 
-    # From a Pydantic model
+    # 从 Pydantic 模型
     user = User(name="Alice", age=30)
     return JsonResponse(user)
 ```
 
-Raises `ValueError` if the content is not a dict, list, or Pydantic model.
+若内容不是 dict、list 或 Pydantic 模型，则抛出 `ValueError`。
 
 ### RedirectResponse
 
-Sends a redirect with a `Location` header. Requires a fully qualified URL (with scheme and host).
+发送带有 `Location` 头的重定向。需要完整 URL（包含协议和主机）。
 
 ```python
 from unfazed.http import RedirectResponse
@@ -86,15 +86,15 @@ from unfazed.http import RedirectResponse
 async def go_home(request: HttpRequest) -> RedirectResponse:
     return RedirectResponse("https://example.com")
 
-    # Permanent redirect
+    # 永久重定向
     return RedirectResponse("https://example.com/new", status_code=301)
 ```
 
-Raises `ValueError` if the URL is missing a scheme or host (e.g. `"/relative/path"`).
+若 URL 缺少协议或主机（如 `"/relative/path"`），则抛出 `ValueError`。
 
 ### StreamingResponse
 
-Streams content from a sync or async iterable. Useful for large payloads or real-time data.
+从同步或异步可迭代对象流式传输内容。适用于大负载或实时数据。
 
 ```python
 from unfazed.http import StreamingResponse
@@ -107,11 +107,11 @@ async def stream_data(request: HttpRequest) -> StreamingResponse:
     return StreamingResponse(generate(), media_type="text/plain")
 ```
 
-Sync generators work too — they are automatically wrapped in a thread pool.
+同步生成器也可用 — 会自动在线程池中包装。
 
 ### FileResponse
 
-Streams a file with support for HTTP range requests (resumable downloads). Sets `Content-Disposition`, `ETag`, `Last-Modified`, and `Accept-Ranges` headers automatically.
+流式传输文件，支持 HTTP 范围请求（可断点续传）。自动设置 `Content-Disposition`、`ETag`、`Last-Modified` 和 `Accept-Ranges` 头。
 
 ```python
 from unfazed.http import FileResponse
@@ -120,26 +120,26 @@ async def download(request: HttpRequest) -> FileResponse:
     return FileResponse("/path/to/report.pdf", filename="report.pdf")
 ```
 
-Range request headers (`Range`, `If-Range`) are handled transparently:
-- Full file: `200 OK`
-- Partial content: `206 Partial Content`
-- Invalid range: `416 Range Not Satisfiable`
+范围请求头（`Range`、`If-Range`）会被透明处理：
+- 完整文件：`200 OK`
+- 部分内容：`206 Partial Content`
+- 无效范围：`416 Range Not Satisfiable`
 
-## Common Parameters
+## 通用参数
 
-All response classes accept these constructor arguments:
+所有响应类都接受以下构造函数参数：
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `content` | varies | `None` | Response body. |
-| `status_code` | `int` | `200` | HTTP status code. |
-| `headers` | `Mapping[str, str]` | `None` | Additional HTTP headers. |
-| `media_type` | `str` | class default | Content-Type header value. |
-| `background` | `BackgroundTask` | `None` | Task to run after the response is sent. |
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `content` | varies | `None` | 响应体。 |
+| `status_code` | `int` | `200` | HTTP 状态码。 |
+| `headers` | `Mapping[str, str]` | `None` | 额外的 HTTP headers。 |
+| `media_type` | `str` | 类默认值 | Content-Type 头的值。 |
+| `background` | `BackgroundTask` | `None` | 响应发送后执行的任务。 |
 
-### Background Tasks
+### 后台任务
 
-Run work after the response has been sent to the client:
+在响应发送给客户端后执行工作：
 
 ```python
 from starlette.background import BackgroundTask
@@ -147,7 +147,7 @@ from unfazed.http import JsonResponse
 
 
 async def send_notification(user_id: int) -> None:
-    # send email, push notification, etc.
+    # 发送邮件、推送通知等
     ...
 
 
@@ -156,7 +156,7 @@ async def create_user(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"id": 42}, background=task)
 ```
 
-## API Reference
+## API 参考
 
 ### HttpResponse
 
@@ -171,7 +171,7 @@ class HttpResponse(starlette.responses.Response):
 ```python
 class PlainTextResponse(HttpResponse)
 ```
-Same as `HttpResponse`. Media type: `text/plain`.
+与 `HttpResponse` 相同。媒体类型：`text/plain`。
 
 ### HtmlResponse
 
@@ -186,9 +186,9 @@ class HtmlResponse(HttpResponse):
 class JsonResponse(HttpResponse):
     media_type = "application/json"
 ```
-Accepts `dict`, `list`, or `BaseModel`. Serializes with `orjson`.
+接受 `dict`、`list` 或 `BaseModel`。使用 `orjson` 序列化。
 
-- `render(content) -> bytes`: Serialize content to JSON bytes.
+- `render(content) -> bytes`: 将内容序列化为 JSON 字节。
 
 ### RedirectResponse
 
@@ -196,7 +196,7 @@ Accepts `dict`, `list`, or `BaseModel`. Serializes with `orjson`.
 class RedirectResponse(HttpResponse):
     def __init__(self, url: str, status_code: int = 302, headers=None, background=None)
 ```
-Requires a fully qualified URL. Raises `ValueError` on relative URLs.
+需要完整 URL。相对 URL 会抛出 `ValueError`。
 
 ### StreamingResponse
 
@@ -204,7 +204,7 @@ Requires a fully qualified URL. Raises `ValueError` on relative URLs.
 class StreamingResponse(HttpResponse):
     def __init__(self, content: Iterable | AsyncIterable, status_code=200, headers=None, media_type=None, background=None)
 ```
-Streams content chunks. Handles both sync and async iterables.
+流式传输内容块。同时支持同步和异步可迭代对象。
 
 ### FileResponse
 
@@ -212,4 +212,4 @@ Streams content chunks. Handles both sync and async iterables.
 class FileResponse(StreamingResponse):
     def __init__(self, path: str | Path, filename: str | None = None, *, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream")
 ```
-File download with HTTP range-request support. Raises `FileNotFoundError` if the file does not exist.
+支持 HTTP 范围请求的文件下载。若文件不存在则抛出 `FileNotFoundError`。

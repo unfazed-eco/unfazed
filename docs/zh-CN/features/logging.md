@@ -1,11 +1,11 @@
-Unfazed Logging
-===============
+Unfazed 日志
+============
 
-Unfazed configures logging through Python's standard `logging.config.dictConfig`. You provide a `LOGGING` dictionary in your settings, and Unfazed merges it with sensible defaults so that framework-internal loggers (`unfazed`, `uvicorn`, `tortoise`) work out of the box. If you don't provide any logging config, the defaults are used as-is.
+Unfazed 通过 Python 标准的 `logging.config.dictConfig` 配置日志。你在配置中提供 `LOGGING` 字典，Unfazed 会将其与合理默认值合并，使框架内部日志（`unfazed`、`uvicorn`、`tortoise`）开箱即用。若不提供任何日志配置，则直接使用默认值。
 
-## Quick Start
+## 快速开始
 
-Add a `LOGGING` key to your settings to configure application-level logging:
+在配置中添加 `LOGGING` 键以配置应用级日志：
 
 ```python
 # settings.py
@@ -37,7 +37,7 @@ UNFAZED_SETTINGS = {
 }
 ```
 
-Then use standard Python logging in your code:
+然后在代码中使用标准 Python 日志：
 
 ```python
 import logging
@@ -49,14 +49,14 @@ async def my_endpoint(request):
     ...
 ```
 
-## Configuration
+## 配置
 
-The `LOGGING` setting follows Python's [dictConfig schema](https://docs.python.org/3/library/logging.config.html#dictionary-schema-details):
+`LOGGING` 配置遵循 Python 的 [dictConfig 模式](https://docs.python.org/3/library/logging.config.html#dictionary-schema-details)：
 
 ```python
 "LOGGING": {
-    "version": 1,                          # required, always 1
-    "disable_existing_loggers": False,      # optional
+    "version": 1,                          # 必填，始终为 1
+    "disable_existing_loggers": False,      # 可选
     "formatters": {
         "<name>": {
             "format": "...",
@@ -74,7 +74,7 @@ The `LOGGING` setting follows Python's [dictConfig schema](https://docs.python.o
             "level": "INFO",
             "formatter": "<formatter_name>",
             "filters": ["<filter_name>"],
-            # ... handler-specific options
+            # ... 处理器特定选项
         },
     },
     "loggers": {
@@ -92,18 +92,18 @@ The `LOGGING` setting follows Python's [dictConfig schema](https://docs.python.o
 }
 ```
 
-### How merging works
+### 合并规则
 
-Your config is **merged** with Unfazed's defaults — it does not replace them. The merge rules are:
+你的配置会与 Unfazed 的默认值**合并** —— 不会完全替换。合并规则为：
 
-- **formatters, handlers, filters, loggers** — your entries are added alongside the defaults. If you define a key that already exists in the defaults, your value wins.
-- **Other top-level keys** (e.g. `version`, `root`, `disable_existing_loggers`) — the defaults are kept; your values for these keys are ignored. This ensures the framework's internal logging always works.
+- **formatters、handlers、filters、loggers** — 你的条目与默认值并存。若你定义的键在默认值中已存在，则你的值优先。
+- **其他顶层键**（如 `version`、`root`、`disable_existing_loggers`）— 保留默认值；这些键的你的值会被忽略。这确保框架内部日志始终可用。
 
-This means you never need to re-declare the `unfazed` or `tortoise` loggers unless you want to change their configuration.
+因此，除非要修改其配置，否则无需重新声明 `unfazed` 或 `tortoise` 日志器。
 
-## Default Configuration
+## 默认配置
 
-When no `LOGGING` setting is provided (or it is empty), Unfazed uses these defaults:
+未提供 `LOGGING` 配置（或为空）时，Unfazed 使用以下默认值：
 
 ```python
 {
@@ -139,9 +139,9 @@ When no `LOGGING` setting is provided (or it is empty), Unfazed uses these defau
 }
 ```
 
-Default handler and formatter names are prefixed with `_` to avoid collisions with your own config.
+默认 handler 和 formatter 名称以 `_` 为前缀，避免与你自己的配置冲突。
 
-## API Reference
+## API 参考
 
 ### LogCenter
 
@@ -150,17 +150,17 @@ class LogCenter:
     def __init__(self, unfazed: Unfazed, dictconfig: Dict[str, Any]) -> None
 ```
 
-Central logging configuration manager. Merges user config with defaults and applies it via `logging.config.dictConfig`.
+中央日志配置管理器。将用户配置与默认值合并，并通过 `logging.config.dictConfig` 应用。
 
-**Methods:**
+**方法：**
 
-- `setup() -> None`: Apply the merged logging configuration.
-- `merge_default(dictconfig: Dict) -> Dict`: Merge user config with the default config and return the result.
+- `setup() -> None`：应用合并后的日志配置。
+- `merge_default(dictconfig: Dict) -> Dict`：将用户配置与默认配置合并并返回结果。
 
-**Attributes:**
+**属性：**
 
-- `config: Dict` — The final merged configuration.
-- `raw_dictconfig: Dict` — The original user-provided configuration.
+- `config: Dict` — 最终合并后的配置。
+- `raw_dictconfig: Dict` — 用户提供的原始配置。
 
 ### LogConfig
 
@@ -176,4 +176,4 @@ class LogConfig(BaseModel):
     disable_existing_loggers: bool | None = None
 ```
 
-Pydantic model used to validate the `LOGGING` setting before it is passed to `LogCenter`.
+在传递给 `LogCenter` 之前用于验证 `LOGGING` 配置的 Pydantic 模型。

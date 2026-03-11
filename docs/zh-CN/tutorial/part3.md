@@ -1,23 +1,23 @@
-# Part 3: Data Models and Serializers
+# 第三部分：数据模型与 Serializer
 
-In the previous parts, we created a project and application, and implemented a Hello World API. Now we will design data models using Tortoise ORM and create serializers that provide automatic CRUD operations.
+在前几部分中，我们创建了项目和应用，并实现了 Hello World API。现在我们将使用 Tortoise ORM 设计数据模型，并创建提供自动 CRUD 操作的 serializer。
 
-We will design the data structure for a student course enrollment system: students, courses, and the many-to-many relationships between them.
+我们将设计学生选课系统的数据结构：学生、课程以及它们之间的多对多关系。
 
-## Data Model Design
+## 数据模型设计
 
-### Business Requirements
+### 业务需求
 
-Our enrollment system needs to support:
+选课系统需要支持：
 
-- **Course Management**: Create and manage course information
-- **Student Management**: Manage student records
-- **Enrollment Relationships**: Students can enroll in multiple courses; courses can have multiple students
-- **Timestamps**: Track creation and update times
+- **课程管理**：创建和管理课程信息
+- **学生管理**：管理学生记录
+- **选课关系**：学生可选修多门课程；课程可有多个学生
+- **时间戳**：记录创建和更新时间
 
-### Defining Models
+### 定义模型
 
-Edit `enroll/models.py`:
+编辑 `enroll/models.py`：
 
 ```python
 # enroll/models.py
@@ -70,32 +70,32 @@ class Course(Model):
         return f"{self.code} - {self.name}"
 ```
 
-Unfazed automatically discovers `models.py` in installed apps and registers them with Tortoise ORM. See [Tortoise ORM](../features/tortoise-orm.md) for the full reference.
+Unfazed 会自动发现已安装应用中的 `models.py` 并注册到 Tortoise ORM。完整参考见 [Tortoise ORM](../features/tortoise-orm.md)。
 
-### Key Field Types
+### 主要字段类型
 
-| Field Type                         | Example               | Description                       |
-| ---------------------------------- | --------------------- | --------------------------------- |
-| `IntField(pk=True)`                | `id`                  | Primary key, auto-increment       |
-| `CharField(max_length=100)`        | `name`                | String field with max length      |
-| `CharField(unique=True)`           | `email`, `student_id` | Unique constraint field           |
-| `TextField()`                      | `description`         | Long text field                   |
-| `BooleanField(default=True)`       | `is_active`           | Boolean with default value        |
-| `DatetimeField(auto_now_add=True)` | `created_at`          | Automatically set on creation     |
-| `DatetimeField(auto_now=True)`     | `updated_at`          | Automatically set on update       |
-| `ManyToManyField()`                | `courses`             | Many-to-many relationship         |
+| 字段类型                         | 示例               | 说明                       |
+| -------------------------------- | ------------------ | -------------------------- |
+| `IntField(pk=True)`              | `id`               | 主键，自增                 |
+| `CharField(max_length=100)`      | `name`             | 带最大长度的字符串字段     |
+| `CharField(unique=True)`         | `email`, `student_id` | 唯一约束字段               |
+| `TextField()`                    | `description`      | 长文本字段                 |
+| `BooleanField(default=True)`     | `is_active`        | 带默认值的布尔字段         |
+| `DatetimeField(auto_now_add=True)` | `created_at`      | 创建时自动设置             |
+| `DatetimeField(auto_now=True)`   | `updated_at`       | 更新时自动设置             |
+| `ManyToManyField()`              | `courses`          | 多对多关系                 |
 
-### Relationship Design
+### 关系设计
 
-- `Student.courses` and `Course.students` form a many-to-many relationship
-- The junction table `student_course` is created automatically by Tortoise ORM
-- Both sides support bidirectional queries (e.g. `student.courses.all()`, `course.students.all()`)
+- `Student.courses` 与 `Course.students` 构成多对多关系
+- 中间表 `student_course` 由 Tortoise ORM 自动创建
+- 支持双向查询（如 `student.courses.all()`、`course.students.all()`）
 
-## Database Configuration
+## 数据库配置
 
-### Configure the Database Connection
+### 配置数据库连接
 
-Edit `entry/settings/__init__.py` to add the `DATABASE` configuration:
+编辑 `entry/settings/__init__.py`，添加 `DATABASE` 配置：
 
 ```python
 # entry/settings/__init__.py
@@ -128,32 +128,32 @@ UNFAZED_SETTINGS = {
 }
 ```
 
-See [Tortoise ORM — Database Configuration](../features/tortoise-orm.md#database-configuration) for all supported engines and credentials.
+所有支持的引擎和凭证配置见 [Tortoise ORM — Database Configuration](../features/tortoise-orm.md#database-configuration)。
 
-### Initialize and Migrate the Database
+### 初始化并迁移数据库
 
-Unfazed uses [Aerich](https://github.com/tortoise/aerich) for database migrations. Run these commands from the backend directory:
+Unfazed 使用 [Aerich](https://github.com/tortoise/aerich) 进行数据库迁移。在 backend 目录下执行：
 
 ```bash
-# 1. Initialize the migration directory (first time only)
+# 1. 初始化迁移目录（仅首次）
 unfazed-cli init-db
 
-# 2. Generate a migration from model changes
+# 2. 根据模型变更生成迁移
 unfazed-cli migrate --name initial
 
-# 3. Apply the migration
+# 3. 应用迁移
 unfazed-cli upgrade
 ```
 
-See [Tortoise ORM — Migration Commands](../features/tortoise-orm.md#migration-commands) for the full command reference.
+完整命令参考见 [Tortoise ORM — Migration Commands](../features/tortoise-orm.md#migration-commands)。
 
-## Serializer Design
+## Serializer 设计
 
-Serializers bridge the gap between database models and your API layer. They auto-generate Pydantic fields from Tortoise models and provide built-in async CRUD operations. See [Serializer](../features/serializer.md) for the full reference.
+Serializer 连接数据库模型与 API 层。它们从 Tortoise 模型自动生成 Pydantic 字段，并提供内置的异步 CRUD 操作。完整参考见 [Serializer](../features/serializer.md)。
 
-### Creating Serializers
+### 创建 Serializer
 
-Edit `enroll/serializers.py`:
+编辑 `enroll/serializers.py`：
 
 ```python
 # enroll/serializers.py
@@ -201,18 +201,18 @@ class CourseWithStudentsSerializer(Serializer):
         enable_relations = True
 ```
 
-### Meta Options
+### Meta 选项
 
-| Option             | Type         | Default | Description                                          |
-| ------------------ | ------------ | ------- | ---------------------------------------------------- |
-| `model`            | `Type[Model]`| required| The Tortoise ORM model to serialize.                 |
-| `include`          | `List[str]`  | `[]`    | Fields to include. If set, others are excluded.       |
-| `exclude`          | `List[str]`  | `[]`    | Fields to exclude. Cannot be used with `include`.     |
-| `enable_relations` | `bool`       | `False` | Generate fields for FK, M2M, and O2O relations.      |
+| 选项             | 类型         | 默认值 | 说明                                          |
+| ---------------- | ------------ | ------ | --------------------------------------------- |
+| `model`          | `Type[Model]`| 必需   | 要序列化的 Tortoise ORM 模型。                |
+| `include`        | `List[str]`  | `[]`   | 要包含的字段。设置后，其他字段会被排除。       |
+| `exclude`        | `List[str]`  | `[]`   | 要排除的字段。不能与 `include` 同时使用。      |
+| `enable_relations` | `bool`       | `False` | 为 FK、M2M、O2O 关系生成字段。               |
 
-### Using CRUD Operations
+### 使用 CRUD 操作
 
-All CRUD methods are class methods that accept a Pydantic `BaseModel` as the context:
+所有 CRUD 方法都是类方法，接受 Pydantic `BaseModel` 作为上下文：
 
 ```python
 from pydantic import BaseModel
@@ -264,13 +264,13 @@ result = await StudentSerializer.list_from_ctx(
     page=1,
     size=10,
 )
-# result.count — total matching records
-# result.data  — list of StudentSerializer instances
+# result.count — 匹配记录总数
+# result.data  — StudentSerializer 实例列表
 ```
 
-### Relationship Data
+### 关联数据
 
-To include related objects when retrieving, use a serializer with `enable_relations = True`:
+检索时包含关联对象，可使用 `enable_relations = True` 的 serializer：
 
 ```python
 class StudentId(BaseModel):
@@ -279,12 +279,12 @@ class StudentId(BaseModel):
 student_with_courses = await StudentWithCoursesSerializer.retrieve_from_ctx(
     StudentId(id=1)
 )
-# student_with_courses.courses contains the enrolled course data
+# student_with_courses.courses 包含已选课程数据
 ```
 
-## Testing the Models
+## 测试模型
 
-You can verify the models interactively using the Unfazed shell:
+可使用 Unfazed shell 交互式验证模型：
 
 ```bash
 unfazed-cli shell
@@ -344,12 +344,12 @@ print(f"Student {student.name} enrolled in {len(enrolled_courses)} courses")
 print(f"Course {course.name} has {len(course_students)} students")
 ```
 
-## Next Steps
+## 下一步
 
-You have designed data models and serializers with built-in CRUD operations. In the next part, we will:
+你已经设计了数据模型和带内置 CRUD 操作的 serializer。下一部分我们将：
 
-- Design API endpoints with typed parameter annotations
-- Define request/response schemas for OpenAPI documentation
-- Learn Unfazed's parameter system (`Path`, `Query`, `Json`, etc.)
+- 使用类型化参数注解设计 API endpoint
+- 定义用于 OpenAPI 文档的请求/响应 schema
+- 学习 Unfazed 的参数系统（`Path`、`Query`、`Json` 等）
 
-Continue to **[Part 4: API Interface Design and Schema Definition](part4.md)**.
+继续阅读 **[第四部分：API 接口设计与 Schema 定义](part4.md)**。

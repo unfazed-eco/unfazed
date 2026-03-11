@@ -1,25 +1,22 @@
-![unfazed](images/unfazed-title.png)
+Unfazed
+====
 
 <p align="center">
     <em>Production Ready ASGI web framework</em>
 </p>
 
-
-
-Unfazed
-====
-
-
 Unfazed is an engineering-oriented, async-first, testable, and extensible Python web framework built on [starlette](https://www.starlette.io/), with project organization inspired by [django](https://www.djangoproject.com/).
 
 ### Getting Started
 
-1. [Part 1 Installation and Project Creation](tutorial/part1.md)
-2. [Part 2 Creating Applications and Hello, World](tutorial/part2.md)
-3. [Part 3 Models and Serializers](tutorial/part3.md)
-4. [Part 4 Endpoint Functions and Schema Definition](tutorial/part4.md)
-5. [Part 5 Business Logic Implementation with Services](tutorial/part5.md)
-6. [Part 6 Testing](tutorial/part6.md)
+Build a complete student course enrollment system from scratch:
+
+1. [Part 1: Installation and Project Creation](tutorial/part1.md) — environment setup, project scaffolding, development server
+2. [Part 2: Creating Applications and Hello World](tutorial/part2.md) — app system, endpoints, routing basics
+3. [Part 3: Data Models and Serializers](tutorial/part3.md) — Tortoise ORM models, database migrations, CRUD serializers
+4. [Part 4: API Interface Design and Schema Definition](tutorial/part4.md) — parameter annotations, request/response schemas, OpenAPI docs
+5. [Part 5: Business Logic Implementation](tutorial/part5.md) — services layer, custom exceptions, database operations
+6. [Part 6: Testing and Quality Assurance](tutorial/part6.md) — Requestfactory, pytest fixtures, coverage
 
 ### Features
 
@@ -31,13 +28,13 @@ Unfazed is an engineering-oriented, async-first, testable, and extensible Python
 6. Logging System: [logging](features/logging.md)
 7. HTTP Related: [request](features/request.md) | [response](features/response.md)
 8. View Function Design: [endpoint](features/endpoint.md)
-9. Static File Service: [staticfiles](features/staticfiles.md)
-10. Tortoise-orm Related: [ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
-11. Caching: [cache](features/cache.md)
-12. Error Handling: [error](features/error.md)
-13. OpenAPI: [openapi](features/openapi.md)
-14. Command Line Design: [command](features/command.md)
-15. Test Client: [test_client](features/testclient.md)
+9. Tortoise-orm Related: [ORM](features/tortoise-orm.md) | [Serializer](features/serializer.md)
+10. Caching: [cache](features/cache.md)
+11. Exception Handling: [exception](features/exception.md)
+12. OpenAPI: [openapi](features/openapi.md)
+13. Command Line Design: [command](features/command.md)
+14. Test Client: [test_client](features/testclient.md)
+15. Concurrency: [concurrency](features/concurrency.md)
 
 
 ### Contrib

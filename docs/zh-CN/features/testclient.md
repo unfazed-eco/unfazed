@@ -1,9 +1,9 @@
-Test Client
+测试客户端
 ===========
 
-Unfazed provides `Requestfactory`, an async test client built on top of `httpx.AsyncClient`. It handles ASGI transport and lifespan events automatically, so you can send HTTP requests to your application without starting a real server.
+Unfazed 提供 `Requestfactory`，一个基于 `httpx.AsyncClient` 构建的异步测试客户端。它自动处理 ASGI 传输和 lifespan 事件，因此你可以在不启动真实服务器的情况下向应用发送 HTTP 请求。
 
-## Quick Start
+## 快速开始
 
 ```python
 import pytest
@@ -31,11 +31,11 @@ async def test_hello() -> None:
         assert resp.text == "Hello, World!"
 ```
 
-The `async with` block calls `lifespan_startup` on enter and `lifespan_shutdown` on exit, matching the real ASGI server lifecycle.
+`async with` 块在进入时调用 `lifespan_startup`，在退出时调用 `lifespan_shutdown`，与真实 ASGI 服务器的生命周期一致。
 
-## Setting Up a Pytest Fixture
+## 配置 Pytest Fixture
 
-For real projects, create a shared fixture in `conftest.py`:
+在实际项目中，在 `conftest.py` 中创建共享 fixture：
 
 ```python
 # conftest.py
@@ -58,7 +58,7 @@ async def unfazed() -> t.AsyncGenerator[Unfazed, None]:
     yield app
 ```
 
-Then use it in your tests:
+然后在测试中使用：
 
 ```python
 from unfazed.core import Unfazed
@@ -71,9 +71,9 @@ async def test_my_endpoint(unfazed: Unfazed) -> None:
         assert resp.status_code == 200
 ```
 
-## Making Requests
+## 发送请求
 
-`Requestfactory` extends `httpx.AsyncClient`, so all standard httpx methods are available:
+`Requestfactory` 继承自 `httpx.AsyncClient`，因此所有标准 httpx 方法都可用：
 
 ```python
 async with Requestfactory(unfazed) as client:
@@ -99,23 +99,23 @@ async with Requestfactory(unfazed) as client:
     resp = await client.get("/me", headers={"Authorization": "Bearer token"})
 ```
 
-## Lifespan Control
+## Lifespan 控制
 
-By default, `Requestfactory` triggers ASGI lifespan events. You can disable this behaviour:
+默认情况下，`Requestfactory` 会触发 ASGI lifespan 事件。你可以禁用此行为：
 
 ```python
 async with Requestfactory(unfazed, lifespan_on=False) as client:
     resp = await client.get("/")
 ```
 
-When `lifespan_on=True` (the default):
+当 `lifespan_on=True`（默认值）时：
 
-- **Enter** (`__aenter__`): Sends `lifespan.startup` and waits for `lifespan.startup.complete`. Raises `RuntimeError` if startup fails.
-- **Exit** (`__aexit__`): Sends `lifespan.shutdown` and waits for `lifespan.shutdown.complete`. Emits `RuntimeWarning` if shutdown fails.
+- **进入**（`__aenter__`）：发送 `lifespan.startup` 并等待 `lifespan.startup.complete`。如果启动失败则抛出 `RuntimeError`。
+- **退出**（`__aexit__`）：发送 `lifespan.shutdown` 并等待 `lifespan.shutdown.complete`。如果关闭失败则发出 `RuntimeWarning`。
 
-## State Sharing
+## 状态共享
 
-Lifespan hooks can populate shared state (e.g. a database connection pool). `Requestfactory` automatically propagates this state to every request scope, so `request.state` works exactly as it does in production:
+Lifespan 钩子可以填充共享状态（例如数据库连接池）。`Requestfactory` 会自动将此状态传播到每个请求作用域，因此 `request.state` 在生产环境中的行为完全一致：
 
 ```python
 from unfazed.lifespan import BaseLifeSpan
@@ -134,9 +134,9 @@ async def get_users(request: HttpRequest) -> JsonResponse:
     ...
 ```
 
-During tests the `db` key is available on `request.state` because `Requestfactory` copies the lifespan state into each ASGI scope.
+在测试期间，`db` 键在 `request.state` 上可用，因为 `Requestfactory` 会将 lifespan 状态复制到每个 ASGI scope 中。
 
-## API Reference
+## API 参考
 
 ### Requestfactory
 
@@ -144,17 +144,17 @@ During tests the `db` key is available on `request.state` because `Requestfactor
 class Requestfactory(httpx.AsyncClient)
 ```
 
-| Parameter | Type | Default | Description |
+| 参数 | 类型 | 默认值 | 描述 |
 |-----------|------|---------|-------------|
-| `app` | `Unfazed` | required | The Unfazed application instance. |
-| `lifespan_on` | `bool` | `True` | Whether to run lifespan startup/shutdown. |
-| `base_url` | `str` | `"http://testserver"` | Base URL prepended to all request paths. |
+| `app` | `Unfazed` | 必填 | Unfazed 应用实例。 |
+| `lifespan_on` | `bool` | `True` | 是否运行 lifespan 启动/关闭。 |
+| `base_url` | `str` | `"http://testserver"` | 预置到所有请求路径的基础 URL。 |
 
-**Methods:**
+**方法：**
 
-| Method | Description |
+| 方法 | 描述 |
 |--------|-------------|
-| `async lifespan_startup()` | Send `lifespan.startup` and assert `lifespan.startup.complete`. Raises `RuntimeError` on failure. |
-| `async lifespan_shutdown()` | Send `lifespan.shutdown` and assert `lifespan.shutdown.complete`. Emits `RuntimeWarning` on failure. |
+| `async lifespan_startup()` | 发送 `lifespan.startup` 并断言 `lifespan.startup.complete`。失败时抛出 `RuntimeError`。 |
+| `async lifespan_shutdown()` | 发送 `lifespan.shutdown` 并断言 `lifespan.shutdown.complete`。失败时发出 `RuntimeWarning`。 |
 
-Plus all methods inherited from `httpx.AsyncClient` — `get`, `post`, `put`, `patch`, `delete`, `options`, `head`, `request`, `stream`, etc.
+以及从 `httpx.AsyncClient` 继承的所有方法 — `get`、`post`、`put`、`patch`、`delete`、`options`、`head`、`request`、`stream` 等。
