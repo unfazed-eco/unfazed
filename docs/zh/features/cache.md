@@ -319,13 +319,29 @@ async def get_config(key: str) -> str:
     ...
 ```
 
-**强制刷新缓存** — 传入 `force_update=True` 绕过缓存并存储新结果：
+**强制刷新缓存** — 传入 `force_update=True` 绕过缓存并存储新结果。  
+`force_update` 仅支持布尔值，且被装饰函数需要显式声明 `force_update: bool` 参数：
 
 ```python
+@cached(timeout=60)
+async def get_user_profile(user_id: int, force_update: bool = False) -> dict:
+    ...
+
 result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-**注意：** 装饰器仅使用关键字参数生成缓存键。位置参数会被忽略（传入时会发出警告）。
+```python
+@cached(timeout=60)
+async def get_user_profile(user_id: int) -> dict:
+    ...
+
+# 会抛出 TypeError：函数未声明 force_update: bool
+result = await get_user_profile(user_id=42, force_update=True)
+```
+
+**注意：**
+- 装饰器仅使用关键字参数生成缓存键。位置参数会被忽略（传入时会发出警告）。
+- `force_update` 不是 `bool` 时会抛出异常，或在特定兼容场景下回退并告警。
 
 ## 自定义序列化器与压缩器
 
