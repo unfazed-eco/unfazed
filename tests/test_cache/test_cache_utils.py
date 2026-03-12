@@ -66,7 +66,7 @@ async def test_cache_key_uses_func_name_or_qualname() -> None:
     # use name may be conflict, so use qualname to avoid it
     assert (
         f"{TestClassA.test_func.__module__}:{TestClassA.test_func.__name__}"
-        == f"{TestClassB.test_func.__module__}:{TestClassB.test_func.__qualname__}"
+        == f"{TestClassB.test_func.__module__}:{TestClassB.test_func.__name__}"
     )
     assert (
         f"{TestClassA.test_func.__module__}:{TestClassA.test_func.__qualname__}"
