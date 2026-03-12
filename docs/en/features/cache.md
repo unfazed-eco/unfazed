@@ -319,13 +319,29 @@ async def get_config(key: str) -> str:
     ...
 ```
 
-**Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result:
+**Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result.  
+`force_update` only accepts boolean values, and the decorated function should explicitly declare a `force_update: bool` parameter:
 
 ```python
+@cached(timeout=60)
+async def get_user_profile(user_id: int, force_update: bool = False) -> dict:
+    ...
+
 result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-**Important:** the decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
+```python
+@cached(timeout=60)
+async def get_user_profile(user_id: int) -> dict:
+    ...
+
+# Raises TypeError: function does not declare force_update: bool
+result = await get_user_profile(user_id=42, force_update=True)
+```
+
+**Important:**
+- The decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
+- When `force_update` is not a boolean, it may raise an exception, or in specific compatibility cases it falls back and emits a warning.
 
 ## Custom Serializers & Compressors
 

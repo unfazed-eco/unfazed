@@ -49,7 +49,11 @@ async def test_cache_decorator() -> None:
         return a + b
 
     assert await test_func5(a=1, b=2) == 3
-    assert await test_func5(a=1, b=2, force_update=True) == 3
+    with pytest.raises(
+        TypeError,
+        match="must define `force_update: bool` or accept `\\*\\*kwargs`",
+    ):
+        await test_func5(a=1, b=2, force_update=True)
 
 
 async def test_cache_key_uses_func_name_or_qualname() -> None:
