@@ -320,7 +320,7 @@ async def get_config(key: str) -> str:
 ```
 
 **强制刷新缓存** — 传入 `force_update=True` 绕过缓存并存储新结果。  
-`force_update` 仅支持布尔值，且被装饰函数需要显式声明 `force_update: bool` 参数：
+推荐在被装饰函数中显式声明 `force_update: bool = False`，接口语义更清晰：
 
 ```python
 @cached(timeout=60)
@@ -330,18 +330,13 @@ async def get_user_profile(user_id: int, force_update: bool = False) -> dict:
 result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-```python
-@cached(timeout=60)
-async def get_user_profile(user_id: int) -> dict:
-    ...
-
-# 会抛出 TypeError：函数未声明 force_update: bool
-result = await get_user_profile(user_id=42, force_update=True)
-```
+如果被装饰函数既没有定义 `force_update` 参数，也不接受 `**kwargs`，`@cached` 会在装饰/导入阶段发出警告。  
+此时在调用时传 `force_update=...`，仍可能因为 Python 函数调用语义抛出 `TypeError`。
 
 **注意：**
 - 装饰器仅使用关键字参数生成缓存键。位置参数会被忽略（传入时会发出警告）。
-- `force_update` 不是 `bool` 时会抛出异常，或在特定兼容场景下回退并告警。
+- `@cached` 会在装饰阶段校验函数签名，并对不明确或不受支持的 `force_update` 用法发出警告（例如缺少 `force_update`/`**kwargs`，或注解不是 `bool`）。
+- `@cached` 不会在运行时强制校验 `force_update` 必须为 `bool`；实际行为遵循 Python 真值语义。
 
 ## 自定义序列化器与压缩器
 

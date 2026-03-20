@@ -320,7 +320,7 @@ async def get_config(key: str) -> str:
 ```
 
 **Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result.  
-`force_update` only accepts boolean values, and the decorated function should explicitly declare a `force_update: bool` parameter:
+Recommended: declare `force_update: bool = False` in the decorated function for explicit API and better readability:
 
 ```python
 @cached(timeout=60)
@@ -330,18 +330,13 @@ async def get_user_profile(user_id: int, force_update: bool = False) -> dict:
 result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-```python
-@cached(timeout=60)
-async def get_user_profile(user_id: int) -> dict:
-    ...
-
-# Raises TypeError: function does not declare force_update: bool
-result = await get_user_profile(user_id=42, force_update=True)
-```
+If the decorated function defines neither `force_update` nor `**kwargs`, `@cached` emits a warning at decoration/import time.  
+Calling that function with `force_update=...` may still raise a `TypeError` from Python function-call semantics.
 
 **Important:**
 - The decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
-- When `force_update` is not a boolean, it may raise an exception, or in specific compatibility cases it falls back and emits a warning.
+- `@cached` validates the function signature at decoration time and emits warnings for unsupported/ambiguous `force_update` usage (for example missing `force_update`/`**kwargs`, or non-`bool` annotation).
+- `@cached` does not enforce a runtime boolean type check for `force_update`; runtime behavior follows Python truthiness.
 
 ## Custom Serializers & Compressors
 
