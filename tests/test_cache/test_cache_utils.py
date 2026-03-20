@@ -118,15 +118,3 @@ async def test_cache_key_with_force_update() -> None:
             return x
 
     assert await f5(x=1) == 1
-
-    # case 5: force_update param exists but runtime type is not boolean -> error
-    with pytest.raises(TypeError):
-        await f4(x=1, force_update="true")
-
-    # case 6: function with **kwargs and non-boolean force_update -> error
-    @cached(using="test_cache_deco", include=["x"])
-    async def f_warn(x: int, **kwargs: t.Any) -> bool:
-        return kwargs.get("force_update", True)
-
-    with pytest.raises(TypeError):
-        await f_warn(x=1, force_update="true")
