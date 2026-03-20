@@ -138,32 +138,37 @@ def cached(
     def decorator(
         func: t.Callable[P, t.Awaitable[t.Any] | t.Any],
     ) -> t.Callable[P, t.Awaitable[t.Any] | t.Any]:
-        has_force_update_param: bool | None = None
-        has_var_keyword_param: bool | None = None
+        signature_target = resolve_signature_target(func)
+        signature = inspect.signature(signature_target)
+        force_update_param = signature.parameters.get("force_update")
+        has_force_update_param = force_update_param is not None
+        has_var_keyword_param = any(
+            param.kind is inspect.Parameter.VAR_KEYWORD
+            for param in signature.parameters.values()
+        )
+
+        if (
+            has_force_update_param
+            and force_update_param.annotation is not inspect.Signature.empty
+            and not is_bool_annotation(force_update_param.annotation)
+        ):
+            warnings.warn(
+                "Parameter 'force_update' should be annotated as bool when using @cached, "
+                "because this decorator reserves it for cache control.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        if not has_var_keyword_param and not has_force_update_param:
+            warnings.warn(
+                "The decorated function does not accept `**kwargs` or `force_update`. "
+                "Passing `force_update` to force update the cache will raise TypeError.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-            nonlocal has_force_update_param, has_var_keyword_param
-            if has_force_update_param is None or has_var_keyword_param is None:
-                signature_target = resolve_signature_target(func)
-                signature = inspect.signature(signature_target)
-                force_update_param = signature.parameters.get("force_update")
-                has_force_update_param = force_update_param is not None
-                has_var_keyword_param = any(
-                    param.kind is inspect.Parameter.VAR_KEYWORD
-                    for param in signature.parameters.values()
-                )
-
-                if (
-                    has_force_update_param
-                    and force_update_param.annotation is not inspect.Signature.empty
-                    and not is_bool_annotation(force_update_param.annotation)
-                ):
-                    raise TypeError(
-                        "Parameter 'force_update' must be annotated as bool when using @cached, "
-                        "because the decorator reserves this parameter for cache control."
-                    )
-
             if args:
                 warnings.warn(
                     "The cached decorator will ignore positional arguments, use keyword arguments instead.",
@@ -182,33 +187,7 @@ def cached(
 
             key = f"{prefix}:{suffix}" if suffix else prefix
 
-            force_update_passed = "force_update" in kwargs
-            if (
-                force_update_passed
-                and not has_force_update_param
-                and not has_var_keyword_param
-            ):
-                raise TypeError(
-                    "The decorated function must define `force_update: bool` or accept `**kwargs` "
-                    "to use the `force_update` argument."
-                )
-
             force_update = kwargs.get("force_update", False)
-            if not isinstance(force_update, bool):
-                if has_force_update_param:
-                    raise TypeError(
-                        "Parameter 'force_update' is reserved by @cached and cannot be overridden "
-                        "with non-boolean values."
-                    )
-                warnings.warn(
-                    "The `force_update` argument should be a boolean value. "
-                    "Received non-boolean value and falling back to cached behavior.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                force_update = False
-                if "force_update" in kwargs:
-                    kwargs["force_update"] = force_update
 
             cache = caches[using]
 

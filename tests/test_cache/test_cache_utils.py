@@ -49,10 +49,7 @@ async def test_cache_decorator() -> None:
         return a + b
 
     assert await test_func5(a=1, b=2) == 3
-    with pytest.raises(
-        TypeError,
-        match="must define `force_update: bool` or accept `\\*\\*kwargs`",
-    ):
+    with pytest.raises(TypeError):
         await test_func5(a=1, b=2, force_update=True)
 
 
@@ -80,14 +77,12 @@ async def test_cache_key_uses_func_name_or_qualname() -> None:
 
 async def test_cache_key_with_force_update() -> None:
     # case 1: no force_update param and no **kwargs -> invalid usage
-    @cached(using="test_cache_deco")
-    async def f1(x: int) -> int:
-        return x
+    with pytest.warns(UserWarning, match="does not accept `\\*\\*kwargs` or `force_update`"):
+        @cached(using="test_cache_deco")
+        async def f1(x: int) -> int:
+            return x
 
-    with pytest.raises(
-        TypeError,
-        match="must define `force_update: bool` or accept `\\*\\*kwargs`",
-    ):
+    with pytest.raises(TypeError):
         await f1(x=1, force_update=True)
 
     # case 2: function accepts **kwargs -> force_update controls cache refresh
@@ -116,22 +111,22 @@ async def test_cache_key_with_force_update() -> None:
     assert await f4(x=1) == 1
     assert await f4(x=1, force_update=True) == 2
 
-    # case 4: invalid force_update annotation -> error
-    @cached(using="test_cache_deco")
-    async def f5(x: int, force_update: int = 0) -> int:
-        return x
+    # case 4: invalid force_update annotation -> warn at decoration time
+    with pytest.warns(UserWarning, match="should be annotated as bool"):
+        @cached(using="test_cache_deco")
+        async def f5(x: int, force_update: int = 0) -> int:
+            return x
 
-    with pytest.raises(TypeError, match="must be annotated as bool"):
-        await f5(x=1)
+    assert await f5(x=1) == 1
 
     # case 5: force_update param exists but runtime type is not boolean -> error
-    with pytest.raises(TypeError, match="cannot be overridden with non-boolean"):
+    with pytest.raises(TypeError):
         await f4(x=1, force_update="true")
 
-    # case 6: function with **kwargs and non-boolean force_update -> warning + fallback
+    # case 6: function with **kwargs and non-boolean force_update -> error
     @cached(using="test_cache_deco", include=["x"])
     async def f_warn(x: int, **kwargs: t.Any) -> bool:
         return kwargs.get("force_update", True)
 
-    with pytest.warns(UserWarning, match="should be a boolean value"):
-        assert await f_warn(x=1, force_update="true") is False
+    with pytest.raises(TypeError):
+        await f_warn(x=1, force_update="true")
