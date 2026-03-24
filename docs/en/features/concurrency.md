@@ -6,7 +6,7 @@ Unfazed provides two async helper functions — `run_in_threadpool` and `run_in_
 ## Quick Start
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def blocking_io() -> str:
     import urllib.request
@@ -25,7 +25,7 @@ async def homepage(request):
 Use `run_in_threadpool` when you need to call a synchronous function that performs blocking I/O (file access, legacy HTTP clients, database drivers without async support, etc.). The function runs in a separate thread, so the event loop stays responsive.
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def read_large_file(path: str) -> str:
     with open(path) as f:
@@ -39,7 +39,7 @@ content = await run_in_threadpool(read_large_file, "/data/report.csv")
 Use `run_in_processpool` when the synchronous function is CPU-intensive (image processing, data crunching, cryptographic hashing, etc.). The function runs in a separate process, bypassing Python's GIL.
 
 ```python
-from unfazed.concurrecy import run_in_processpool
+from unfazed.concurrency import run_in_processpool
 
 def compute_hash(data: bytes) -> str:
     import hashlib
@@ -53,7 +53,7 @@ digest = await run_in_processpool(compute_hash, b"some large payload")
 Both functions accept positional and keyword arguments, which are forwarded to the target function:
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def greet(name: str, *, greeting: str = "Hello") -> str:
     return f"{greeting}, {name}!"
@@ -67,7 +67,7 @@ result = await run_in_threadpool(greet, "Alice", greeting="Hi")
 If the target function raises an exception, it is re-raised in the calling coroutine. Handle it with standard `try`/`except`:
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def might_fail() -> None:
     raise ValueError("something went wrong")
@@ -86,7 +86,7 @@ When integrating with a third-party SDK that only offers synchronous methods, wr
 
 ```python
 # myapp/endpoints.py
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 from unfazed.http import JsonResponse
 
 def fetch_exchange_rate(base: str, target: str) -> float:
@@ -107,7 +107,7 @@ Heavy computation like image resizing benefits from a process pool to avoid bloc
 
 ```python
 # myapp/endpoints.py
-from unfazed.concurrecy import run_in_processpool
+from unfazed.concurrency import run_in_processpool
 
 def generate_thumbnail(image_bytes: bytes, size: tuple) -> bytes:
     from PIL import Image

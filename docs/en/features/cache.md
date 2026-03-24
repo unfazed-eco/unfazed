@@ -319,13 +319,24 @@ async def get_config(key: str) -> str:
     ...
 ```
 
-**Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result:
+**Forcing a cache refresh** — pass `force_update=True` to bypass the cache and store a fresh result.  
+Recommended: declare `force_update: bool = False` in the decorated function for explicit API and better readability:
 
 ```python
+@cached(timeout=60)
+async def get_user_profile(user_id: int, force_update: bool = False) -> dict:
+    ...
+
 result = await get_user_profile(user_id=42, force_update=True)
 ```
 
-**Important:** the decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
+If the decorated function defines neither `force_update` nor `**kwargs`, `@cached` emits a warning at decoration/import time.  
+Calling that function with `force_update=...` may still raise a `TypeError` from Python function-call semantics.
+
+**Important:**
+- The decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
+- `@cached` validates the function signature at decoration time and emits warnings for unsupported/ambiguous `force_update` usage (for example missing `force_update`/`**kwargs`, or non-`bool` annotation).
+- `@cached` does not enforce a runtime boolean type check for `force_update`; runtime behavior follows Python truthiness.
 
 ## Custom Serializers & Compressors
 

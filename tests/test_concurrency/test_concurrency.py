@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from unfazed.concurrecy import run_in_processpool, run_in_threadpool
+from unfazed.concurrency import run_in_processpool, run_in_threadpool
 
 
 def sync_add(a: int, b: int) -> int:
