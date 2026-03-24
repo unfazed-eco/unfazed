@@ -6,7 +6,7 @@ Unfazed 提供了两个异步辅助函数 — `run_in_threadpool` 和 `run_in_pr
 ## 快速开始
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def blocking_io() -> str:
     import urllib.request
@@ -25,7 +25,7 @@ async def homepage(request):
 当你需要调用执行阻塞 I/O 的同步函数时（文件访问、传统 HTTP 客户端、不支持异步的数据库驱动等），使用 `run_in_threadpool`。函数会在单独的线程中运行，保持事件循环的响应能力。
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def read_large_file(path: str) -> str:
     with open(path) as f:
@@ -39,7 +39,7 @@ content = await run_in_threadpool(read_large_file, "/data/report.csv")
 当同步函数是 CPU 密集型的（图像处理、数据计算、加密哈希等），使用 `run_in_processpool`。函数会在单独的进程中运行，绕过 Python 的 GIL。
 
 ```python
-from unfazed.concurrecy import run_in_processpool
+from unfazed.concurrency import run_in_processpool
 
 def compute_hash(data: bytes) -> str:
     import hashlib
@@ -53,7 +53,7 @@ digest = await run_in_processpool(compute_hash, b"some large payload")
 两个函数都支持位置参数和关键字参数，参数会被转发给目标函数：
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def greet(name: str, *, greeting: str = "Hello") -> str:
     return f"{greeting}, {name}!"
@@ -67,7 +67,7 @@ result = await run_in_threadpool(greet, "Alice", greeting="Hi")
 如果目标函数抛出异常，该异常会在调用协程中重新抛出。使用标准的 `try`/`except` 进行处理：
 
 ```python
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 def might_fail() -> None:
     raise ValueError("something went wrong")
@@ -86,7 +86,7 @@ except ValueError as e:
 
 ```python
 # myapp/endpoints.py
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 from unfazed.http import JsonResponse
 
 def fetch_exchange_rate(base: str, target: str) -> float:
@@ -107,7 +107,7 @@ async def exchange_rate_endpoint(request):
 
 ```python
 # myapp/endpoints.py
-from unfazed.concurrecy import run_in_processpool
+from unfazed.concurrency import run_in_processpool
 
 def generate_thumbnail(image_bytes: bytes, size: tuple) -> bytes:
     from PIL import Image
