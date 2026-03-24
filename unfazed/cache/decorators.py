@@ -3,7 +3,7 @@ import typing as t
 import warnings
 from functools import wraps
 
-from unfazed.concurrecy import run_in_threadpool
+from unfazed.concurrency import run_in_threadpool
 
 from .handler import caches
 
@@ -138,6 +138,9 @@ def cached(
     def decorator(
         func: t.Callable[P, t.Awaitable[t.Any] | t.Any],
     ) -> t.Callable[P, t.Awaitable[t.Any] | t.Any]:
+        has_force_update_param: bool | None = None
+        has_var_keyword_param: bool | None = None
+
         signature_target = resolve_signature_target(func)
         signature = inspect.signature(signature_target)
         force_update_param = signature.parameters.get("force_update")
@@ -192,7 +195,7 @@ def cached(
             cache = caches[using]
 
             value = await cache.get(key)
-            if value and not force_update:
+            if value is not None and not force_update:
                 return value
             else:
                 if inspect.iscoroutinefunction(func):
