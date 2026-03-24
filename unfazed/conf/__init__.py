@@ -18,6 +18,7 @@ from .decorators import register_settings
 
 @register_settings("UNFAZED_SETTINGS")
 class UnfazedSettings(BaseModel):
+    DEPLOY: str = Field(default="dev")
     INSTALLED_APPS: t.List[CanBeImported] = []
     MIDDLEWARE: t.List[CanBeImported] = []
     DEBUG: bool = True

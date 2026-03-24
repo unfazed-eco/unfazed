@@ -16,6 +16,7 @@ HOST = os.getenv("REDIS_HOST", "redis")
 
 _Setting = {
     "DEBUG": True,
+    "DEPLOY": "dev",
     "PROJECT_NAME": "test_app_launch",
     "ROOT_URLCONF": "tests.apps.core.routes",
     "INSTALLED_APPS": ["tests.apps.core.common"],
