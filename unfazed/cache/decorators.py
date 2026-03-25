@@ -65,7 +65,9 @@ def resolve_signature_target(func: t.Callable[..., t.Any]) -> t.Callable[..., t.
                     current = candidate
                     break
             else:
-                callable_cells = [value for value in closure_vars.values() if callable(value)]
+                callable_cells = [
+                    value for value in closure_vars.values() if callable(value)
+                ]
                 if len(callable_cells) == 1:
                     current = callable_cells[0]
                 else:
@@ -151,7 +153,7 @@ def cached(
         )
 
         if (
-            has_force_update_param
+            force_update_param
             and force_update_param.annotation is not inspect.Signature.empty
             and not is_bool_annotation(force_update_param.annotation)
         ):
