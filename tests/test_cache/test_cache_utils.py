@@ -77,7 +77,10 @@ async def test_cache_key_uses_func_name_or_qualname() -> None:
 
 async def test_cache_key_with_force_update() -> None:
     # case 1: no force_update param and no **kwargs -> invalid usage
-    with pytest.warns(UserWarning, match="does not accept `\\*\\*kwargs` or `force_update`"):
+    with pytest.warns(
+        UserWarning, match="does not accept `\\*\\*kwargs` or `force_update`"
+    ):
+
         @cached(using="test_cache_deco")
         async def f1(x: int) -> int:
             return x
@@ -113,6 +116,7 @@ async def test_cache_key_with_force_update() -> None:
 
     # case 4: invalid force_update annotation -> warn at decoration time
     with pytest.warns(UserWarning, match="should be annotated as bool"):
+
         @cached(using="test_cache_deco")
         async def f5(x: int, force_update: int = 0) -> int:
             return x

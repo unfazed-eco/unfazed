@@ -86,7 +86,7 @@ class SerializerBackend:
             db=kw.get("db", 0),
             password=kw.get("password", None),
             username=kw.get("username"),
-            retry=retry_cls,
+            retry=retry_cls,  # type: ignore[arg-type]
             socket_timeout=options_model.socket_timeout,
             socket_connect_timeout=options_model.socket_connect_timeout,
             socket_keepalive=options_model.socket_keepalive,

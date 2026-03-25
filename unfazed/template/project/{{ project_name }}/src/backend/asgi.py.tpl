@@ -1,11 +1,13 @@
 import os
 import sys
+import typing as t
 import warnings
 
-from unfazed.core import Unfazed
+if t.TYPE_CHECKING:
+    from unfazed.core import Unfazed
 
 
-def get_application() -> Unfazed:
+def get_application() -> "Unfazed":
     root_path = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(root_path)
     os.environ.setdefault("UNFAZED_SETTINGS_MODULE", "entry.settings")
