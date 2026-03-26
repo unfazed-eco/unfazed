@@ -101,7 +101,7 @@ async def test_cache_key_with_force_update() -> None:
     assert await f2(x=1) == 1
     assert await f2(x=1, force_update=True) == 2
 
-    # case 3: function declares force_update: bool -> valid boolean works
+    # case 3: function declares force_update: bool -> valid, no warning
     f4_call_count = 0
 
     @cached(using="test_cache_deco", include=["x"])
@@ -122,3 +122,20 @@ async def test_cache_key_with_force_update() -> None:
             return x
 
     assert await f5(x=1) == 1
+
+
+async def test_is_bool_annotation_with_literal() -> None:
+    # Literal[True, False] -> bool annotation check passes, no warning emitted
+    @cached(using="test_cache_deco", include=["x"])
+    async def f_literal_bool(x: int, force_update: t.Literal[True, False] = False) -> int:
+        return x
+
+    assert await f_literal_bool(x=10) == 10
+    assert await f_literal_bool(x=10, force_update=True) == 10
+
+    # Literal with non-bool values -> bool annotation check fails, warning emitted
+    with pytest.warns(UserWarning, match="should be annotated as bool"):
+
+        @cached(using="test_cache_deco")
+        async def f_str_literal(x: int, force_update: t.Literal["yes", "no"] = "no") -> int:
+            return x

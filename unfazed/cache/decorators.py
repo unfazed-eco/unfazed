@@ -23,63 +23,6 @@ def is_bool_annotation(annotation: t.Any) -> bool:
     return False
 
 
-def resolve_signature_target(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
-    current: t.Any = func
-    visited: set[int] = set()
-
-    while callable(current):
-        if inspect.ismethod(current):
-            current = current.__func__
-
-        current_id = id(current)
-        if current_id in visited:
-            return current
-        visited.add(current_id)
-
-        wrapped = getattr(current, "__wrapped__", None)
-        if callable(wrapped):
-            current = wrapped
-            continue
-
-        code = getattr(current, "__code__", None)
-        closure = getattr(current, "__closure__", None)
-        freevars = getattr(code, "co_freevars", ())
-        if closure and freevars:
-            closure_vars: dict[str, t.Any] = {}
-            for name, cell in zip(freevars, closure):
-                try:
-                    closure_vars[name] = cell.cell_contents
-                except ValueError:
-                    continue
-
-            for name in (
-                "func",
-                "f",
-                "wrapped",
-                "wrapped_func",
-                "fn",
-                "callable_obj",
-                "inner",
-            ):
-                candidate = closure_vars.get(name)
-                if callable(candidate):
-                    current = candidate
-                    break
-            else:
-                callable_cells = [
-                    value for value in closure_vars.values() if callable(value)
-                ]
-                if len(callable_cells) == 1:
-                    current = callable_cells[0]
-                else:
-                    return current
-            continue
-
-        return current
-
-    return func
-
-
 def cached(
     using: str = "default",
     timeout: int = 60,
@@ -145,8 +88,7 @@ def cached(
         if func_id not in _warned_functions:
             _warned_functions.add(func_id)
 
-            signature_target = resolve_signature_target(func)
-            signature = inspect.signature(signature_target)
+            signature = inspect.signature(func)
             force_update_param = signature.parameters.get("force_update")
             has_force_update_param = force_update_param is not None
             has_var_keyword_param = any(
