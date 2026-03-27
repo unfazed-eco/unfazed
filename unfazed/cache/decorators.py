@@ -8,6 +8,7 @@ from unfazed.concurrency import run_in_threadpool
 from .handler import caches
 
 P = t.ParamSpec("P")
+_warned_functions: set[str] = set()
 
 
 def is_bool_annotation(annotation: t.Any) -> bool:
@@ -20,63 +21,6 @@ def is_bool_annotation(annotation: t.Any) -> bool:
         return all(isinstance(v, bool) for v in args)
 
     return False
-
-
-def resolve_signature_target(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
-    current: t.Any = func
-    visited: set[int] = set()
-
-    while callable(current):
-        if inspect.ismethod(current):
-            current = current.__func__
-
-        current_id = id(current)
-        if current_id in visited:
-            return current
-        visited.add(current_id)
-
-        wrapped = getattr(current, "__wrapped__", None)
-        if callable(wrapped):
-            current = wrapped
-            continue
-
-        code = getattr(current, "__code__", None)
-        closure = getattr(current, "__closure__", None)
-        freevars = getattr(code, "co_freevars", ())
-        if closure and freevars:
-            closure_vars: dict[str, t.Any] = {}
-            for name, cell in zip(freevars, closure):
-                try:
-                    closure_vars[name] = cell.cell_contents
-                except ValueError:
-                    continue
-
-            for name in (
-                "func",
-                "f",
-                "wrapped",
-                "wrapped_func",
-                "fn",
-                "callable_obj",
-                "inner",
-            ):
-                candidate = closure_vars.get(name)
-                if callable(candidate):
-                    current = candidate
-                    break
-            else:
-                callable_cells = [
-                    value for value in closure_vars.values() if callable(value)
-                ]
-                if len(callable_cells) == 1:
-                    current = callable_cells[0]
-                else:
-                    return current
-            continue
-
-        return current
-
-    return func
 
 
 def cached(
@@ -140,37 +84,37 @@ def cached(
     def decorator(
         func: t.Callable[P, t.Awaitable[t.Any] | t.Any],
     ) -> t.Callable[P, t.Awaitable[t.Any] | t.Any]:
-        has_force_update_param: bool | None = None
-        has_var_keyword_param: bool | None = None
+        func_id = f"{func.__module__}:{func.__qualname__}"
+        if func_id not in _warned_functions:
+            _warned_functions.add(func_id)
 
-        signature_target = resolve_signature_target(func)
-        signature = inspect.signature(signature_target)
-        force_update_param = signature.parameters.get("force_update")
-        has_force_update_param = force_update_param is not None
-        has_var_keyword_param = any(
-            param.kind is inspect.Parameter.VAR_KEYWORD
-            for param in signature.parameters.values()
-        )
-
-        if (
-            force_update_param
-            and force_update_param.annotation is not inspect.Signature.empty
-            and not is_bool_annotation(force_update_param.annotation)
-        ):
-            warnings.warn(
-                "Parameter 'force_update' should be annotated as bool when using @cached, "
-                "because this decorator reserves it for cache control.",
-                UserWarning,
-                stacklevel=2,
+            signature = inspect.signature(func)
+            force_update_param = signature.parameters.get("force_update")
+            has_force_update_param = force_update_param is not None
+            has_var_keyword_param = any(
+                param.kind is inspect.Parameter.VAR_KEYWORD
+                for param in signature.parameters.values()
             )
 
-        if not has_var_keyword_param and not has_force_update_param:
-            warnings.warn(
-                "The decorated function does not accept `**kwargs` or `force_update`. "
-                "Passing `force_update` to force update the cache will raise TypeError.",
-                UserWarning,
-                stacklevel=2,
-            )
+            if (
+                has_force_update_param
+                and force_update_param.annotation is not inspect.Signature.empty
+                and not is_bool_annotation(force_update_param.annotation)
+            ):
+                warnings.warn(
+                    "Parameter 'force_update' should be annotated as bool when using @cached, "
+                    "because this decorator reserves it for cache control.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+            if not has_var_keyword_param and not has_force_update_param:
+                warnings.warn(
+                    "The decorated function does not accept `**kwargs` or `force_update`. "
+                    "Passing `force_update` to force update the cache will raise TypeError.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
