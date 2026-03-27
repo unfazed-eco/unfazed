@@ -1,3 +1,7 @@
+v0.0.21
+====
+- [issue 112](https://github.com/unfazed-eco/unfazed/issues/112) 优化 cached 装饰器
+
 v0.0.20
 ====
 - [issue 98](https://github.com/unfazed-eco/unfazed/issues/98) 启动时优化 setup_route 流程
