@@ -127,7 +127,9 @@ async def test_cache_key_with_force_update() -> None:
 async def test_is_bool_annotation_with_literal() -> None:
     # Literal[True, False] -> bool annotation check passes, no warning emitted
     @cached(using="test_cache_deco", include=["x"])
-    async def f_literal_bool(x: int, force_update: t.Literal[True, False] = False) -> int:
+    async def f_literal_bool(
+        x: int, force_update: t.Literal[True, False] = False
+    ) -> int:
         return x
 
     assert await f_literal_bool(x=10) == 10
@@ -137,5 +139,7 @@ async def test_is_bool_annotation_with_literal() -> None:
     with pytest.warns(UserWarning, match="should be annotated as bool"):
 
         @cached(using="test_cache_deco")
-        async def f_str_literal(x: int, force_update: t.Literal["yes", "no"] = "no") -> int:
+        async def f_str_literal(
+            x: int, force_update: t.Literal["yes", "no"] = "no"
+        ) -> int:
             return x

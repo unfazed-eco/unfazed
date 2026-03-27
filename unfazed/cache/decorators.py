@@ -97,7 +97,7 @@ def cached(
             )
 
             if (
-                has_force_update_param
+                force_update_param
                 and force_update_param.annotation is not inspect.Signature.empty
                 and not is_bool_annotation(force_update_param.annotation)
             ):
