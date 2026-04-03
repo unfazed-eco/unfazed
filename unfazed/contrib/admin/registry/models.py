@@ -329,9 +329,7 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -737,9 +735,7 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [
-            self.action_permission(action) for action in self.get_actions()
-        ]  # type: ignore
+        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:

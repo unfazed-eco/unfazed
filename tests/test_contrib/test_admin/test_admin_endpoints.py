@@ -233,9 +233,7 @@ async def test_batch_model_save_endpoint_is_atomic(
                 },
             )
 
-        assert (
-            await T1User.get_or_none(email="atomic_batch_user_1@example.com") is None
-        )
+        assert await T1User.get_or_none(email="atomic_batch_user_1@example.com") is None
 
 
 async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None:

@@ -3,6 +3,8 @@ import typing as t
 import uuid
 
 import pytest
+from tortoise.exceptions import DoesNotExist
+from tortoise.models import Model
 
 from tests.apps.admin.registry.models import (
     Brand,
@@ -252,20 +254,20 @@ async def test_admin_services_hooks(
             return serializer
 
         async def after_save(
-            self, instance: Car, *args: t.Any, **kwargs: t.Any
-        ) -> Car:
+            self, instance: Model, *args: t.Any, **kwargs: t.Any
+        ) -> Model:
             event_log.append(("after_save", instance.alias))
             return instance
 
         async def before_delete(
-            self, instance: Car, *args: t.Any, **kwargs: t.Any
-        ) -> Car:
+            self, instance: Model, *args: t.Any, **kwargs: t.Any
+        ) -> Model:
             event_log.append(("before_delete", instance.alias))
             return instance
 
         async def after_delete(
-            self, instance: Car, *args: t.Any, **kwargs: t.Any
-        ) -> Car:
+            self, instance: Model, *args: t.Any, **kwargs: t.Any
+        ) -> Model:
             event_log.append(("after_delete", instance.alias))
             return instance
 
@@ -336,8 +338,8 @@ async def test_admin_batch_services_hooks(
             return serializers
 
         async def batch_after_save(
-            self, instances: t.List[Car], *args: t.Any, **kwargs: t.Any
-        ) -> t.List[Car]:
+            self, instances: t.List[Model], *args: t.Any, **kwargs: t.Any
+        ) -> t.List[Model]:
             event_log.append(
                 ("batch_after_save", [instance.alias for instance in instances])
             )
@@ -415,7 +417,7 @@ async def test_admin_batch_services_atomic(
     class AtomicCarAdmin(ModelAdmin):
         pass
 
-    with pytest.raises(Exception):
+    with pytest.raises(DoesNotExist):
         await AdminModelService.batch_model_save(
             "AtomicCarAdmin",
             [

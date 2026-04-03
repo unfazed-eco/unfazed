@@ -216,8 +216,9 @@ class AdminModelService:
 
         async with in_transaction() as connection:
             for serializer in _wait_save:
-                if serializer.id > 0:
-                    current_db_ins = await serializer_cls.get_object(serializer)
+                idschema = IdSchema.model_validate(serializer.model_dump())
+                if idschema.id > 0:
+                    current_db_ins = await serializer_cls.get_object(idschema)
                     db_ins = await serializer.update(
                         current_db_ins, using_db=connection
                     )
@@ -254,9 +255,9 @@ class AdminModelService:
         db_model = await admin_ins.before_delete(instance=db_model, request=request)
 
         # TODO: handle related data
-        res = await serializer_cls.destroy(db_model)
+        await serializer_cls.destroy(db_model)
 
         # trigger after delete
         await admin_ins.after_delete(instance=db_model, request=request)
 
-        return res
+        return None
