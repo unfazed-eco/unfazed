@@ -4,6 +4,7 @@ import typing as t
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from tortoise import Model as TModel
+from tortoise.transactions import in_transaction
 
 from unfazed.contrib.admin.registry.schema import AdminSite
 from unfazed.exception import PermissionDenied
@@ -182,9 +183,52 @@ class AdminModelService:
             db_ins = await serializer.update(current_db_ins)
 
         # trigger after save
-        await admin_ins.after_save(ins=db_ins, request=request)
+        await admin_ins.after_save(instance=db_ins, request=request)
 
         return await serializer_cls.retrieve(db_ins)
+
+    @classmethod
+    async def batch_model_save(
+        cls,
+        admin_ins_name: str,
+        data: t.List[t.Dict],
+        request: HttpRequest,
+    ) -> None:
+        admin_ins: ModelAdmin = admin_collector[admin_ins_name]
+
+        if not await admin_ins.has_change_perm(
+            request
+        ) and not await admin_ins.has_create_perm(request):
+            raise PermissionDenied(message="Permission Denied")
+
+        serializer_cls: t.Type[Serializer] = admin_ins.serializer
+        _wait_save: t.List[Serializer] = []
+        saved_inses: t.List[TModel] = []
+
+        for item in data:
+            _validated_item = serializer_cls.model_validate(item)
+            _wait_save.append(_validated_item)
+
+        # trigger before save
+        _wait_save = await admin_ins.batch_before_save(
+            serializers=_wait_save, request=request
+        )
+
+        async with in_transaction() as connection:
+            for serializer in _wait_save:
+                if serializer.id > 0:
+                    current_db_ins = await serializer_cls.get_object(serializer)
+                    db_ins = await serializer.update(
+                        current_db_ins, using_db=connection
+                    )
+                else:
+                    db_ins = await serializer.create(using_db=connection)
+                saved_inses.append(db_ins)
+
+        # trigger after save
+        await admin_ins.batch_after_save(instances=saved_inses, request=request)
+
+        return None
 
     @classmethod
     async def model_delete(
@@ -207,12 +251,12 @@ class AdminModelService:
         db_model = await serializer_cls.get_object(idschema)
 
         # trigger before delete
-        db_model = await admin_ins.before_delete(ins=db_model, request=request)
+        db_model = await admin_ins.before_delete(instance=db_model, request=request)
 
         # TODO: handle related data
         res = await serializer_cls.destroy(db_model)
 
         # trigger after delete
-        await admin_ins.after_delete(ins=db_model, request=request)
+        await admin_ins.after_delete(instance=db_model, request=request)
 
         return res

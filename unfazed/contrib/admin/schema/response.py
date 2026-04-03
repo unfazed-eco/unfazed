@@ -38,5 +38,9 @@ class SaveResp(BaseResponse[t.Dict]):
     pass
 
 
+class BatchSaveResp(BaseResponse[t.Dict]):
+    pass
+
+
 class DeleteResp(BaseResponse[t.Dict]):
     pass

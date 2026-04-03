@@ -288,6 +288,8 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     can_edit: bool = True
     # can search the items in the list page
     can_search: bool = True
+    # can batch save the data
+    can_batch_save: bool = True
 
     @property
     def route_label(self) -> str:
@@ -327,7 +329,9 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
             self.change_permission,
             self.delete_permission,
             self.create_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @property
     def app_label(self) -> str:
@@ -599,6 +603,7 @@ class ModelAdmin(BaseModelAdmin):
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
                 "can_search": self.can_search,
+                "can_batch_save": self.can_batch_save,
                 "detail_display": detail_display,
                 "detail_order": self.detail_order,
                 "detail_editable": self.detail_editable,
@@ -623,14 +628,28 @@ class ModelAdmin(BaseModelAdmin):
     ) -> Serializer:
         return serializer
 
-    async def after_save(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
-        return ins
+    async def after_save(self, instance: Model, *args: t.Any, **kwargs: t.Any) -> Model:
+        return instance
 
-    async def before_delete(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
-        return ins
+    async def before_delete(
+        self, instance: Model, *args: t.Any, **kwargs: t.Any
+    ) -> Model:
+        return instance
 
-    async def after_delete(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
-        return ins
+    async def after_delete(
+        self, instance: Model, *args: t.Any, **kwargs: t.Any
+    ) -> Model:
+        return instance
+
+    async def batch_before_save(
+        self, serializers: t.List[Serializer], *args: t.Any, **kwargs: t.Any
+    ) -> t.List[Serializer]:
+        return serializers
+
+    async def batch_after_save(
+        self, instances: t.List[Model], *args: t.Any, **kwargs: t.Any
+    ) -> t.List[Model]:
+        return instances
 
 
 class ModelInlineAdmin(ModelAdmin):
@@ -683,6 +702,7 @@ class ModelInlineAdmin(ModelAdmin):
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
                 "can_search": self.can_search,
+                "can_batch_save": self.can_batch_save,
             }
         )
 
@@ -717,7 +737,9 @@ class CustomAdmin(BaseAdmin):
     def get_all_permissions(self) -> t.List[str]:
         return [
             self.view_permission,
-        ] + [self.action_permission(action) for action in self.get_actions()]  # type: ignore
+        ] + [
+            self.action_permission(action) for action in self.get_actions()
+        ]  # type: ignore
 
     @t.override
     def to_serialize(self) -> AdminCustomSerializeModel:

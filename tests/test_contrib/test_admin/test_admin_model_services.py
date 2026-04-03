@@ -251,17 +251,23 @@ async def test_admin_services_hooks(
             event_log.append(("before_save", serializer.alias))
             return serializer
 
-        async def after_save(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
-            event_log.append(("after_save", ins.alias))
-            return ins
+        async def after_save(
+            self, instance: Car, *args: t.Any, **kwargs: t.Any
+        ) -> Car:
+            event_log.append(("after_save", instance.alias))
+            return instance
 
-        async def before_delete(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
-            event_log.append(("before_delete", ins.alias))
-            return ins
+        async def before_delete(
+            self, instance: Car, *args: t.Any, **kwargs: t.Any
+        ) -> Car:
+            event_log.append(("before_delete", instance.alias))
+            return instance
 
-        async def after_delete(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
-            event_log.append(("after_delete", ins.alias))
-            return ins
+        async def after_delete(
+            self, instance: Car, *args: t.Any, **kwargs: t.Any
+        ) -> Car:
+            event_log.append(("after_delete", instance.alias))
+            return instance
 
     car_dict = {
         "id": -1,
@@ -308,6 +314,209 @@ async def test_admin_services_hooks(
         ("before_delete", "hooked-hook-target"),
         ("after_delete", "hooked-hook-target"),
     ]
+
+
+async def test_admin_batch_services_hooks(
+    setup_without_relation_env: None,
+) -> None:
+    event_log: list[tuple[str, t.Any]] = []
+
+    class BatchHookCarSerializer(Serializer):
+        class Meta:
+            model = Car
+
+    @register(BatchHookCarSerializer)
+    class BatchHookCarAdmin(ModelAdmin):
+        async def batch_before_save(
+            self, serializers: t.List[Serializer], *args: t.Any, **kwargs: t.Any
+        ) -> t.List[Serializer]:
+            for serializer in serializers:
+                serializer.alias = f"batch-{serializer.alias}"
+            event_log.append(("batch_before_save", [s.alias for s in serializers]))
+            return serializers
+
+        async def batch_after_save(
+            self, instances: t.List[Car], *args: t.Any, **kwargs: t.Any
+        ) -> t.List[Car]:
+            event_log.append(
+                ("batch_after_save", [instance.alias for instance in instances])
+            )
+            return instances
+
+    await AdminModelService.batch_model_save(
+        "BatchHookCarAdmin",
+        [
+            {
+                "id": -1,
+                "bits": b"bits",
+                "limited": True,
+                "brand": Brand.BENZ,
+                "alias": "one",
+                "year": datetime.date(2025, 1, 1),
+                "production_datetime": datetime.datetime.now(),
+                "release_datetime": datetime.datetime.now(),
+                "price": 1000,
+                "length": 100,
+                "color": Color.RED,
+                "height": 100,
+                "extra_info": {"extra_info": "extra_info_1"},
+                "version": 1,
+                "description": "description_1",
+                "usage": datetime.timedelta(days=1),
+                "late_used_time": datetime.time(hour=1),
+                "uuid": uuid.uuid4(),
+                "override": "override_1",
+                "pic": "pic_1",
+                "created_at": 11001,
+            },
+            {
+                "id": -1,
+                "bits": b"bits",
+                "limited": True,
+                "brand": Brand.BENZ,
+                "alias": "two",
+                "year": datetime.date(2025, 1, 1),
+                "production_datetime": datetime.datetime.now(),
+                "release_datetime": datetime.datetime.now(),
+                "price": 2000,
+                "length": 200,
+                "color": Color.RED,
+                "height": 200,
+                "extra_info": {"extra_info": "extra_info_2"},
+                "version": 1,
+                "description": "description_2",
+                "usage": datetime.timedelta(days=2),
+                "late_used_time": datetime.time(hour=2),
+                "uuid": uuid.uuid4(),
+                "override": "override_2",
+                "pic": "pic_2",
+                "created_at": 11002,
+            },
+        ],
+        build_request(),
+    )
+
+    saved_cars = await Car.filter(created_at__in=[11001, 11002]).order_by("created_at")
+    assert [car.alias for car in saved_cars] == ["batch-one", "batch-two"]
+    assert event_log == [
+        ("batch_before_save", ["batch-one", "batch-two"]),
+        ("batch_after_save", ["batch-one", "batch-two"]),
+    ]
+
+
+async def test_admin_batch_services_atomic(
+    setup_without_relation_env: None,
+) -> None:
+    class AtomicCarSerializer(Serializer):
+        class Meta:
+            model = Car
+
+    @register(AtomicCarSerializer)
+    class AtomicCarAdmin(ModelAdmin):
+        pass
+
+    with pytest.raises(Exception):
+        await AdminModelService.batch_model_save(
+            "AtomicCarAdmin",
+            [
+                {
+                    "id": -1,
+                    "bits": b"bits",
+                    "limited": True,
+                    "brand": Brand.BENZ,
+                    "alias": "atomic-one",
+                    "year": datetime.date(2025, 1, 1),
+                    "production_datetime": datetime.datetime.now(),
+                    "release_datetime": datetime.datetime.now(),
+                    "price": 1000,
+                    "length": 100,
+                    "color": Color.RED,
+                    "height": 100,
+                    "extra_info": {"extra_info": "extra_info_1"},
+                    "version": 1,
+                    "description": "description_1",
+                    "usage": datetime.timedelta(days=1),
+                    "late_used_time": datetime.time(hour=1),
+                    "uuid": uuid.uuid4(),
+                    "override": "override_1",
+                    "pic": "pic_1",
+                    "created_at": 12001,
+                },
+                {
+                    "id": 999999,
+                    "bits": b"bits",
+                    "limited": True,
+                    "brand": Brand.BENZ,
+                    "alias": "atomic-two",
+                    "year": datetime.date(2025, 1, 1),
+                    "production_datetime": datetime.datetime.now(),
+                    "release_datetime": datetime.datetime.now(),
+                    "price": 2000,
+                    "length": 200,
+                    "color": Color.RED,
+                    "height": 200,
+                    "extra_info": {"extra_info": "extra_info_2"},
+                    "version": 1,
+                    "description": "description_2",
+                    "usage": datetime.timedelta(days=2),
+                    "late_used_time": datetime.time(hour=2),
+                    "uuid": uuid.uuid4(),
+                    "override": "override_2",
+                    "pic": "pic_2",
+                    "created_at": 12002,
+                },
+            ],
+            build_request(),
+        )
+
+    assert await Car.get_or_none(created_at=12001) is None
+
+
+async def test_admin_batch_services_update_path(
+    setup_without_relation_env: None,
+) -> None:
+    class UpdateBatchCarSerializer(Serializer):
+        class Meta:
+            model = Car
+
+    @register(UpdateBatchCarSerializer)
+    class UpdateBatchCarAdmin(ModelAdmin):
+        pass
+
+    existing = await Car.get(created_at=1)
+
+    await AdminModelService.batch_model_save(
+        "UpdateBatchCarAdmin",
+        [
+            {
+                "id": existing.id,
+                "bits": existing.bits,
+                "limited": existing.limited,
+                "brand": existing.brand,
+                "alias": "updated-in-batch",
+                "year": existing.year,
+                "production_datetime": existing.production_datetime,
+                "release_datetime": existing.release_datetime,
+                "price": existing.price,
+                "length": existing.length,
+                "color": existing.color,
+                "height": existing.height,
+                "extra_info": existing.extra_info,
+                "version": existing.version,
+                "description": existing.description,
+                "usage": existing.usage,
+                "late_used_time": existing.late_used_time,
+                "uuid": existing.uuid,
+                "override": existing.override,
+                "pic": existing.pic,
+                "created_at": existing.created_at,
+            }
+        ],
+        build_request(),
+    )
+
+    refreshed = await Car.get(id=existing.id)
+    assert refreshed.alias == "updated-in-batch"
 
 
 async def test_admin_services_inlines_with_relation_fields(
@@ -552,6 +761,9 @@ async def test_permission_denied() -> None:
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_delete("TSCarAdmin", {}, request)
+
+    with pytest.raises(PermissionDenied):
+        await AdminModelService.batch_model_save("TSCarAdmin", [], request)
 
     with pytest.raises(PermissionDenied):
         await AdminModelService.model_action(
