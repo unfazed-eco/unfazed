@@ -1,6 +1,7 @@
 import typing as t
 
 import orjson as json
+from pydantic import BaseModel
 from starlette.requests import Request
 
 if t.TYPE_CHECKING:
@@ -24,7 +25,7 @@ class HttpRequest(Request):
         scheme (str): The URL scheme (http/https).
         path (str): The URL path.
         session (SessionBase): The session object if SessionMiddleware is installed.
-        user (AbstractUser): The authenticated user if AuthenticationMiddleware is installed.
+        user (t.Optional[t.Union[AbstractUser, BaseModel]]): The current user from scope["user"].
         unfazed (Unfazed): The Unfazed application instance.
 
     Example:
@@ -42,7 +43,7 @@ class HttpRequest(Request):
             # Access session (requires SessionMiddleware)
             session = request.session
 
-            # Access authenticated user (requires AuthenticationMiddleware)
+            # Access current user from request scope
             user = request.user
 
             # Access the Unfazed application
@@ -111,12 +112,12 @@ class HttpRequest(Request):
 
     @property
     @t.override
-    def user(self) -> "AbstractUser":  # type: ignore
+    def user(self) -> t.Optional[t.Union["AbstractUser", BaseModel]]:
         """
         Get the authenticated user.
 
         Returns:
-            AbstractUser: The authenticated user or None if not authenticated.
+            t.Optional[t.Union[AbstractUser, BaseModel]]: The authenticated user or None if not authenticated.
 
         Raises:
             ValueError: If AuthenticationMiddleware is not installed.

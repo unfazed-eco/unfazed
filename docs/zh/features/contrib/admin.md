@@ -193,6 +193,44 @@ class PostAdmin(ModelAdmin):
 
 Unfazed 会在可能时自动检测关联类型和连接字段（`AutoFill`）。对于 M2M 关联，你必须使用 `AdminThrough` schema 提供 `through` 配置。
 
+### 生命周期 Hook
+
+`ModelAdmin` 在保存和删除前后提供了四个生命周期 hook：
+
+```python
+from tortoise import Model
+
+from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.serializer import Serializer
+
+
+@register(PostSerializer)
+class PostAdmin(ModelAdmin):
+    async def before_save(self, serializer: Serializer, **kwargs) -> Serializer:
+        serializer.title = serializer.title.strip()
+        return serializer
+
+    async def after_save(self, ins: Model, **kwargs) -> Model:
+        return ins
+
+    async def before_delete(self, ins: Model, **kwargs) -> Model:
+        return ins
+
+    async def after_delete(self, ins: Model, **kwargs) -> Model:
+        return ins
+```
+
+Hook 约定如下：
+
+| Hook | 执行时机 | 返回值 |
+|------|----------|--------|
+| `before_save` | 在创建/更新真正执行前 | 必须返回要落库的 `Serializer`。 |
+| `after_save` | 在创建/更新成功后 | 返回已保存的模型实例。 |
+| `before_delete` | 在删除真正执行前 | 必须返回要删除的模型实例。 |
+| `after_delete` | 在删除成功后 | 返回已删除的模型实例。 |
+
+所有 admin 生命周期 hook 都必须使用 `async def` 定义。和 `@action` 不同，同步 hook 当前不受支持。
+
 ### CustomAdmin
 
 用于不绑定模型的 admin 页面 — 仪表盘、报表或工具页：

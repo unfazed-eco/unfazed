@@ -93,9 +93,11 @@ Auth 设置注册在 `UNFAZED_CONTRIB_AUTH_SETTINGS` 下：
 
 ## AuthenticationMiddleware
 
-`AuthenticationMiddleware` 读取 session 并填充 `scope["user"]`，使 `request.user` 返回当前用户（匿名请求时为 `None`）。
+`AuthenticationMiddleware` 读取 session 并填充 `scope["user"]`，使 `request.user` 返回当前用户（auth 场景下通常是 `AbstractUser`，匿名请求时为 `None`）。
 
 它必须放在 middleware 列表中 `SessionMiddleware` **之后**，因为它依赖 `request.session`。
+
+如果前置 middleware 已经写入了 `scope["user"]`，`AuthenticationMiddleware` 不会覆盖该值；因此在框架层面，`request.user` 也可以是自定义的 `BaseModel` 对象。
 
 ## User 模型
 

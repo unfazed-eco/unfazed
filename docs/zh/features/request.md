@@ -54,7 +54,7 @@ async def my_endpoint(request: HttpRequest) -> JsonResponse:
 | `path` | `str` | `url.path` 的简写。 |
 | `await json()` | `dict` | 使用 `orjson` 将请求体解析为 JSON。首次调用后缓存。 |
 | `session` | `SessionBase` | session 对象。需要 `SessionMiddleware`。若未安装则抛出 `ValueError`。 |
-| `user` | `AbstractUser` | 已认证用户。需要 `AuthenticationMiddleware`。若未安装则抛出 `ValueError`。 |
+| `user` | `AbstractUser \| BaseModel \| None` | 当前请求用户。通常由 middleware 写入 `scope["user"]`。未安装相关 middleware 时访问会抛出 `ValueError`。 |
 | `unfazed` | `Unfazed` | 应用实例。 |
 
 ## API 参考
@@ -76,5 +76,5 @@ Unfazed 框架的增强型 HTTP 请求类。
 - `scheme -> str`: URL 协议（`"http"` 或 `"https"`）。
 - `path -> str`: URL 路径（如 `"/api/users"`）。
 - `session -> SessionBase`: session 对象。若未安装 `SessionMiddleware` 则抛出 `ValueError`。
-- `user -> AbstractUser`: 已认证用户。若未安装 `AuthenticationMiddleware` 则抛出 `ValueError`。
+- `user -> Optional[AbstractUser | BaseModel]`: 当前请求用户。通常由 `AuthenticationMiddleware` 或自定义 middleware 注入；匿名请求时可为 `None`。若没有 middleware 写入 `scope["user"]`，则抛出 `ValueError`。
 - `unfazed -> Unfazed`: 从 ASGI scope 中获取的 Unfazed 应用实例。

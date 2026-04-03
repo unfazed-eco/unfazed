@@ -54,7 +54,7 @@ async def my_endpoint(request: HttpRequest) -> JsonResponse:
 | `path` | `str` | Shortcut for `url.path`. |
 | `await json()` | `dict` | Parse body as JSON using `orjson`. Cached after first call. |
 | `session` | `SessionBase` | The session object. Requires `SessionMiddleware`. Raises `ValueError` if not installed. |
-| `user` | `AbstractUser` | The authenticated user. Requires `AuthenticationMiddleware`. Raises `ValueError` if not installed. |
+| `user` | `AbstractUser \| BaseModel \| None` | The current request user. Usually populated by middleware via `scope["user"]`. Raises `ValueError` when no relevant middleware has populated it. |
 | `unfazed` | `Unfazed` | The application instance. |
 
 ## API Reference
@@ -76,5 +76,5 @@ Enhanced HTTP request class for the Unfazed framework.
 - `scheme -> str`: URL scheme (`"http"` or `"https"`).
 - `path -> str`: URL path (e.g. `"/api/users"`).
 - `session -> SessionBase`: Session object. Raises `ValueError` if `SessionMiddleware` is not installed.
-- `user -> AbstractUser`: Authenticated user. Raises `ValueError` if `AuthenticationMiddleware` is not installed.
+- `user -> Optional[AbstractUser | BaseModel]`: Current request user. Usually injected by `AuthenticationMiddleware` or custom middleware; may be `None` for anonymous requests. Raises `ValueError` when `scope["user"]` has not been populated.
 - `unfazed -> Unfazed`: The Unfazed application instance from the ASGI scope.

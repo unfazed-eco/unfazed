@@ -6,6 +6,7 @@ from itertools import chain
 
 from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
+from tortoise.models import Model
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.settings import UnfazedContribAdminSettings
@@ -616,6 +617,20 @@ class ModelAdmin(BaseModelAdmin):
             actions=actions,
             attrs=attrs,
         )
+
+    async def before_save(
+        self, serializer: Serializer, *args: t.Any, **kwargs: t.Any
+    ) -> Serializer:
+        return serializer
+
+    async def after_save(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
+        return ins
+
+    async def before_delete(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
+        return ins
+
+    async def after_delete(self, ins: Model, *args: t.Any, **kwargs: t.Any) -> Model:
+        return ins
 
 
 class ModelInlineAdmin(ModelAdmin):

@@ -169,14 +169,20 @@ class AdminModelService:
         serializer_cls: t.Type[Serializer] = admin_ins.serializer
 
         # handle main model
-        idschema = IdSchema.model_validate(data)
+        idschema: IdSchema = IdSchema.model_validate(data)
+        serializer: Serializer = serializer_cls.model_validate(data)
+
+        # trigger before save
+        serializer = await admin_ins.before_save(serializer=serializer, request=request)
+
         if idschema.id <= 0:
-            serializer = serializer_cls.model_validate(data)
             db_ins = await serializer.create()
         else:
             current_db_ins = await serializer_cls.get_object(idschema)
-            serializer = serializer_cls.model_validate(data)
             db_ins = await serializer.update(current_db_ins)
+
+        # trigger after save
+        await admin_ins.after_save(ins=db_ins, request=request)
 
         return await serializer_cls.retrieve(db_ins)
 
@@ -200,6 +206,13 @@ class AdminModelService:
         serializer_cls: t.Type[Serializer] = admin_ins.serializer
         db_model = await serializer_cls.get_object(idschema)
 
-        # TODO: handle related data
+        # trigger before delete
+        db_model = await admin_ins.before_delete(ins=db_model, request=request)
 
-        return await serializer_cls.destroy(db_model)
+        # TODO: handle related data
+        res = await serializer_cls.destroy(db_model)
+
+        # trigger after delete
+        await admin_ins.after_delete(ins=db_model, request=request)
+
+        return res

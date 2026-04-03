@@ -193,6 +193,44 @@ class PostAdmin(ModelAdmin):
 
 Unfazed auto-detects the relation type and join fields when possible (`AutoFill`). For M2M relations, you must provide a `through` configuration with the `AdminThrough` schema.
 
+### Lifecycle Hooks
+
+`ModelAdmin` provides four lifecycle hooks around save and delete operations:
+
+```python
+from tortoise import Model
+
+from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.serializer import Serializer
+
+
+@register(PostSerializer)
+class PostAdmin(ModelAdmin):
+    async def before_save(self, serializer: Serializer, **kwargs) -> Serializer:
+        serializer.title = serializer.title.strip()
+        return serializer
+
+    async def after_save(self, ins: Model, **kwargs) -> Model:
+        return ins
+
+    async def before_delete(self, ins: Model, **kwargs) -> Model:
+        return ins
+
+    async def after_delete(self, ins: Model, **kwargs) -> Model:
+        return ins
+```
+
+Hook contract:
+
+| Hook | When it runs | Return value |
+|------|--------------|--------------|
+| `before_save` | Before create/update is executed | Must return the `Serializer` that should be persisted. |
+| `after_save` | After create/update succeeds | Returns the saved model instance. |
+| `before_delete` | Before delete is executed | Must return the model instance that should be deleted. |
+| `after_delete` | After delete succeeds | Returns the deleted model instance. |
+
+All admin lifecycle hooks must be declared with `async def`. Unlike `@action`, sync hooks are not supported.
+
 ### CustomAdmin
 
 For admin pages that are not tied to a model — dashboards, reports, or utility pages:

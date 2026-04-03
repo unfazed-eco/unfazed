@@ -233,6 +233,83 @@ async def test_admin_services_without_relations(
         )
 
 
+async def test_admin_services_hooks(
+    setup_without_relation_env: None,
+) -> None:
+    event_log: list[tuple[str, t.Any]] = []
+
+    class HookCarSerializer(Serializer):
+        class Meta:
+            model = Car
+
+    @register(HookCarSerializer)
+    class HookCarAdmin(ModelAdmin):
+        async def before_save(
+            self, serializer: Serializer, *args: t.Any, **kwargs: t.Any
+        ) -> Serializer:
+            serializer.alias = f"hooked-{serializer.alias}"
+            event_log.append(("before_save", serializer.alias))
+            return serializer
+
+        async def after_save(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
+            event_log.append(("after_save", ins.alias))
+            return ins
+
+        async def before_delete(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
+            event_log.append(("before_delete", ins.alias))
+            return ins
+
+        async def after_delete(self, ins: Car, *args: t.Any, **kwargs: t.Any) -> Car:
+            event_log.append(("after_delete", ins.alias))
+            return ins
+
+    car_dict = {
+        "id": -1,
+        "bits": b"bits",
+        "limited": True,
+        "brand": Brand.BENZ,
+        "alias": "hook-target",
+        "year": datetime.date(2025, 1, 1),
+        "production_datetime": datetime.datetime.now(),
+        "release_datetime": datetime.datetime.now(),
+        "price": 1000,
+        "length": 100,
+        "color": Color.RED,
+        "height": 100,
+        "extra_info": {"extra_info": "extra_info_1"},
+        "version": 1,
+        "description": "description_1",
+        "usage": datetime.timedelta(days=1),
+        "late_used_time": datetime.time(hour=1),
+        "uuid": uuid.uuid4(),
+        "override": "override_1",
+        "pic": "pic_1",
+        "created_at": 10001,
+    }
+
+    save_ret = await AdminModelService.model_save(
+        "HookCarAdmin", car_dict, build_request()
+    )
+
+    assert save_ret.alias == "hooked-hook-target"
+    saved_ins = await Car.get(id=save_ret.id)
+    assert saved_ins.alias == "hooked-hook-target"
+    assert event_log[:2] == [
+        ("before_save", "hooked-hook-target"),
+        ("after_save", "hooked-hook-target"),
+    ]
+
+    await AdminModelService.model_delete(
+        "HookCarAdmin", {"id": save_ret.id}, build_request()
+    )
+
+    assert (await Car.get_or_none(id=save_ret.id)) is None
+    assert event_log[2:] == [
+        ("before_delete", "hooked-hook-target"),
+        ("after_delete", "hooked-hook-target"),
+    ]
+
+
 async def test_admin_services_inlines_with_relation_fields(
     setup_inline: None,
     setup_inlines_with_relation_fields: t.AsyncGenerator,

@@ -25,7 +25,7 @@ class DataBase:
         with conn:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    f"CREATE DATABASE {db_name}  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+                    f"CREATE DATABASE IF NOT EXISTS {db_name}  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
                 )
 
             conn.commit()
@@ -35,6 +35,6 @@ class DataBase:
 
         with conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"DROP DATABASE {db_name}")
+                cursor.execute(f"DROP DATABASE IF EXISTS {db_name}")
 
             conn.commit()
