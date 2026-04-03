@@ -93,6 +93,7 @@ When you include `unfazed.contrib.admin.routes`, the following endpoints are reg
 | POST | `/model-data` | Query and paginate model data. |
 | POST | `/model-inlines` | Return inline relation data for a record. |
 | POST | `/model-save` | Create or update a record. |
+| POST | `/batch-model-save` | Create or update multiple records in one request. |
 | POST | `/model-delete` | Delete a record. |
 | POST | `/model-action` | Execute a custom action. |
 
@@ -157,6 +158,7 @@ class PostAdmin(ModelAdmin):
 | `can_delete` | `True` | Show a "Delete" button. |
 | `can_edit` | `True` | Allow editing records. |
 | `can_search` | `True` | Enable the search panel. |
+| `can_batch_save` | `True` | Allow batch create/update from the admin UI. |
 
 **Navigation:**
 
@@ -192,6 +194,58 @@ class PostAdmin(ModelAdmin):
 ```
 
 Unfazed auto-detects the relation type and join fields when possible (`AutoFill`). For M2M relations, you must provide a `through` configuration with the `AdminThrough` schema.
+
+### Lifecycle Hooks
+
+`ModelAdmin` provides lifecycle hooks around save, batch save, and delete operations:
+
+```python
+from tortoise import Model
+
+from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.serializer import Serializer
+
+
+@register(PostSerializer)
+class PostAdmin(ModelAdmin):
+    async def before_save(self, serializer: Serializer, **kwargs) -> Serializer:
+        serializer.title = serializer.title.strip()
+        return serializer
+
+    async def after_save(self, instance: Model, **kwargs) -> Model:
+        return instance
+
+    async def batch_before_save(
+        self, serializers: list[Serializer], **kwargs
+    ) -> list[Serializer]:
+        return serializers
+
+    async def batch_after_save(
+        self, instances: list[Model], **kwargs
+    ) -> list[Model]:
+        return instances
+
+    async def before_delete(self, instance: Model, **kwargs) -> Model:
+        return instance
+
+    async def after_delete(self, instance: Model, **kwargs) -> Model:
+        return instance
+```
+
+Hook contract:
+
+| Hook | When it runs | Return value |
+|------|--------------|--------------|
+| `before_save` | Before create/update is executed | Must return the `Serializer` that should be persisted. |
+| `after_save` | After create/update succeeds | Returns the saved model instance. |
+| `batch_before_save` | Before batch create/update is executed | Must return the serializers that should be persisted. |
+| `batch_after_save` | After batch create/update succeeds | Returns the saved model instances. |
+| `before_delete` | Before delete is executed | Must return the model instance that should be deleted. |
+| `after_delete` | After delete succeeds | Returns the deleted model instance. |
+
+All admin lifecycle hooks must be declared with `async def`. Unlike `@action`, sync hooks are not supported.
+
+`can_batch_save` only controls whether batch save is exposed to the frontend admin. If enabled, the backend batch save endpoint is `POST /batch-model-save`.
 
 ### CustomAdmin
 

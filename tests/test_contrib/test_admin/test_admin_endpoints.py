@@ -1,7 +1,9 @@
 import typing as t
 from unittest.mock import patch
 
+import pytest
 import pytest_asyncio
+from tortoise.exceptions import DoesNotExist
 
 from tests.apps.admin.registry.models import T1User
 from unfazed.contrib.admin.registry import (
@@ -169,9 +171,69 @@ async def test_endpoints(setup_admin_unfazed: Unfazed) -> None:
 
         assert resp11.status_code == 200
 
-        # test openapi integration
-        resp12 = await request.get("/openapi/openapi.json")
+        resp12 = await request.post(
+            "/api/contrib/admin/batch-model-save",
+            json={
+                "name": "TET1UserAdmin",
+                "data": [
+                    {
+                        "name": "batch_user_1",
+                        "email": "batch_user_1@example.com",
+                        "password": "batch_user_1",
+                        "id": -1,
+                    },
+                    {
+                        "name": "batch_user_2",
+                        "email": "batch_user_2@example.com",
+                        "password": "batch_user_2",
+                        "id": -1,
+                    },
+                ],
+            },
+        )
+
         assert resp12.status_code == 200
+
+        batch_users = await T1User.filter(
+            email__in=["batch_user_1@example.com", "batch_user_2@example.com"]
+        ).order_by("email")
+        assert len(batch_users) == 2
+        assert [user.name for user in batch_users] == ["batch_user_1", "batch_user_2"]
+
+        # test openapi integration
+        resp13 = await request.get("/openapi/openapi.json")
+        assert resp13.status_code == 200
+
+
+async def test_batch_model_save_endpoint_is_atomic(
+    setup_admin_unfazed: Unfazed,
+) -> None:
+    with patch.object(HttpRequest, "user", User()):
+        request = Requestfactory(setup_admin_unfazed)
+
+        with pytest.raises(DoesNotExist):
+            await request.post(
+                "/api/contrib/admin/batch-model-save",
+                json={
+                    "name": "TET1UserAdmin",
+                    "data": [
+                        {
+                            "name": "atomic_batch_user_1",
+                            "email": "atomic_batch_user_1@example.com",
+                            "password": "atomic_batch_user_1",
+                            "id": -1,
+                        },
+                        {
+                            "name": "atomic_batch_user_2",
+                            "email": "atomic_batch_user_2@example.com",
+                            "password": "atomic_batch_user_2",
+                            "id": 999999,
+                        },
+                    ],
+                },
+            )
+
+        assert await T1User.get_or_none(email="atomic_batch_user_1@example.com") is None
 
 
 async def test_endpoints_with_unknown_user(setup_admin_unfazed: Unfazed) -> None:

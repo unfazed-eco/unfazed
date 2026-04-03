@@ -85,6 +85,22 @@ class Save(BaseModel):
     ]
 
 
+class BatchSave(BaseModel):
+    name: str = Field(description="name of the model")
+    data: t.List[ModelLineDataT] = Field(
+        description="one line data of the model",
+        examples=[
+            {
+                "id": 1,
+                "name": "admin",
+                "email": "admin@example.com",
+                "created_at": 12345,
+                "updated_at": 12345,
+            }
+        ],
+    )
+
+
 class Delete(BaseModel):
     name: str = Field(description="name of the model")
     data: ModelLineDataT = Field(

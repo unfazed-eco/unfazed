@@ -82,3 +82,12 @@ async def model_delete(
 ) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.DeleteResp)]:
     await AdminModelService.model_delete(ctx.name, ctx.data, request=request)
     return JsonResponse(s.DeleteResp(data={}))
+
+
+@login_required
+@record
+async def batch_model_save(
+    request: HttpRequest, ctx: t.Annotated[s.BatchSave, p.Json()]
+) -> t.Annotated[JsonResponse, p.ResponseSpec(model=s.BatchSaveResp)]:
+    await AdminModelService.batch_model_save(ctx.name, ctx.data, request=request)
+    return JsonResponse(s.BatchSaveResp(data={}))

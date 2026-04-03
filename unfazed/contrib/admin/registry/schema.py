@@ -133,6 +133,10 @@ class AdminBaseAttrs(BaseModel):
         default=True,
         description="can search the items in the list page",
     )
+    can_batch_save: bool = Field(
+        default=True,
+        description="can batch save the data in the list page",
+    )
     list_per_page: int = Field(
         default=20, description="number of items to display per page in frontend admin"
     )

@@ -6,6 +6,7 @@ from itertools import chain
 
 from pydantic.fields import FieldInfo
 from tortoise import Model as TModel
+from tortoise.models import Model
 
 from unfazed.conf import UnfazedSettings, settings
 from unfazed.contrib.admin.settings import UnfazedContribAdminSettings
@@ -287,6 +288,8 @@ class BaseModelAdmin(BaseAdmin, AdminAuthProtocol):
     can_edit: bool = True
     # can search the items in the list page
     can_search: bool = True
+    # can batch save the data
+    can_batch_save: bool = True
 
     @property
     def route_label(self) -> str:
@@ -598,6 +601,7 @@ class ModelAdmin(BaseModelAdmin):
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
                 "can_search": self.can_search,
+                "can_batch_save": self.can_batch_save,
                 "detail_display": detail_display,
                 "detail_order": self.detail_order,
                 "detail_editable": self.detail_editable,
@@ -616,6 +620,34 @@ class ModelAdmin(BaseModelAdmin):
             actions=actions,
             attrs=attrs,
         )
+
+    async def before_save(
+        self, serializer: Serializer, *args: t.Any, **kwargs: t.Any
+    ) -> Serializer:
+        return serializer
+
+    async def after_save(self, instance: Model, *args: t.Any, **kwargs: t.Any) -> Model:
+        return instance
+
+    async def before_delete(
+        self, instance: Model, *args: t.Any, **kwargs: t.Any
+    ) -> Model:
+        return instance
+
+    async def after_delete(
+        self, instance: Model, *args: t.Any, **kwargs: t.Any
+    ) -> Model:
+        return instance
+
+    async def batch_before_save(
+        self, serializers: t.List[Serializer], *args: t.Any, **kwargs: t.Any
+    ) -> t.List[Serializer]:
+        return serializers
+
+    async def batch_after_save(
+        self, instances: t.List[Model], *args: t.Any, **kwargs: t.Any
+    ) -> t.List[Model]:
+        return instances
 
 
 class ModelInlineAdmin(ModelAdmin):
@@ -668,6 +700,7 @@ class ModelInlineAdmin(ModelAdmin):
                 "can_delete": self.can_delete,
                 "can_edit": self.can_edit,
                 "can_search": self.can_search,
+                "can_batch_save": self.can_batch_save,
             }
         )
 

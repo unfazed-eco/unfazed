@@ -93,9 +93,11 @@ Each `AuthBackend` entry has:
 
 ## AuthenticationMiddleware
 
-`AuthenticationMiddleware` reads the session and populates `scope["user"]` so that `request.user` returns the current user (or `None` for anonymous requests).
+`AuthenticationMiddleware` reads the session and populates `scope["user"]` so that `request.user` returns the current user (typically an `AbstractUser` in auth flows, or `None` for anonymous requests).
 
 It must be placed **after** `SessionMiddleware` in the middleware list, since it depends on `request.session`.
+
+If an earlier middleware has already populated `scope["user"]`, `AuthenticationMiddleware` will not override it. Because of that, `request.user` can also be a custom `BaseModel` instance at the framework level.
 
 ## The User Model
 

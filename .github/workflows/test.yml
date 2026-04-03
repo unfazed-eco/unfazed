@@ -40,7 +40,7 @@ jobs:
           pip install uv
           uv sync --all-extras
       - name: "Run Test"
-        run: make test
+        run: make format && make test
         env:
           MYSQL_HOST: "127.0.0.1"
           MYSQL_PORT: "3306"

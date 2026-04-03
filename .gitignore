@@ -3,6 +3,7 @@ __pycache__
 .DS_Store
 .ruff_cache
 .coverage
+.coverage.*
 .venv
 migrations
 .VSCodeCounter

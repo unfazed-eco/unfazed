@@ -93,6 +93,7 @@ Admin 设置注册在 `UNFAZED_CONTRIB_ADMIN_SETTINGS` 下：
 | POST | `/model-data` | 查询并分页模型数据。 |
 | POST | `/model-inlines` | 返回记录的内联关联数据。 |
 | POST | `/model-save` | 创建或更新记录。 |
+| POST | `/batch-model-save` | 在一次请求中批量创建或更新多条记录。 |
 | POST | `/model-delete` | 删除记录。 |
 | POST | `/model-action` | 执行自定义操作。 |
 
@@ -157,6 +158,7 @@ class PostAdmin(ModelAdmin):
 | `can_delete` | `True` | 显示「删除」按钮。 |
 | `can_edit` | `True` | 允许编辑记录。 |
 | `can_search` | `True` | 启用搜索面板。 |
+| `can_batch_save` | `True` | 允许在 admin 界面中批量创建或更新记录。 |
 
 **导航：**
 
@@ -192,6 +194,58 @@ class PostAdmin(ModelAdmin):
 ```
 
 Unfazed 会在可能时自动检测关联类型和连接字段（`AutoFill`）。对于 M2M 关联，你必须使用 `AdminThrough` schema 提供 `through` 配置。
+
+### 生命周期 Hook
+
+`ModelAdmin` 在单条保存、批量保存和删除前后提供生命周期 hook：
+
+```python
+from tortoise import Model
+
+from unfazed.contrib.admin.registry import ModelAdmin, register
+from unfazed.serializer import Serializer
+
+
+@register(PostSerializer)
+class PostAdmin(ModelAdmin):
+    async def before_save(self, serializer: Serializer, **kwargs) -> Serializer:
+        serializer.title = serializer.title.strip()
+        return serializer
+
+    async def after_save(self, instance: Model, **kwargs) -> Model:
+        return instance
+
+    async def batch_before_save(
+        self, serializers: list[Serializer], **kwargs
+    ) -> list[Serializer]:
+        return serializers
+
+    async def batch_after_save(
+        self, instances: list[Model], **kwargs
+    ) -> list[Model]:
+        return instances
+
+    async def before_delete(self, instance: Model, **kwargs) -> Model:
+        return instance
+
+    async def after_delete(self, instance: Model, **kwargs) -> Model:
+        return instance
+```
+
+Hook 约定如下：
+
+| Hook | 执行时机 | 返回值 |
+|------|----------|--------|
+| `before_save` | 在创建/更新真正执行前 | 必须返回要落库的 `Serializer`。 |
+| `after_save` | 在创建/更新成功后 | 返回已保存的模型实例。 |
+| `batch_before_save` | 在批量创建/更新真正执行前 | 必须返回要落库的 serializers。 |
+| `batch_after_save` | 在批量创建/更新成功后 | 返回已保存的模型实例列表。 |
+| `before_delete` | 在删除真正执行前 | 必须返回要删除的模型实例。 |
+| `after_delete` | 在删除成功后 | 返回已删除的模型实例。 |
+
+所有 admin 生命周期 hook 都必须使用 `async def` 定义。和 `@action` 不同，同步 hook 当前不受支持。
+
+`can_batch_save` 只控制前端 admin 是否暴露批量保存能力；启用后，后端对应的批量保存 endpoint 是 `POST /batch-model-save`。
 
 ### CustomAdmin
 

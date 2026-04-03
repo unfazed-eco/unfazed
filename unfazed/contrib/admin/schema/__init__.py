@@ -1,5 +1,6 @@
-from .request import Action, Data, Delete, Detail, Save
+from .request import Action, BatchSave, Data, Delete, Detail, Save
 from .response import (
+    BatchSaveResp,
     DataResp,
     DeleteResp,
     DescResp,
@@ -18,6 +19,8 @@ __all__ = [
     "Action",
     "Save",
     "SaveResp",
+    "BatchSave",
+    "BatchSaveResp",
     "Delete",
     "DeleteResp",
     "RouteResp",

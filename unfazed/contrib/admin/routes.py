@@ -57,4 +57,11 @@ patterns = [
         methods=["POST"],
         operation_id="modelData",
     ),
+    path(
+        "/batch-model-save",
+        endpoint=e.batch_model_save,
+        name="batch-model-save",
+        methods=["POST"],
+        operation_id="batchModelSave",
+    ),
 ]
