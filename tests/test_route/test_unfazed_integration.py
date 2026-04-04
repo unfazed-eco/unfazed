@@ -9,7 +9,7 @@ from unfazed.test import Requestfactory
 async def test_integration(setup_route_unfazed: Unfazed) -> None:
     routes = setup_route_unfazed.routes
 
-    assert len(routes) == 7
+    assert len(routes) == 9
 
     async with Requestfactory(setup_route_unfazed) as request:
         # test path
@@ -26,7 +26,16 @@ async def test_integration(setup_route_unfazed: Unfazed) -> None:
         response = await request.get("/mount/app/bar")
         assert response.status_code == 200
         # test static html files
-        response = await request.get("/static_html")
+        response = await request.get("/static_html/")
+        assert response.status_code == 200
+
+        with pytest.raises(FileNotFoundError):
+            await request.get("/static_html/not_found.html")
+
+        with pytest.raises(FileNotFoundError):
+            await request.get("/static_site/not_found.html")
+
+        response = await request.get("/static_spa/dashboard")
         assert response.status_code == 200
         # test static html files
         response = await request.get("/static/js/foo.js")
@@ -43,6 +52,9 @@ async def test_integration(setup_route_unfazed: Unfazed) -> None:
 
         with pytest.raises(FileNotFoundError):
             await request.get("/static/not_found.html")
+
+        with pytest.raises(FileNotFoundError):
+            await request.get("/static_spa/js/missing.js")
 
         # test mount
         response = await request.get("/mount/app/bar")

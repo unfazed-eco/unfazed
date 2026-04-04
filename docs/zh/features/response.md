@@ -111,13 +111,26 @@ async def stream_data(request: HttpRequest) -> StreamingResponse:
 
 ### FileResponse
 
-流式传输文件，支持 HTTP 范围请求（可断点续传）。自动设置 `Content-Disposition`、`ETag`、`Last-Modified` 和 `Accept-Ranges` 头。
+流式传输文件，支持 HTTP 范围请求（可断点续传）。自动设置 `ETag`、`Last-Modified` 和 `Accept-Ranges` 头。它默认更偏向“下载响应”的语义：
+
+- `Content-Type` 默认是 `application/octet-stream`
+- 传入 `filename` 时会附加 `Content-Disposition`
+- 可以通过 `content_disposition_type` 把默认的 `attachment` 改成 `inline`
 
 ```python
 from unfazed.http import FileResponse
 
 async def download(request: HttpRequest) -> FileResponse:
     return FileResponse("/path/to/report.pdf", filename="report.pdf")
+
+
+async def preview(request: HttpRequest) -> FileResponse:
+    return FileResponse(
+        "/path/to/manual.pdf",
+        filename="manual.pdf",
+        media_type="application/pdf",
+        content_disposition_type="inline",
+    )
 ```
 
 范围请求头（`Range`、`If-Range`）会被透明处理：
@@ -210,6 +223,6 @@ class StreamingResponse(HttpResponse):
 
 ```python
 class FileResponse(StreamingResponse):
-    def __init__(self, path: str | Path, filename: str | None = None, *, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream")
+    def __init__(self, path: str | Path, filename: str | None = None, *, status_code: int = 200, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream", content_disposition_type: str = "attachment")
 ```
 支持 HTTP 范围请求的文件下载。若文件不存在则抛出 `FileNotFoundError`。

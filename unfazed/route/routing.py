@@ -127,6 +127,7 @@ class Static(Route):
         name: str | None = None,
         middlewares: t.List[CanBeImported] | None = None,
         html: bool = False,
+        fallback: str | None = None,
         app_label: str | None = None,
     ) -> None:
         if not path.startswith("/"):
@@ -142,7 +143,11 @@ class Static(Route):
         self.path_regex, self.path_format, self.param_convertors = compile_path(
             path + "/{path:path}"
         )
-        self.app: StaticFiles = StaticFiles(directory=directory, html=html)
+        self.app: StaticFiles = StaticFiles(
+            directory=directory,
+            html=html,
+            fallback=fallback,
+        )
 
         self.load_middlewares(middlewares or [])
 

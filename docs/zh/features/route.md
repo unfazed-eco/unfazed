@@ -188,7 +188,8 @@ from unfazed.route import static
 
 patterns = [
     static("/static", "/path/to/staticfiles"),
-    static("/media", "/path/to/media", html=True),
+    static("/docs", "/path/to/site", html=True),
+    static("/", "/path/to/dist", html=True, fallback="index.html"),
 ]
 ```
 
@@ -197,8 +198,42 @@ patterns = [
 | `path` | URL 前缀（如 `"/static"`）。 |
 | `directory` | 文件目录的绝对路径。 |
 | `html` | 若为 `True`，对目录请求提供 `index.html`。 |
+| `fallback` | 缺失的路由型路径回退到指定文件，适合 SPA history fallback。 |
 
 静态路由会从 OpenAPI schema 中排除。
+
+补充说明：
+
+- 目录首页是针对目录请求生效的，例如 `/docs/` 会映射到 `/path/to/site/index.html`。
+- `fallback` 只作用于像前端路由那样的路径，例如 `/dashboard`、`/users/profile`。
+- 缺失的 `.js`、`.css`、`.png` 等静态资源仍然返回 `404`，不会回退到 HTML。
+
+SPA 示例：
+
+```python
+patterns = [
+    static("/", "/path/to/dist", html=True, fallback="index.html"),
+]
+```
+
+假设前端构建产物目录如下：
+
+```text
+dist/
+  index.html
+  404.html
+  assets/
+    app.js
+    app.css
+```
+
+预期行为：
+
+- `/` -> `dist/index.html`
+- `/assets/app.js` -> `dist/assets/app.js`
+- `/dashboard` -> `dist/index.html`
+- `/users/profile` -> `dist/index.html`
+- `/assets/missing.js` -> `404`
 
 ## 挂载外部应用
 
@@ -264,7 +299,7 @@ def include(route_path: str) -> List[Route]
 ### static()
 
 ```python
-def static(path: str, directory: str, *, name: str = None, app_label: str = None, html: bool = False) -> Static
+def static(path: str, directory: str, *, name: str = None, app_label: str = None, html: bool = False, fallback: str | None = None) -> Static
 ```
 
 创建静态文件服务路由。

@@ -238,6 +238,11 @@ async def test_static() -> None:
     )
     assert ret == (Match.NONE, {})
 
+    match, scope = route.matches({"type": "http", "path": "/static", "method": "GET"})
+    assert match == Match.FULL
+    assert "root_path" in scope
+    assert scope["endpoint"] == route.app
+
     route2 = static("/static", abs_path, app_label="test_route")
     assert route2.app_label == "test_route"
 

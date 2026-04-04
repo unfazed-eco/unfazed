@@ -111,13 +111,26 @@ Sync generators work too — they are automatically wrapped in a thread pool.
 
 ### FileResponse
 
-Streams a file with support for HTTP range requests (resumable downloads). Sets `Content-Disposition`, `ETag`, `Last-Modified`, and `Accept-Ranges` headers automatically.
+Streams a file with support for HTTP range requests (resumable downloads). Sets `ETag`, `Last-Modified`, and `Accept-Ranges` headers automatically. By default it behaves like a download response:
+
+- `Content-Type` defaults to `application/octet-stream`
+- `Content-Disposition` is added when `filename` is provided
+- `content_disposition_type` can be used to switch from `attachment` to `inline`
 
 ```python
 from unfazed.http import FileResponse
 
 async def download(request: HttpRequest) -> FileResponse:
     return FileResponse("/path/to/report.pdf", filename="report.pdf")
+
+
+async def preview(request: HttpRequest) -> FileResponse:
+    return FileResponse(
+        "/path/to/manual.pdf",
+        filename="manual.pdf",
+        media_type="application/pdf",
+        content_disposition_type="inline",
+    )
 ```
 
 Range request headers (`Range`, `If-Range`) are handled transparently:
@@ -210,6 +223,6 @@ Streams content chunks. Handles both sync and async iterables.
 
 ```python
 class FileResponse(StreamingResponse):
-    def __init__(self, path: str | Path, filename: str | None = None, *, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream")
+    def __init__(self, path: str | Path, filename: str | None = None, *, status_code: int = 200, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream", content_disposition_type: str = "attachment")
 ```
 File download with HTTP range-request support. Raises `FileNotFoundError` if the file does not exist.
