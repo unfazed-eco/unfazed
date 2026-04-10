@@ -10,6 +10,7 @@ from unfazed.contrib.admin.registry import (
     register,
 )
 from unfazed.contrib.admin.registry.models import CustomField
+from unfazed.contrib.common.schema import BaseResponse
 
 from . import serializers as s
 
@@ -68,8 +69,5 @@ class BookSerializer(CustomAdmin):
         confirm=True,
         output=ActionOutput.Display,
     )
-    async def get_owner(self, ctx: ActionKwargs):
-        return {
-            "success": True,
-            "message": "Owner retrieved successfully",
-        }
+    async def get_owner(self, ctx: ActionKwargs) -> BaseResponse:
+        return BaseResponse[dict](data={"message": "Owner retrieved successfully"})

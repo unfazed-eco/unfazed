@@ -11,6 +11,7 @@ from unfazed.contrib.admin.registry import (
     admin_collector,
     register,
 )
+from unfazed.contrib.common.schema import BaseResponse
 
 from . import models as m
 from . import serializers as s
@@ -26,6 +27,10 @@ class UserAdmin(ModelAdmin, AuthMixin):
     readonly_fields = ["id"]
     datetime_fields = ["created_at", "updated_at"]
     list_search = ["account", "email"]
+    search_fields = ["account", "email"]
+    search_range_fields = ["created_at", "updated_at"]
+
+    list_editable = ["account"]
 
     inlines = [
         AdminRelation(
@@ -56,6 +61,7 @@ class UserAdmin(ModelAdmin, AuthMixin):
 @register(s.GroupSerializer)
 class InlineGroupUnderUserAdmin(ModelInlineAdmin):
     list_display = ["id", "name"]
+    search_fields = ["name"]
 
 
 @register(s.UserGroupSerializer)
@@ -66,6 +72,7 @@ class InlineUserGroupUnderUserAdmin(ModelInlineAdmin):
 @register(s.RoleSerializer)
 class InlineRoleUnderUserAdmin(ModelInlineAdmin):
     list_display = ["id", "name"]
+    search_fields = ["name"]
 
 
 @register(s.UserRoleSerializer)
@@ -82,6 +89,8 @@ class GroupAdmin(ModelAdmin, AuthMixin):
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
     datetime_fields = ["created_at", "updated_at"]
+    search_fields = ["name"]
+    list_editable = ["name"]
 
     inlines = [
         AdminRelation(
@@ -112,11 +121,13 @@ class GroupAdmin(ModelAdmin, AuthMixin):
 @register(s.UserSerializer)
 class InlineUserUnderGroupAdmin(ModelInlineAdmin):
     list_display = ["id", "account", "email", "is_superuser"]
+    search_fields = ["account", "email"]
 
 
 @register(s.RoleSerializer)
 class InlineRoleUnderGroupAdmin(ModelInlineAdmin):
     list_display = ["id", "name"]
+    search_fields = ["name"]
 
 
 @register(s.UserGroupSerializer)
@@ -134,10 +145,12 @@ class InlineGroupRoleUnderGroupAdmin(ModelInlineAdmin):
 
 @register(s.RoleSerializer)
 class RoleAdmin(ModelAdmin, AuthMixin):
-    list_search = ["name"]
+    list_search = ["id", "name"]
     detail_display = ["id", "name"]
     readonly_fields = ["id"]
     datetime_fields = ["created_at", "updated_at"]
+    search_fields = ["name"]
+    list_editable = ["name"]
 
     inlines = [
         AdminRelation(
@@ -157,6 +170,7 @@ class RoleAdmin(ModelAdmin, AuthMixin):
 @register(s.PermissionSerializer)
 class InlinePermissionUnderRoleAdmin(ModelInlineAdmin):
     list_display = ["id", "access"]
+    search_fields = ["access"]
 
 
 @register(s.RolePermissionSerializer)
@@ -173,9 +187,11 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
     list_search = ["access"]
     readonly_fields = ["id"]
     datetime_fields = ["created_at", "updated_at"]
+    search_fields = ["access"]
+    list_editable = ["access", "remark"]
 
     @action(
-        name="sync_permission",
+        name="sync_permissions",
         label="Sync Permissions",
         description="Init or Update permissions to all admin models",
         batch=True,
@@ -184,7 +200,7 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
     async def sync_permissions(
         self,
         ctx: ActionKwargs,
-    ) -> str:
+    ) -> BaseResponse:
         """
         Init or Update permissions to all admin models.
 
@@ -205,4 +221,4 @@ class PermissionAdmin(ModelAdmin, AuthMixin):
             for permission in permissions:
                 await m.Permission.get_or_create(access=permission)
 
-        return "Permissions synced successfully"
+        return BaseResponse[dict](data={"message": "Permissions synced successfully"})
