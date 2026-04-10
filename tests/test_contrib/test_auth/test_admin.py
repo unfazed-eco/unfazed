@@ -1,6 +1,10 @@
+import typing as t
+
+from unfazed.contrib.admin.registry.schema import AdminBaseAttrs
 from unfazed.contrib.admin.schema.request import Action
 from unfazed.contrib.admin.services import AdminModelService
 from unfazed.contrib.auth import models as m
+from unfazed.contrib.common.schema import BaseResponse
 from unfazed.http import HttpRequest
 
 
@@ -13,6 +17,10 @@ def build_request() -> HttpRequest:
     return request
 
 
+def as_admin_attrs(desc: t.Any) -> AdminBaseAttrs:
+    return t.cast(AdminBaseAttrs, desc.attrs)
+
+
 async def test_auth_admin() -> None:
     user_desc = await AdminModelService.model_desc("UserAdmin", build_request())
     group_desc = await AdminModelService.model_desc("GroupAdmin", build_request())
@@ -20,11 +28,65 @@ async def test_auth_admin() -> None:
     permission_desc = await AdminModelService.model_desc(
         "PermissionAdmin", build_request()
     )
+    inline_group_under_user_desc = await AdminModelService.model_desc(
+        "InlineGroupUnderUserAdmin", build_request()
+    )
+    inline_role_under_user_desc = await AdminModelService.model_desc(
+        "InlineRoleUnderUserAdmin", build_request()
+    )
+    inline_user_under_group_desc = await AdminModelService.model_desc(
+        "InlineUserUnderGroupAdmin", build_request()
+    )
+    inline_role_under_group_desc = await AdminModelService.model_desc(
+        "InlineRoleUnderGroupAdmin", build_request()
+    )
+    inline_permission_under_role_desc = await AdminModelService.model_desc(
+        "InlinePermissionUnderRoleAdmin", build_request()
+    )
 
     assert user_desc is not None
     assert group_desc is not None
     assert role_desc is not None
     assert permission_desc is not None
+    assert inline_group_under_user_desc is not None
+    assert inline_role_under_user_desc is not None
+    assert inline_user_under_group_desc is not None
+    assert inline_role_under_group_desc is not None
+    assert inline_permission_under_role_desc is not None
+
+    user_attrs = as_admin_attrs(user_desc)
+    group_attrs = as_admin_attrs(group_desc)
+    role_attrs = as_admin_attrs(role_desc)
+    permission_attrs = as_admin_attrs(permission_desc)
+    inline_group_under_user_attrs = as_admin_attrs(inline_group_under_user_desc)
+    inline_role_under_user_attrs = as_admin_attrs(inline_role_under_user_desc)
+    inline_user_under_group_attrs = as_admin_attrs(inline_user_under_group_desc)
+    inline_role_under_group_attrs = as_admin_attrs(inline_role_under_group_desc)
+    inline_permission_under_role_attrs = as_admin_attrs(
+        inline_permission_under_role_desc
+    )
+
+    assert user_attrs.search_fields == ["account", "email"]
+    assert user_attrs.search_range_fields == ["created_at", "updated_at"]
+    assert user_attrs.list_editable == ["account"]
+
+    assert group_attrs.search_fields == ["name"]
+    assert group_attrs.list_editable == ["name"]
+
+    assert role_attrs.list_search == ["id", "name"]
+    assert role_attrs.search_fields == ["name"]
+    assert role_attrs.list_editable == ["name"]
+
+    assert permission_attrs.search_fields == ["access"]
+    assert permission_attrs.list_editable == ["access", "remark"]
+    assert "sync_permissions" in permission_desc.actions
+    assert "sync_permission" not in permission_desc.actions
+
+    assert inline_group_under_user_attrs.search_fields == ["name"]
+    assert inline_role_under_user_attrs.search_fields == ["name"]
+    assert inline_user_under_group_attrs.search_fields == ["account", "email"]
+    assert inline_role_under_group_attrs.search_fields == ["name"]
+    assert inline_permission_under_role_attrs.search_fields == ["access"]
 
     # save data
     user_save = await AdminModelService.model_save(
@@ -128,7 +190,7 @@ async def test_auth_admin() -> None:
     assert len(permissions_from_role) == 1
 
     # sync permission
-    await AdminModelService.model_action(
+    sync_permissions_ret = await AdminModelService.model_action(
         Action(
             name="PermissionAdmin",
             action="sync_permissions",
@@ -138,6 +200,8 @@ async def test_auth_admin() -> None:
         ),
         build_request(),
     )
+    assert isinstance(sync_permissions_ret, BaseResponse)
+    assert sync_permissions_ret.data == {"message": "Permissions synced successfully"}
 
     permission_list = await m.Permission.all()
 
