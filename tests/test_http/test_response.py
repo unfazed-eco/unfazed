@@ -133,7 +133,25 @@ async def test_fileresponse() -> None:
     assert "ETag" in resp.headers
     assert "Accept-Ranges" in resp.headers
     assert "Last-Modified" in resp.headers
-    assert "Content-Disposition" in resp.headers
+    assert "Content-Disposition" not in resp.headers
+
+    download_resp = FileResponse(file_path, filename="zenofpython.txt")
+    assert download_resp.headers["content-type"] == "application/octet-stream"
+    assert (
+        download_resp.headers["content-disposition"]
+        == 'attachment; filename="zenofpython.txt"'
+    )
+
+    inline_resp = FileResponse(
+        file_path,
+        filename="zenofpython.txt",
+        headers={"X-Test": "1"},
+        content_disposition_type="inline",
+    )
+    assert (
+        inline_resp.headers["content-disposition"]
+        == 'inline; filename="zenofpython.txt"'
+    )
 
     app1 = StreamingApp()
     await resp({}, app1.reiceive, app1.send)
@@ -142,6 +160,16 @@ async def test_fileresponse() -> None:
     assert "Beautiful is better than ugly." in body_str
     assert (
         "Namespaces are one honking great idea -- let's do more of those!" in body_str
+    )
+
+    custom_status_resp = FileResponse(file_path, status_code=404)
+    assert custom_status_resp.status_code == 404
+    assert custom_status_resp.headers["content-length"] == str(total_length)
+
+    quoted_filename_resp = FileResponse(file_path, filename="zen of python.txt")
+    assert (
+        quoted_filename_resp.headers["content-disposition"]
+        == "attachment; filename*=utf-8''zen%20of%20python.txt"
     )
 
 

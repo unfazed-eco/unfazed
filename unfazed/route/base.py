@@ -174,12 +174,14 @@ def static(
     name: str | None = None,
     app_label: str | None = None,
     html: bool = False,
+    fallback: str | None = None,
 ) -> Static:
     return Static(
         path=path,
         directory=directory,
         name=name,
         html=html,
+        fallback=fallback,
         app_label=app_label,
     )
 

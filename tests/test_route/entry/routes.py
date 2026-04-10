@@ -18,6 +18,8 @@ patterns = [
     path("/path", routes=include("route_common.routes")),
     static("/static", get_static_dir()),
     static("/static_html", get_static_dir(), html=True),
+    static("/static_site", get_static_dir(), html=True),
+    static("/static_spa", get_static_dir(), html=True, fallback="index.html"),
     mount(
         "/mount/app",
         app=Unfazed(routes=[Route("/bar", endpoint=hello)]),

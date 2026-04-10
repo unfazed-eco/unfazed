@@ -188,7 +188,8 @@ from unfazed.route import static
 
 patterns = [
     static("/static", "/path/to/staticfiles"),
-    static("/media", "/path/to/media", html=True),
+    static("/docs", "/path/to/site", html=True),
+    static("/", "/path/to/dist", html=True, fallback="index.html"),
 ]
 ```
 
@@ -197,8 +198,42 @@ patterns = [
 | `path` | URL prefix (e.g. `"/static"`). |
 | `directory` | Absolute path to the files directory. |
 | `html` | If `True`, serve `index.html` for directory requests. |
+| `fallback` | Optional file served for missing route-like paths, useful for SPA history fallback. |
 
 Static routes are excluded from the OpenAPI schema.
+
+Notes:
+
+- Directory indexes are served for directory requests, so `/docs/` maps to `/path/to/site/index.html`.
+- `fallback` only applies to route-like paths such as `/dashboard` or `/users/profile`.
+- Missing asset files such as `.js`, `.css`, or `.png` still raise `404` instead of falling back to HTML.
+
+SPA example:
+
+```python
+patterns = [
+    static("/", "/path/to/dist", html=True, fallback="index.html"),
+]
+```
+
+Assuming the build output looks like this:
+
+```text
+dist/
+  index.html
+  404.html
+  assets/
+    app.js
+    app.css
+```
+
+Expected behavior:
+
+- `/` -> `dist/index.html`
+- `/assets/app.js` -> `dist/assets/app.js`
+- `/dashboard` -> `dist/index.html`
+- `/users/profile` -> `dist/index.html`
+- `/assets/missing.js` -> `404`
 
 ## Mounting External Apps
 
@@ -264,7 +299,7 @@ Import a module's `patterns` list. The module must define `patterns` at module l
 ### static()
 
 ```python
-def static(path: str, directory: str, *, name: str = None, app_label: str = None, html: bool = False) -> Static
+def static(path: str, directory: str, *, name: str = None, app_label: str = None, html: bool = False, fallback: str | None = None) -> Static
 ```
 
 Create a static file serving route.

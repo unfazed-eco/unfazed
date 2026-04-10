@@ -467,17 +467,25 @@ class FileResponse(StreamingResponse):
         path: PathLike,
         filename: str | None = None,
         *,
+        status_code: int = 200,
         chunk_size: int = 65536,
         headers: t.Dict[str, str] | None = None,
         background: BackgroundTask | None = None,
         media_type: str = "application/octet-stream",
+        content_disposition_type: str = "attachment",
     ) -> None:
         handler = RangeFileHandler(path, filename, chunk_size)
+        self.filename = filename
+        self.content_disposition_type = content_disposition_type
+        self.media_type = media_type
 
         headers = headers or {}
-        range_start, range_end, status_code = parse_request(handler, headers)
+        if status_code == 200:
+            range_start, range_end, status_code = parse_request(handler, headers)
+            handler.set_range(range_start, range_end)
+        else:
+            handler.set_range(0, handler.file_size)
         self.status_code = status_code
-        handler.set_range(range_start, range_end)
         resp_headers = self.build_headers(handler)
 
         super().__init__(
@@ -503,9 +511,20 @@ class FileResponse(StreamingResponse):
             "Accept-Ranges": "bytes",
             "Last-Modified": handler.last_modified,
             "Content-Length": str(handler.content_length),
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": f"attachment; filename={handler.file_name}",
+            "Content-Type": self.media_type,
         }
+
+        if self.filename is not None:
+            content_disposition_filename = quote(self.filename)
+            if content_disposition_filename != self.filename:
+                headers["Content-Disposition"] = (
+                    f"{self.content_disposition_type}; "
+                    f"filename*=utf-8''{content_disposition_filename}"
+                )
+            else:
+                headers["Content-Disposition"] = (
+                    f'{self.content_disposition_type}; filename="{self.filename}"'
+                )
 
         if self.status_code == 206:
             headers["Content-Range"] = handler.content_range
