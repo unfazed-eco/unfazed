@@ -1,3 +1,10 @@
+v0.0.22
+====
+- [issue #114](https://github.com/unfazed-eco/unfazed/issues/114) change request scope user type
+- [issue #107](https://github.com/unfazed-eco/unfazed/issues/107) Admin lifecycle hooks (before/after save, batch save, delete) and batch-model-save endpoint
+- [issue #116](https://github.com/unfazed-eco/unfazed/issues/116) Improve static file serving: FileResponse `content_disposition_type`/`status_code` params, `static()` SPA fallback support
+- Enhance built-in auth/admin model configs (search fields, list editable, action return type)
+
 v0.0.21
 ====
 - [issue 112](https://github.com/unfazed-eco/unfazed/issues/112) Improve the `cached` decorator
