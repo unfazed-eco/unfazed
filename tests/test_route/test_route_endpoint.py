@@ -987,6 +987,65 @@ async def test_definition() -> None:
         )
 
 
+async def test_custom_request_class_is_injected() -> None:
+    captured_request: HttpRequest | None = None
+
+    class CustomRequest(HttpRequest):
+        @property
+        def trace_id(self) -> str:
+            return self.headers["x-trace-id"]
+
+    async def endpoint(request: CustomRequest) -> JsonResponse:
+        nonlocal captured_request
+        captured_request = request
+        return JsonResponse({"trace_id": request.trace_id})
+
+    route = Route(path="/", endpoint=endpoint, methods=["GET"])
+
+    assert route.endpoint_definition.request_class is CustomRequest
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "scheme": "https",
+        "server": ("www.example.org", 80),
+        "path": "/",
+        "headers": [(b"x-trace-id", b"trace-123")],
+        "query_string": b"",
+    }
+
+    await route(scope=scope, receive=reiceive, send=send)
+
+    assert isinstance(captured_request, CustomRequest)
+    assert captured_request.trace_id == "trace-123"
+
+
+def test_request_parameter_must_be_first() -> None:
+    class CustomRequest(HttpRequest):
+        pass
+
+    async def endpoint(
+        query1: t.Annotated[str, p.Query()], request: CustomRequest
+    ) -> JsonResponse:
+        return JsonResponse({"query1": query1})
+
+    with pytest.raises(ValueError, match="request parameter must be the first"):
+        Route(path="/", endpoint=endpoint, methods=["GET"])
+
+
+def test_multiple_request_parameters_not_supported() -> None:
+    class CustomRequest(HttpRequest):
+        pass
+
+    async def endpoint(request: HttpRequest, request2: CustomRequest) -> JsonResponse:
+        return JsonResponse({})
+
+    with pytest.raises(
+        ValueError, match="multiple request parameters are not supported"
+    ):
+        Route(path="/", endpoint=endpoint, methods=["GET"])
+
+
 # ====== test file ======
 
 

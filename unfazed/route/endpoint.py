@@ -45,7 +45,7 @@ class EndpointHandler:
         self.endpoint_definition = endpoint_definition
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        request = HttpRequest(scope, receive, send)
+        request = self.endpoint_definition.request_class(scope, receive, send)
 
         kwargs, error_list = await self.solve_params(request)
 
@@ -183,6 +183,7 @@ class EndPointDefinition(BaseModel):
     methods: t.Set[str]
     tags: t.List[str]
     path_parm_names: t.List[str]
+    request_class: t.Type[HttpRequest] = HttpRequest
 
     # stage 1: convert signature to params and response
     params: t.Dict[str, inspect.Parameter] | None = None
@@ -225,7 +226,8 @@ class EndPointDefinition(BaseModel):
 
         # handle endpoint params
         ret: t.Dict[str, inspect.Parameter] = {}
-        for args, param in signature.parameters.items():
+        has_request_param = False
+        for index, (args, param) in enumerate(signature.parameters.items()):
             if param.kind in [
                 inspect.Parameter.VAR_KEYWORD,
                 inspect.Parameter.VAR_POSITIONAL,
@@ -235,6 +237,16 @@ class EndPointDefinition(BaseModel):
             # skip unfazed request
             mro = getattr(param.annotation, "__mro__", [])
             if HttpRequest in mro:
+                if has_request_param:
+                    raise ValueError(
+                        f"multiple request parameters are not supported in endpoint: {self.endpoint_name}"
+                    )
+                if index != 0:
+                    raise ValueError(
+                        f"request parameter must be the first parameter in endpoint: {self.endpoint_name}"
+                    )
+                self.request_class = param.annotation
+                has_request_param = True
                 continue
 
             # raise if no type hint
