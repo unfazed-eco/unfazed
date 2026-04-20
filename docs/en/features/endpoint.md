@@ -46,6 +46,29 @@ routes = [
 
 Every non-`HttpRequest` parameter in an endpoint signature must declare where its value comes from. You do this with `typing.Annotated[Type, p.Source()]`.
 
+## Custom Request Classes
+
+You can inject a custom request type by subclassing `HttpRequest` and using that subclass as the first endpoint parameter.
+
+```python
+from unfazed.http import HttpRequest, JsonResponse
+
+
+class CustomRequest(HttpRequest):
+    @property
+    def trace_id(self) -> str:
+        return self.headers.get("x-trace-id", "")
+
+
+async def get_trace(request: CustomRequest) -> JsonResponse:
+    return JsonResponse({"trace_id": request.trace_id})
+```
+
+Rules:
+
+- The request parameter must be the first parameter in the endpoint signature.
+- Only one `HttpRequest` or `HttpRequest` subclass parameter is allowed per endpoint.
+
 ### Path Parameters
 
 Extracted from URL path segments. The parameter name must match a `{name}` placeholder in the route path.
@@ -370,6 +393,8 @@ async def good(
 ```
 
 **Cannot mix Json and Form** in the same endpoint. You will get a `ValueError` at startup if you try.
+
+**Custom request parameters must come first.** If you use a custom `HttpRequest` subclass, declare it as the first parameter and only once.
 
 **All parameters require type hints.** Missing type hints raise `TypeHintRequired`.
 

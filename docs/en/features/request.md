@@ -26,6 +26,26 @@ async def my_endpoint(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"method": method, "path": path})
 ```
 
+## Custom Request Subclasses
+
+You can extend `HttpRequest` to add project-specific helpers, then type your endpoint with that subclass:
+
+```python
+from unfazed.http import HttpRequest, JsonResponse
+
+
+class CustomRequest(HttpRequest):
+    @property
+    def trace_id(self) -> str:
+        return self.headers.get("x-trace-id", "")
+
+
+async def my_endpoint(request: CustomRequest) -> JsonResponse:
+    return JsonResponse({"trace_id": request.trace_id})
+```
+
+The custom request parameter must be the first parameter in the endpoint signature, and it can only appear once.
+
 ## Available Properties
 
 ### Inherited from Starlette

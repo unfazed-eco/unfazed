@@ -1,3 +1,8 @@
+v0.0.23
+====
+- [issue #120](https://github.com/unfazed-eco/unfazed/issues/120) endpoint 签名现在支持注入自定义 `HttpRequest` 子类作为请求对象。
+
+
 v0.0.22
 ====
 - [issue #114](https://github.com/unfazed-eco/unfazed/issues/114) change request scope user type
