@@ -1040,9 +1040,7 @@ def test_multiple_request_parameters_not_supported() -> None:
     async def endpoint(request: HttpRequest, request2: CustomRequest) -> JsonResponse:
         return JsonResponse({})
 
-    with pytest.raises(
-        ValueError, match="multiple request parameters are not supported"
-    ):
+    with pytest.raises(ValueError, match="unsupported type hint for `request2`"):
         Route(path="/", endpoint=endpoint, methods=["GET"])
 
 
