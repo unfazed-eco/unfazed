@@ -1040,23 +1040,9 @@ def test_multiple_request_parameters_not_supported() -> None:
     async def endpoint(request: HttpRequest, request2: CustomRequest) -> JsonResponse:
         return JsonResponse({})
 
-    with pytest.raises(ValueError, match="unsupported type hint for `request2`"):
-        Route(path="/", endpoint=endpoint, methods=["GET"])
-
-
-def test_endpoint_without_any_parameter_is_rejected() -> None:
-    async def endpoint() -> JsonResponse:  # type: ignore[unused-ignore]
-        return JsonResponse({})
-
-    with pytest.raises(ValueError, match="must declare `request: HttpRequest`"):
-        Route(path="/", endpoint=endpoint, methods=["GET"])
-
-
-def test_first_parameter_with_wrong_type_is_rejected() -> None:
-    async def endpoint(ctx: t.Annotated[str, p.Query()]) -> JsonResponse:
-        return JsonResponse({"ctx": ctx})
-
-    with pytest.raises(ValueError, match="request parameter must be the first"):
+    with pytest.raises(
+        ValueError, match="multiple request parameters are not supported"
+    ):
         Route(path="/", endpoint=endpoint, methods=["GET"])
 
 

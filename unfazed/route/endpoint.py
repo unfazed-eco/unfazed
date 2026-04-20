@@ -1,6 +1,5 @@
 import inspect
 import typing as t
-from collections import OrderedDict
 
 from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema, create_model
 from starlette.concurrency import run_in_threadpool
@@ -223,28 +222,31 @@ class EndPointDefinition(BaseModel):
         endpoint = self.endpoint
         type_hints = t.get_type_hints(endpoint, include_extras=True)
 
-        od_all_params: OrderedDict[str, inspect.Parameter] = OrderedDict(
-            inspect.signature(endpoint).parameters
-        )
-        if not od_all_params:
-            raise ValueError(
-                f"endpoint `{self.endpoint_name}` must declare `request: HttpRequest` as the first parameter"
-            )
+        signature = inspect.signature(endpoint)
 
-        _, request_param = od_all_params.popitem(last=False)
-        if HttpRequest not in getattr(request_param.annotation, "__mro__", []):
-            raise ValueError(
-                f"request parameter must be the first parameter of endpoint `{self.endpoint_name}`, "
-                f"got `{request_param.name}: {request_param.annotation}`"
-            )
-        self.request_class = t.cast(t.Type[HttpRequest], request_param.annotation)
-
+        # handle endpoint params
         ret: t.Dict[str, inspect.Parameter] = {}
-        for args, param in od_all_params.items():
+        has_request_param = False
+        for index, (args, param) in enumerate(signature.parameters.items()):
             if param.kind in [
                 inspect.Parameter.VAR_KEYWORD,
                 inspect.Parameter.VAR_POSITIONAL,
             ]:
+                continue
+
+            # skip unfazed request
+            mro = getattr(param.annotation, "__mro__", [])
+            if HttpRequest in mro:
+                if has_request_param:
+                    raise ValueError(
+                        f"multiple request parameters are not supported in endpoint: {self.endpoint_name}"
+                    )
+                if index != 0:
+                    raise ValueError(
+                        f"request parameter must be the first parameter in endpoint: {self.endpoint_name}"
+                    )
+                self.request_class = param.annotation
+                has_request_param = True
                 continue
 
             # raise if no type hint
