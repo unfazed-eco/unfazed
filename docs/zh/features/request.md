@@ -26,6 +26,26 @@ async def my_endpoint(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"method": method, "path": path})
 ```
 
+## 自定义 Request 子类
+
+你可以继承 `HttpRequest` 来补充项目自己的辅助属性或方法，然后在 endpoint 中直接标注这个子类：
+
+```python
+from unfazed.http import HttpRequest, JsonResponse
+
+
+class CustomRequest(HttpRequest):
+    @property
+    def trace_id(self) -> str:
+        return self.headers.get("x-trace-id", "")
+
+
+async def my_endpoint(request: CustomRequest) -> JsonResponse:
+    return JsonResponse({"trace_id": request.trace_id})
+```
+
+这个自定义 request 参数必须位于 endpoint 签名的第一个位置，并且只能出现一次。
+
 ## 可用属性
 
 ### 继承自 Starlette

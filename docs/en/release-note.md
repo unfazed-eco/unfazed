@@ -1,3 +1,7 @@
+v0.0.23
+====
+- [issue #120](https://github.com/unfazed-eco/unfazed/issues/120) Endpoint signatures now support injecting a custom `HttpRequest` subclass as the request object.
+
 v0.0.22
 ====
 - [issue #114](https://github.com/unfazed-eco/unfazed/issues/114) change request scope user type

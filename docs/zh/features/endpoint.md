@@ -46,6 +46,29 @@ routes = [
 
 endpoint 签名中每个非 `HttpRequest` 的参数都必须声明其值来源。使用 `typing.Annotated[Type, p.Source()]` 实现。
 
+## 自定义 Request 类
+
+你可以继承 `HttpRequest` 并将该子类作为 endpoint 的第一个参数，从而注入自定义 request 类型。
+
+```python
+from unfazed.http import HttpRequest, JsonResponse
+
+
+class CustomRequest(HttpRequest):
+    @property
+    def trace_id(self) -> str:
+        return self.headers.get("x-trace-id", "")
+
+
+async def get_trace(request: CustomRequest) -> JsonResponse:
+    return JsonResponse({"trace_id": request.trace_id})
+```
+
+规则如下：
+
+- request 参数必须是 endpoint 签名中的第一个参数。
+- 每个 endpoint 只能声明一个 `HttpRequest` 或其子类参数。
+
 ### 路径参数
 
 从 URL 路径段提取。参数名必须与路由路径中的 `{name}` 占位符匹配。
@@ -370,6 +393,8 @@ async def good(
 ```
 
 **不能在同一 endpoint 中混用 Json 和 Form**。尝试时会在启动时抛出 `ValueError`。
+
+**自定义 request 参数必须放在第一个位置。** 如果使用 `HttpRequest` 子类，它必须是第一个参数，且只能声明一次。
 
 **所有参数都需要类型提示。** 缺少类型提示会抛出 `TypeHintRequired`。
 
