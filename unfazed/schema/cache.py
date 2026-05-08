@@ -9,6 +9,7 @@ class Cache(BaseModel):
     BACKEND: CanBeImported
     LOCATION: t.List[str] | str | None = None
     OPTIONS: t.Dict[str, t.Any] | None = None
+    DISABLED_CACHED: bool = False
 
 
 class LocOptions(BaseModel):

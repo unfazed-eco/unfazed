@@ -2,6 +2,7 @@ import inspect
 import typing as t
 import warnings
 from functools import wraps
+from unfazed.conf import settings
 
 from unfazed.concurrency import run_in_threadpool
 
@@ -124,6 +125,13 @@ def cached(
                     UserWarning,
                     stacklevel=2,
                 )
+                
+            cache_conf = (settings["UNFAZED_SETTINGS"].CACHE or {}).get(using)
+            if cache_conf and cache_conf.DISABLED_CACHED:
+                if inspect.iscoroutinefunction(func):
+                    return await func(*args, **kwargs)
+                else:
+                    return await run_in_threadpool(func, *args, **kwargs)
 
             prefix = f"{func.__module__}:{func.__qualname__}"
             if include:
