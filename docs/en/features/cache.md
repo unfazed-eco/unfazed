@@ -56,6 +56,7 @@ The `CACHE` setting is a dictionary where each key is a cache alias (e.g. `"defa
 | `BACKEND` | Dotted import path to the cache backend class. |
 | `LOCATION` | Backend-specific location. For LocMem: a unique name string. For Redis: a connection URL like `redis://localhost:6379/0`. |
 | `OPTIONS` | Dict of backend-specific options (see each backend below). |
+| `DISABLED_CACHED` | `bool`, default `False`. When `True`, the `@cached` decorator will skip caching and always call the function directly for this backend. The backend itself is still instantiated and usable via `caches["alias"]`. |
 
 You can define as many named caches as you need and access them by alias:
 
@@ -337,6 +338,22 @@ Calling that function with `force_update=...` may still raise a `TypeError` from
 - The decorator only uses keyword arguments for the cache key. Positional arguments are ignored (a warning is emitted if you pass them).
 - `@cached` validates the function signature at decoration time and emits warnings for unsupported/ambiguous `force_update` usage (for example missing `force_update`/`**kwargs`, or non-`bool` annotation).
 - `@cached` does not enforce a runtime boolean type check for `force_update`; runtime behavior follows Python truthiness.
+
+**Disabling caching per backend** — set `DISABLED_CACHED: True` in the backend config to make the `@cached` decorator skip caching entirely for that backend. This is useful during development or testing when you want functions to always execute without caching:
+
+```python
+# settings.py
+UNFAZED_SETTINGS = {
+    "CACHE": {
+        "default": {
+            "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+            "LOCATION": "default_cache",
+            "OPTIONS": {"MAX_ENTRIES": 1000},
+            "DISABLED_CACHED": True,  # @cached(using="default") will always call the function
+        },
+    },
+}
+```
 
 ## Custom Serializers & Compressors
 
