@@ -39,14 +39,15 @@ class CacheSession(SessionBase):
         return f"{self.PREFIX}{timestamp}:{uuid_hex_str1}:{uuid_hex_str2}"
 
     async def save(self) -> None:
+        if not self._session:
+            if self.session_key:
+                await self.client.delete(self.session_key)
+            return
+
         if not self.session_key:
             self.session_key = self.generate_session_key()
 
-        if not self._session:
-            await self.client.delete(self.session_key)
-
-        else:
-            await self.client.set(self.session_key, self._session, self.get_max_age())
+        await self.client.set(self.session_key, self._session, self.get_max_age())
 
     async def load(self) -> None:
         if not self.session_key:
@@ -56,8 +57,10 @@ class CacheSession(SessionBase):
         ret = await self.client.get(self.session_key)
 
         # expired or not found
-        if not ret:
+        if ret is None:
+            self.session_key = None
             self._session = {}
+            self.modified = True
+            return
 
-        else:
-            self._session = ret
+        self._session = ret

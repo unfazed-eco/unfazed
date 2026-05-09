@@ -1,6 +1,8 @@
 import uuid
 
+from unfazed.cache import caches
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.contrib.session.backends.cache import CacheSession
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse, JsonResponse
@@ -170,5 +172,44 @@ async def test_middleware() -> None:
 
     await _test_engine(
         await _build_unfazed(),
-        SessionSettings.model_validate(CACHE_SESSION_SETTINGS)
+        SessionSettings.model_validate(CACHE_SESSION_SETTINGS),
     )
+
+
+async def test_cache_session_resets_when_cache_misses() -> None:
+    await _build_unfazed()
+    session = CacheSession(
+        SessionSettings.model_validate(CACHE_SESSION_SETTINGS),
+        session_key="missing-session-key",
+    )
+
+    await session.load()
+
+    assert session.session_key is None
+    assert session._session == {}
+    assert session.modified is True
+
+    await session.save()
+
+    assert session.session_key is None
+
+
+async def test_cache_session_deletes_stale_cookie_when_cache_misses() -> None:
+    settings["UNFAZED_CONTRIB_SESSION_SETTINGS"] = SessionSettings.model_validate(
+        CACHE_SESSION_SETTINGS
+    )
+
+    async with Requestfactory(
+        await _build_unfazed(),
+        base_url="https://unfazed.com",
+    ) as request:
+        resp = await request.get("/login")
+        assert resp.status_code == 200
+        _assert_persistent_session_cookie(resp.headers.get("set-cookie"))
+
+        await caches["default"].clear()
+
+        resp = await request.get("/read")
+        assert resp.status_code == 200
+        assert resp.json() == {}
+        _assert_deleted_session_cookie(resp.headers.get("set-cookie"))

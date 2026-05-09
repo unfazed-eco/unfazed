@@ -140,8 +140,9 @@ UNFAZED_SETTINGS = {
 **工作原理：**
 
 1. `load()` 时：使用 cookie 中的 session 键从缓存获取数据。
-2. `save()` 时：生成新的 session 键（如需要）并将数据存入缓存，TTL 等于 `COOKIE_MAX_AGE`。
-3. 若 save 时 session 为空，则删除缓存条目。
+2. 若缓存条目不存在或已过期，则重置 session 键、清空 session，并在响应中删除浏览器里的旧 cookie。
+3. `save()` 时：生成新的 session 键（如需要）并将数据存入缓存，TTL 等于 `COOKIE_MAX_AGE`。
+4. 若 save 时 session 为空，则删除缓存条目。
 
 **权衡：**
 
