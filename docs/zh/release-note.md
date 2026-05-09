@@ -1,6 +1,7 @@
 v0.0.23
 ====
 - [issue #120](https://github.com/unfazed-eco/unfazed/issues/120) endpoint 签名现在支持注入自定义 `HttpRequest` 子类作为请求对象。
+- Session cookie 新增 `COOKIE_EXPIRE_AT_BROWSER_CLOSE` 配置，并修复过期 session cookie header 格式。
 
 
 v0.0.22

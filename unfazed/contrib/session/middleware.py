@@ -44,12 +44,12 @@ class SessionMiddleware:
                 if session_store.modified:
                     await session_store.save()
 
-                    # if session is empty, delete the cookie
+                    # set or update the cookie if session is not empty, or delete the cookie
                     if session_store:
                         header_value = build_cookie(
                             self.setting.cookie_name,
                             t.cast(str, session_store.session_key),
-                            max_age=self.setting.cookie_max_age,
+                            max_age=session_store.get_cookie_max_age(),
                             expires=session_store.get_expiry_age(),
                             path=self.setting.cookie_path,
                             domain=self.setting.cookie_domain,

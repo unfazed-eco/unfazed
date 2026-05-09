@@ -55,7 +55,7 @@ async def test_default() -> None:
     await session2.save()
     assert bool(session2) is False
     assert session2.modified is False
-    assert session2.get_expiry_age() == "expires=Thu, 01 Jan 1970 00:00:00 GMT; "
+    assert session2.get_expiry_age() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
     # failed case
     session3 = SigningSession(

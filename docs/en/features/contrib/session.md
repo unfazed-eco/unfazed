@@ -68,7 +68,23 @@ Session settings are registered under `UNFAZED_CONTRIB_SESSION_SETTINGS`:
 | `COOKIE_HTTPONLY` | `bool` | `True` | Prevent JavaScript access to the cookie. |
 | `COOKIE_SAMESITE` | `"lax" \| "strict" \| "none"` | `"lax"` | SameSite cookie attribute. |
 | `COOKIE_MAX_AGE` | `int` | `604800` (7 days) | Cookie lifetime in seconds. |
+| `COOKIE_EXPIRE_AT_BROWSER_CLOSE` | `bool` | `False` | If `True`, write the session cookie without `Max-Age` or `Expires`, so the browser treats it as a session cookie. |
 | `CACHE_ALIAS` | `str` | `"default"` | Cache backend alias (only used by `CacheSession`). |
+
+### Browser-session cookies
+
+Set `COOKIE_EXPIRE_AT_BROWSER_CLOSE` to `True` when the browser should not persist the session cookie after the browser session ends:
+
+```python
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
+    "SECRET": "my-secret",
+    "COOKIE_EXPIRE_AT_BROWSER_CLOSE": True,
+}
+```
+
+With this option enabled, normal session updates omit `Max-Age` and `Expires` in the `Set-Cookie` header. `COOKIE_MAX_AGE` still applies to the session data itself: `SigningSession` uses it to validate the signed cookie timestamp, and `CacheSession` uses it as the cache TTL.
+
+When a session is flushed or becomes empty, Unfazed still sends `Max-Age=0` and an expired `Expires` value so the browser removes the cookie immediately.
 
 ## Backends
 
@@ -185,6 +201,7 @@ Abstract base class for session backends. Implements dict-like access (`[]`, `in
 | `async delete()` | Clear all session data. |
 | `async flush()` | Alias for `delete()`. |
 | `get_max_age()` | Return `cookie_max_age` from settings. |
+| `get_cookie_max_age()` | Return the cookie `Max-Age`, or `None` when browser-session cookies are enabled. |
 | `generate_session_key()` | (abstract) Generate a new session key. |
 | `async save()` | (abstract) Persist session data. |
 | `async load()` | (abstract) Load session data. |
