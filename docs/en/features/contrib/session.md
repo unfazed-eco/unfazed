@@ -140,8 +140,9 @@ UNFAZED_SETTINGS = {
 **How it works:**
 
 1. On `load()`: the session key from the cookie is used to fetch data from the cache.
-2. On `save()`: a new session key is generated (if needed) and data is stored in the cache with TTL equal to `COOKIE_MAX_AGE`.
-3. If the session is empty on save, the cache entry is deleted.
+2. If the cache entry is missing or expired, the session key is reset, the session is emptied, and the stale browser cookie is removed on the response.
+3. On `save()`: a new session key is generated (if needed) and data is stored in the cache with TTL equal to `COOKIE_MAX_AGE`.
+4. If the session is empty on save, the cache entry is deleted.
 
 **Trade-offs:**
 
