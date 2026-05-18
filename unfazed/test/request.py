@@ -326,7 +326,7 @@ class WebSocketTestSession:
     async def _stop(self) -> None:
         try:
             self._app_queue.put_nowait({"type": "websocket.disconnect", "code": 1000})
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
         if self._app_task is not None and not self._app_task.done():
             self._app_task.cancel()

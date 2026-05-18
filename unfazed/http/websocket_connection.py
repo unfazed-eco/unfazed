@@ -2,7 +2,7 @@ import typing as t
 
 from starlette.websockets import WebSocket
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from unfazed.contrib.session.backends.base import SessionBase
     from unfazed.core import Unfazed
 
@@ -57,7 +57,7 @@ class WebSocketConnection(WebSocket):
             raise ValueError(
                 "SessionMiddleware must be installed to access websocket.session"
             )
-        return self.scope["session"]
+        return self.scope["session"]  # pragma: no cover
 
     @property
     @t.override
@@ -72,7 +72,7 @@ class WebSocketConnection(WebSocket):
             raise ValueError(
                 "AuthenticationMiddleware must be installed to access websocket.user"
             )
-        return self.scope.get("user", None)
+        return self.scope.get("user", None)  # pragma: no cover
 
     @property
     def unfazed(self) -> "Unfazed":

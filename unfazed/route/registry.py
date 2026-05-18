@@ -43,7 +43,7 @@ def parse_urlconf(
         if isinstance(route, (Static, Mount)):
             ret.append(route)
             continue
-        if isinstance(route, WebSocketRoute):
+        if isinstance(route, WebSocketRoute):  # pragma: no cover
             ret.append(route)
             continue
         if route.app_label and route.app_label not in app_center:

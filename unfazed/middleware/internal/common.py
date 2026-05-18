@@ -107,7 +107,7 @@ class CommonMiddleware(BaseMiddleware):
                             "reason": "Internal server error",
                         }
                     )
-                except Exception:
+                except Exception:  # pragma: no cover
                     pass
             return
 

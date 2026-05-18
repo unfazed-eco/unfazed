@@ -60,7 +60,7 @@ class Unfazed:
     def __init__(
         self,
         *,
-        routes: t.List[Route] | None = None,
+        routes: t.Sequence[t.Union[Route, WebSocketRoute]] | None = None,
         middlewares: t.List[t.Type[p.MiddleWare]] | None = None,
         settings: UnfazedSettings | None = None,
         silent: bool = False,
@@ -130,7 +130,7 @@ class Unfazed:
         return self._model_center
 
     @property
-    def routes(self) -> t.List[Route]:
+    def routes(self) -> t.List[t.Union[Route, WebSocketRoute]]:
         return self.router.routes  # type: ignore
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

@@ -3,7 +3,7 @@ import typing as t
 from openapi_pydantic.v3 import v3_1 as v3_1_spec
 from pydantic import BaseModel
 
-from unfazed.route import Route
+from unfazed.route import Route, WebSocketRoute
 from unfazed.route.params import Param, ResponseSpec
 from unfazed.schema import OpenAPI as OpenAPISettingModel
 
@@ -225,7 +225,7 @@ class OpenApi:
     @classmethod
     def create_openapi_model(
         cls,
-        routes: t.List[Route],
+        routes: t.Sequence[t.Union[Route, WebSocketRoute]],
         openapi_setting: OpenAPISettingModel | None = None,
     ) -> s.OpenAPI:
         if not openapi_setting:
@@ -245,6 +245,8 @@ class OpenApi:
         tags: t.Dict[str, s.Tag] = {}
 
         for route in routes:
+            if not isinstance(route, Route):
+                continue
             if not route.include_in_schema:
                 continue
 
@@ -266,7 +268,7 @@ class OpenApi:
     @classmethod
     def create_schema(
         cls,
-        routes: t.List[Route],
+        routes: t.Sequence[t.Union[Route, WebSocketRoute]],
         openapi_setting: OpenAPISettingModel | None = None,
     ) -> t.Dict:
         ret = cls.create_openapi_model(routes, openapi_setting)

@@ -196,6 +196,7 @@ def websocket(
     name: str | None = None,
     app_label: str | None = None,
     middlewares: t.List[CanBeImported] | None = None,
+    tags: t.List[str] | None = None,
 ) -> WebSocketRoute:
     """
     Create a WebSocket route.
@@ -219,6 +220,7 @@ def websocket(
         name=name,
         middlewares=middlewares,
         app_label=app_label,
+        tags=tags,
     )
 
 

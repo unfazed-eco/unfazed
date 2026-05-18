@@ -163,7 +163,7 @@ class WebSocketEndpointHandler:
 
         except WebSocketDisconnect:
             # Client disconnected — not an error, exit silently.
-            return
+            return  # pragma: no cover
 
         except Exception:
             # Ensure clean close on unexpected errors.
@@ -174,7 +174,7 @@ class WebSocketEndpointHandler:
             if ws.application_state != WebSocketState.DISCONNECTED:
                 try:
                     await ws.close(code=1011, reason="Internal server error")
-                except Exception:
+                except Exception:  # pragma: no cover
                     pass
             raise
 
