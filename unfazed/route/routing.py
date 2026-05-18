@@ -204,7 +204,7 @@ class Mount(Route):
         self,
         path: str,
         app: ASGIApp | None = None,
-        routes: t.List[Route] | None = None,
+        routes: t.Sequence[t.Any] | None = None,
         *,
         name: str | None = None,
         app_label: str | None = None,

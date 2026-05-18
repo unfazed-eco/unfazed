@@ -1,12 +1,16 @@
+import asyncio
+import base64
+import hashlib
 import typing as t
 import warnings
+from contextlib import asynccontextmanager
 
 import httpx
 from asgiref.testing import ApplicationCommunicator
 from httpx import Request, Response
 from httpx._transports.asgi import ASGIResponseStream, create_event
 
-from unfazed.type import ASGIApp, Receive, Scope, Send
+from unfazed.type import ASGIApp, Message, Receive, Scope, Send
 
 if t.TYPE_CHECKING:
     from unfazed.core import Unfazed  # pragma: no cover
@@ -213,3 +217,164 @@ class Requestfactory(httpx.AsyncClient):
         message = await self.communicator.receive_output()  # type: ignore
         if message["type"] != "lifespan.shutdown.complete":
             warnings.warn("Shutdown failed", RuntimeWarning, stacklevel=2)
+
+    @asynccontextmanager
+    async def websocket_connect(
+        self, url: str, subprotocols: t.List[str] | None = None
+    ) -> t.AsyncIterator["WebSocketTestSession"]:
+        """Establish a WebSocket connection for testing.
+
+        Usage:
+            ```python
+            async with Requestfactory(app) as client:
+                async with client.websocket_connect("/ws/chat/1") as ws:
+                    ws.send_text("hello")
+                    response = ws.receive_text()
+                    assert response == "echo: hello"
+            ```
+        """
+        scope = self._build_websocket_scope(url, subprotocols)
+        session = WebSocketTestSession(self.app, scope)
+        await session._start()
+        try:
+            yield session
+        finally:
+            await session._stop()
+
+    def _build_websocket_scope(
+        self, url: str, subprotocols: t.List[str] | None = None
+    ) -> Scope:
+        from urllib.parse import unquote, urlparse
+
+        parsed = urlparse(url)
+        path = unquote(parsed.path)
+        query_string = parsed.query.encode("utf-8")
+        raw_path = path.encode("utf-8")
+
+        headers: t.List[t.Tuple[bytes, bytes]] = [
+            (b"host", b"testserver"),
+            (b"connection", b"upgrade"),
+            (b"upgrade", b"websocket"),
+            (b"sec-websocket-version", b"13"),
+            (
+                b"sec-websocket-key",
+                base64.b64encode(hashlib.sha1(b"test_key").digest()),
+            ),
+        ]
+
+        if subprotocols:
+            headers.append(
+                (
+                    b"sec-websocket-protocol",
+                    b", ".join(s.encode() for s in subprotocols),
+                )
+            )
+
+        return {
+            "type": "websocket",
+            "asgi": {"version": "3.0", "spec_version": "2.1"},
+            "http_version": "1.1",
+            "scheme": "ws",
+            "path": path,
+            "raw_path": raw_path,
+            "query_string": query_string,
+            "headers": [(k.decode(), v.decode()) for k, v in headers],
+            "client": ("127.0.0.1", 50000),
+            "server": ("testserver", 80),
+            "subprotocols": subprotocols or [],
+            "state": self.app_state.copy(),
+        }
+
+
+class WebSocketTestSession:
+    """WebSocket test session for use with Requestfactory.websocket_connect().
+
+    Provides methods to send and receive WebSocket messages in tests.
+    Uses asyncio.Queue for message passing between the test and the ASGI app.
+    """
+
+    def __init__(self, app: ASGIApp, scope: Scope) -> None:
+        self.app = app
+        self.scope = scope
+        self._app_queue: asyncio.Queue[Message] = asyncio.Queue()
+        self._client_queue: asyncio.Queue[Message] = asyncio.Queue()
+        self._app_task: asyncio.Task[None] | None = None
+        self._close_message: Message | None = None
+
+    async def _start(self) -> None:
+        async def app_receive() -> Message:
+            return await self._app_queue.get()
+
+        async def app_send(message: Message) -> None:
+            await self._client_queue.put(message)
+
+        self._app_task = asyncio.create_task(
+            self.app(self.scope, app_receive, app_send)  # type: ignore[arg-type]
+        )
+
+        # Send websocket.connect to initiate the connection
+        await self._app_queue.put({"type": "websocket.connect"})
+
+        # Wait for accept or close
+        message = await self._client_queue.get()
+        if message["type"] == "websocket.close":
+            self._close_message = message
+            return
+        self._close_message = None
+        self.accepted_subprotocol = message.get("subprotocol", None)
+
+    async def _stop(self) -> None:
+        try:
+            self._app_queue.put_nowait({"type": "websocket.disconnect", "code": 1000})
+        except Exception:
+            pass
+        if self._app_task is not None and not self._app_task.done():
+            self._app_task.cancel()
+            try:
+                await self._app_task
+            except asyncio.CancelledError:
+                pass
+
+    async def send(self, message: Message) -> None:
+        await self._app_queue.put(message)
+
+    async def receive(self) -> Message:
+        if self._close_message is not None:
+            msg = self._close_message
+            self._close_message = None
+            return msg
+        return await self._client_queue.get()
+
+    async def send_text(self, data: str) -> None:
+        await self.send({"type": "websocket.receive", "text": data})
+
+    async def send_bytes(self, data: bytes) -> None:
+        await self.send({"type": "websocket.receive", "bytes": data})
+
+    async def send_json(self, data: t.Any) -> None:
+        import orjson
+
+        await self.send_text(orjson.dumps(data).decode())
+
+    async def receive_text(self) -> str:
+        message = await self.receive()
+        assert (
+            message["type"] == "websocket.send"
+        ), f"Expected websocket.send, got {message['type']}"
+        return t.cast(str, message["text"])
+
+    async def receive_bytes(self) -> bytes:
+        message = await self.receive()
+        assert (
+            message["type"] == "websocket.send"
+        ), f"Expected websocket.send, got {message['type']}"
+        return t.cast(bytes, message["bytes"])
+
+    async def receive_json(self) -> t.Any:
+        import orjson
+
+        text = await self.receive_text()
+        return orjson.loads(text)
+
+    async def close(self, code: int = 1000, reason: str = "") -> None:
+        await self.send({"type": "websocket.disconnect", "code": code})

@@ -14,4 +14,5 @@ class ASGIType:
     WS_ACCEPT = "websocket.accept"
     WS_RECEIVE = "websocket.receive"
     WS_SEND = "websocket.send"
+    WS_CLOSE = "websocket.close"
     WS_DISCONNECT = "websocket.disconnect"

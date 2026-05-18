@@ -16,7 +16,7 @@ from unfazed.lifespan import BaseLifeSpan, lifespan_context, lifespan_handler
 from unfazed.logging import LogCenter
 from unfazed.openapi import OpenApi
 from unfazed.openapi.routes import patterns
-from unfazed.route import Route, parse_urlconf
+from unfazed.route import Route, WebSocketRoute, parse_urlconf
 from unfazed.schema import LogConfig
 from unfazed.type import ASGIApp, Receive, Scope, Send
 from unfazed.utils import Timer, import_string, unfazed_locker
@@ -261,6 +261,10 @@ class Unfazed:
 
         logger.debug("ROUTES:")
         for route in self.routes:
+            if isinstance(route, WebSocketRoute):
+                logger.debug(f"    WS  | {route.path}")
+                continue
+
             if not hasattr(route, "methods"):
                 continue
 
