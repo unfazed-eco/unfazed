@@ -278,7 +278,7 @@ class Requestfactory(httpx.AsyncClient):
             "path": path,
             "raw_path": raw_path,
             "query_string": query_string,
-            "headers": [(k.decode(), v.decode()) for k, v in headers],
+            "headers": headers,
             "client": ("127.0.0.1", 50000),
             "server": ("testserver", 80),
             "subprotocols": subprotocols or [],

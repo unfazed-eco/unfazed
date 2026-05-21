@@ -6,6 +6,7 @@ from starlette.routing import WebSocketRoute as StarletteWebSocketRoute
 from starlette.routing import compile_path
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
+from unfazed.exception import ParameterError
 from unfazed.http.websocket_connection import WebSocketConnection
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.type import CanBeImported, Receive, Scope, Send
@@ -31,10 +32,11 @@ class WebSocketEndpointDefinition(BaseModel):
 
     # stage 2: dispatch
     path_params: t.Dict[str, t.Tuple[t.Type, p.Path]] = {}
-    query_params: t.Dict[str, t.Type] = {}
+    query_params: t.Dict[str, t.Tuple[t.Type, p.Query]] = {}
 
-    # stage 3: create model for path params (for validation)
+    # stage 3: create models for validation
     path_model: t.Type[BaseModel] | None = None
+    query_model: t.Type[BaseModel] | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -42,7 +44,7 @@ class WebSocketEndpointDefinition(BaseModel):
         super().__init__(**data)
         self.handle_signature()
         self.dispatch_params()
-        self.build_path_model()
+        self.build_param_models()
 
     def handle_signature(self) -> None:
         endpoint = self.endpoint
@@ -57,8 +59,10 @@ class WebSocketEndpointDefinition(BaseModel):
             ]:
                 continue
 
+            annotation = type_hints.get(param.name, param.annotation)
+
             # skip WebSocketConnection (first param)
-            mro = getattr(param.annotation, "__mro__", [])
+            mro = getattr(annotation, "__mro__", [])
             if WebSocketConnection in mro:
                 continue
 
@@ -68,7 +72,7 @@ class WebSocketEndpointDefinition(BaseModel):
                     f"in endpoint: {self.endpoint_name}"
                 )
 
-            ret[args] = param
+            ret[args] = param.replace(annotation=annotation)
 
         self.params = ret
 
@@ -85,6 +89,8 @@ class WebSocketEndpointDefinition(BaseModel):
 
                 if isinstance(model_or_field, p.Path):
                     self.path_params[param.name] = (origin, model_or_field)
+                elif isinstance(model_or_field, p.Query):
+                    self.query_params[param.name] = (origin, model_or_field)
                 else:
                     raise ValueError(
                         f"Unsupported annotation for '{param.name}' "
@@ -92,15 +98,26 @@ class WebSocketEndpointDefinition(BaseModel):
                     )
             else:
                 # Plain type annotation without Annotated
+                has_default = param.default is not inspect.Parameter.empty
                 if param.name in self.path_parm_names:
-                    self.path_params[param.name] = (annotation, p.Path())
+                    self.path_params[param.name] = (
+                        annotation,
+                        p.Path(default=param.default) if has_default else p.Path(),
+                    )
                 else:
-                    self.query_params[param.name] = annotation
+                    self.query_params[param.name] = (
+                        annotation,
+                        p.Query(default=param.default) if has_default else p.Query(),
+                    )
 
-    def build_path_model(self) -> None:
+    def build_param_models(self) -> None:
         self.path_model = self._create_model(
             self.path_params,
             f"{self.endpoint.__name__.capitalize()}WSPathModel",
+        )
+        self.query_model = self._create_model(
+            self.query_params,
+            f"{self.endpoint.__name__.capitalize()}WSQueryModel",
         )
 
     def _create_model(
@@ -156,7 +173,16 @@ class WebSocketEndpointHandler:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         ws = WebSocketConnection(scope, receive, send)
-        kwargs = self._resolve_params(ws, scope)
+
+        try:
+            kwargs = self._resolve_params(ws, scope)
+        except ParameterError:
+            if ws.application_state == WebSocketState.CONNECTING:
+                try:
+                    await ws.close(code=1008, reason="Invalid websocket parameters")
+                except Exception:  # pragma: no cover
+                    pass
+            return
 
         try:
             await self.endpoint(ws, **kwargs)
@@ -183,19 +209,39 @@ class WebSocketEndpointHandler:
     ) -> t.Dict[str, t.Any]:
         kwargs: t.Dict[str, t.Any] = {}
 
-        # Path params — Starlette already converted types via compile_path converters
         path_params = scope.get("path_params", {})
-        for name in self.endpoint_definition.path_params:
-            if name in path_params:
-                kwargs[name] = path_params[name]
+        if self.endpoint_definition.path_model:
+            kwargs.update(
+                self._solve_params(
+                    self.endpoint_definition.path_model,
+                    self.endpoint_definition.path_params,
+                    path_params,
+                )
+            )
 
-        # Query params — from initial HTTP upgrade request query string
-        for name, annotation in self.endpoint_definition.query_params.items():
-            raw = ws.query_params.get(name)
-            if raw is not None:
-                kwargs[name] = annotation(raw)
+        if self.endpoint_definition.query_model:
+            kwargs.update(
+                self._solve_params(
+                    self.endpoint_definition.query_model,
+                    self.endpoint_definition.query_params,
+                    t.cast(t.Mapping[str, t.Any], ws.query_params),
+                )
+            )
 
         return kwargs
+
+    def _solve_params(
+        self,
+        model_cls: t.Type[BaseModel],
+        endpoint_params: t.Mapping[str, t.Tuple[t.Type, p.Param]],
+        request_params: t.Mapping[str, t.Any],
+    ) -> t.Dict[str, t.Any]:
+        try:
+            model = model_cls.model_validate(request_params)
+        except Exception as err:
+            raise ParameterError(str(err))
+
+        return {name: getattr(model, name) for name in endpoint_params}
 
 
 class WebSocketRoute(StarletteWebSocketRoute):

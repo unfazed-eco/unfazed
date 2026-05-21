@@ -1,11 +1,13 @@
 import typing as t
 
 import pytest
-from starlette.websockets import WebSocketDisconnect
+from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from unfazed.core import Unfazed
+from unfazed.exception import ParameterError
 from unfazed.http import WebSocketConnection
 from unfazed.route import WebSocketRoute, websocket
+from unfazed.route.params import Header as WSHeader
 from unfazed.route.params import Path as WSPath
 from unfazed.route.params import Query as WSQuery
 
@@ -35,6 +37,24 @@ async def chat_endpoint(ws: WebSocketConnection, room_id: str) -> None:
 async def query_endpoint(ws: WebSocketConnection, token: str) -> None:
     await ws.accept()
     await ws.send_text(f"token={token}")
+    await ws.close()
+
+
+async def int_query_endpoint(ws: WebSocketConnection, n: int) -> None:
+    await ws.accept()
+    await ws.send_text(f"n={n}:{type(n).__name__}")
+    await ws.close()
+
+
+async def bool_query_endpoint(ws: WebSocketConnection, enabled: bool) -> None:
+    await ws.accept()
+    await ws.send_text(f"enabled={enabled}")
+    await ws.close()
+
+
+async def default_query_endpoint(ws: WebSocketConnection, page: int = 1) -> None:
+    await ws.accept()
+    await ws.send_text(f"page={page}:{type(page).__name__}")
     await ws.close()
 
 
@@ -78,9 +98,23 @@ async def annotated_path_endpoint(
 
 
 async def annotated_unsupported_endpoint(
-    ws: WebSocketConnection, x: t.Annotated[str, WSQuery()]
+    ws: WebSocketConnection, x: t.Annotated[str, WSHeader()]
 ) -> None:
     await ws.accept()
+
+
+async def annotated_query_endpoint(
+    ws: WebSocketConnection, token: t.Annotated[str, WSQuery()]
+) -> None:
+    await ws.accept()
+    await ws.send_text(f"token={token}")
+    await ws.close()
+
+
+async def int_path_endpoint(ws: WebSocketConnection, room_id: int) -> None:
+    await ws.accept()
+    await ws.send_text(f"room={room_id}:{type(room_id).__name__}")
+    await ws.close()
 
 
 async def bytes_echo_endpoint(ws: WebSocketConnection) -> None:
@@ -237,6 +271,10 @@ class TestWebSocketRoute:
         route = websocket("/ws/{room_id}", endpoint=annotated_path_endpoint)
         assert "room_id" in route.endpoint_definition.path_params
 
+    async def test_endpoint_annotated_with_query(self) -> None:
+        route = websocket("/ws/test", endpoint=annotated_query_endpoint)
+        assert "token" in route.endpoint_definition.query_params
+
     async def test_endpoint_annotated_unsupported(self) -> None:
         with pytest.raises(ValueError, match="Unsupported annotation"):
             websocket(
@@ -288,6 +326,93 @@ class TestWebSocketConnection:
             async with client.websocket_connect("/auth?token=abc123") as ws:
                 resp = await ws.receive_text()
                 assert resp == "token=abc123"
+
+    async def test_query_param_is_validated(self, setup_route_unfazed: Unfazed) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/num", endpoint=int_query_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/num?n=12") as ws:
+                resp = await ws.receive_text()
+                assert resp == "n=12:int"
+
+    async def test_bool_query_param_is_validated(
+        self, setup_route_unfazed: Unfazed
+    ) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/flag", endpoint=bool_query_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/flag?enabled=false") as ws:
+                resp = await ws.receive_text()
+                assert resp == "enabled=False"
+
+    async def test_invalid_query_param_closes_connection(
+        self, setup_route_unfazed: Unfazed
+    ) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/num", endpoint=int_query_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/num?n=abc") as ws:
+                msg = await ws.receive()
+                assert msg["type"] == "websocket.close"
+                assert msg.get("code") == 1008
+
+    async def test_default_query_param_used_when_missing(
+        self, setup_route_unfazed: Unfazed
+    ) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/paged", endpoint=default_query_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/paged") as ws:
+                resp = await ws.receive_text()
+                assert resp == "page=1:int"
+
+    async def test_default_query_param_overridden(
+        self, setup_route_unfazed: Unfazed
+    ) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/paged", endpoint=default_query_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/paged?page=5") as ws:
+                resp = await ws.receive_text()
+                assert resp == "page=5:int"
+
+    async def test_path_param_is_validated(self, setup_route_unfazed: Unfazed) -> None:
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup(
+            [websocket("/room/{room_id}", endpoint=int_path_endpoint)],
+            setup_route_unfazed.settings,
+        )
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            async with client.websocket_connect("/room/12") as ws:
+                resp = await ws.receive_text()
+                assert resp == "room=12:int"
 
     async def test_send_receive_bytes(self, setup_route_unfazed: Unfazed) -> None:
         from unfazed.test import Requestfactory
@@ -378,8 +503,67 @@ class TestWebSocketConnection:
                 assert resp == "echo: hi"
                 await ws.close()
 
+    async def test_websocket_scope_headers_are_bytes(
+        self, setup_route_unfazed: Unfazed
+    ) -> None:
+        from starlette.requests import HTTPConnection
+
+        from unfazed.test import Requestfactory
+
+        app = await _make_and_setup([], setup_route_unfazed.settings)
+
+        async with Requestfactory(app, lifespan_on=False) as client:
+            scope = client._build_websocket_scope("/echo")
+            assert all(
+                isinstance(k, bytes) and isinstance(v, bytes)
+                for k, v in scope["headers"]
+            )
+            scope["headers"].append((b"cookie", b"sid=abc"))
+            assert HTTPConnection(scope).cookies["sid"] == "abc"
+
 
 class TestWebSocketExceptionHandling:
+    async def _call_handler_with_param_error_state(
+        self, state: WebSocketState
+    ) -> t.List[t.MutableMapping[str, t.Any]]:
+        route = websocket("/num", endpoint=int_query_endpoint)
+        handler = route.app
+        sent_messages: t.List[t.MutableMapping[str, t.Any]] = []
+
+        def raise_param_error_with_state(
+            ws: WebSocketConnection, scope: t.Dict[str, t.Any]
+        ) -> t.Dict[str, t.Any]:
+            ws.application_state = state
+            raise ParameterError("invalid params")
+
+        async def receive() -> t.MutableMapping[str, t.Any]:
+            return {"type": "websocket.connect"}
+
+        async def send(message: t.MutableMapping[str, t.Any]) -> None:
+            sent_messages.append(message)
+
+        handler._resolve_params = raise_param_error_with_state  # type: ignore[method-assign]
+
+        await handler(
+            {
+                "type": "websocket",
+                "asgi": {"version": "3.0", "spec_version": "2.1"},
+                "scheme": "ws",
+                "path": "/num",
+                "raw_path": b"/num",
+                "query_string": b"n=bad",
+                "headers": [],
+                "client": ("127.0.0.1", 50000),
+                "server": ("testserver", 80),
+                "subprotocols": [],
+                "state": {},
+            },
+            receive,
+            send,
+        )
+
+        return sent_messages
+
     async def test_error_after_accept_closes_with_1011(
         self, setup_route_unfazed: Unfazed
     ) -> None:
@@ -408,6 +592,33 @@ class TestWebSocketExceptionHandling:
             async with client.websocket_connect("/err2") as ws:
                 msg = await ws.receive()
                 assert msg["type"] == "websocket.close"
+
+    async def test_param_error_before_connected_closes_with_1008(self) -> None:
+        sent_messages = await self._call_handler_with_param_error_state(
+            WebSocketState.CONNECTING
+        )
+
+        assert sent_messages == [
+            {
+                "type": "websocket.close",
+                "code": 1008,
+                "reason": "Invalid websocket parameters",
+            }
+        ]
+
+    async def test_param_error_after_connected_does_not_close(self) -> None:
+        sent_messages = await self._call_handler_with_param_error_state(
+            WebSocketState.CONNECTED
+        )
+
+        assert sent_messages == []
+
+    async def test_param_error_after_disconnected_does_not_close(self) -> None:
+        sent_messages = await self._call_handler_with_param_error_state(
+            WebSocketState.DISCONNECTED
+        )
+
+        assert sent_messages == []
 
     async def test_disconnect_propagates_silently(
         self, setup_route_unfazed: Unfazed
