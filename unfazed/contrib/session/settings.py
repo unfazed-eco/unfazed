@@ -27,6 +27,10 @@ class SessionSettings(BaseModel):
         alias="COOKIE_SAMESITE",
     )
     cookie_max_age: int = Field(default=60 * 60 * 24 * 7, alias="COOKIE_MAX_AGE")
+    cookie_expire_at_browser_close: bool = Field(
+        default=False,
+        alias="COOKIE_EXPIRE_AT_BROWSER_CLOSE",
+    )
 
     # If both Expires and Max-Age are set, Max-Age has precedence.
     # => so unfazed ignore `expires`

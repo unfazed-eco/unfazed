@@ -51,12 +51,17 @@ class SessionBase(ABC):
     def get_max_age(self) -> int:
         return self.setting.cookie_max_age
 
+    def get_cookie_max_age(self) -> int | None:
+        if self.setting.cookie_expire_at_browser_close:
+            return None
+        return self.setting.cookie_max_age
+
     def get_expiry_age(self) -> str | None:
         """
-        use max age to control the expiry of the cookie
+        Return an expired HTTP date when the session cookie should be removed.
         """
         if not self._session:
-            return "expires=Thu, 01 Jan 1970 00:00:00 GMT; "
+            return "Thu, 01 Jan 1970 00:00:00 GMT"
         return None
 
     async def flush(self) -> None:

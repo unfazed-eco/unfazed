@@ -1,6 +1,8 @@
 v0.0.23
 ====
 - [issue #120](https://github.com/unfazed-eco/unfazed/issues/120) Endpoint signatures now support injecting a custom `HttpRequest` subclass as the request object.
+- Add `COOKIE_EXPIRE_AT_BROWSER_CLOSE` for session cookies and fix expired session cookie header formatting.
+- Reset `CacheSession` when the cache entry is missing so stale session cookies are cleared.
 
 v0.0.22
 ====

@@ -1,21 +1,21 @@
-import os
 import uuid
 
+from unfazed.cache import caches
 from unfazed.conf import UnfazedSettings, settings
+from unfazed.contrib.session.backends.cache import CacheSession
 from unfazed.contrib.session.settings import SessionSettings
 from unfazed.core import Unfazed
 from unfazed.http import HttpRequest, HttpResponse, JsonResponse
 from unfazed.route import Route
 from unfazed.test import Requestfactory
 
-HOST = os.getenv("REDIS_HOST", "redis")
 UNFAZED_SETTINGS = {
     "PROJECT": "test_middleware",
     "MIDDLEWARE": ["unfazed.contrib.session.middleware.SessionMiddleware"],
     "CACHE": {
         "default": {
-            "BACKEND": "unfazed.cache.backends.redis.SerializerBackend",
-            "LOCATION": f"redis://{HOST}:6379",
+            "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+            "LOCATION": "test_middleware",
             "OPTIONS": {
                 "PREFIX": "test_middleware",
             },
@@ -36,6 +36,13 @@ CACHE_SESSION_SETTINGS = {
     "COOKIE_SECURE": True,
     "CACHE_ALIAS": "default",
     "ENGINE": "unfazed.contrib.session.backends.cache.CacheSession",
+}
+
+BROWSER_CLOSE_SESSION_SETTINGS = {
+    "SECRET": uuid.uuid4().hex,
+    "COOKIE_DOMAIN": "unfazed.com",
+    "COOKIE_SECURE": True,
+    "COOKIE_EXPIRE_AT_BROWSER_CLOSE": True,
 }
 
 
@@ -73,7 +80,41 @@ ROUTES = [
 ]
 
 
-async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> None:
+async def _build_unfazed() -> Unfazed:
+    unfazed = Unfazed(
+        settings=UnfazedSettings.model_validate(UNFAZED_SETTINGS),
+        routes=ROUTES,
+        silent=True,
+    )
+    await unfazed.setup()
+    return unfazed
+
+
+def _assert_persistent_session_cookie(header_value: str | None) -> None:
+    assert header_value is not None
+    assert "Max-Age=604800" in header_value
+    assert "expires=" not in header_value.lower()
+
+
+def _assert_browser_close_session_cookie(header_value: str | None) -> None:
+    assert header_value is not None
+    assert "Max-Age" not in header_value
+    assert "expires=" not in header_value.lower()
+
+
+def _assert_deleted_session_cookie(header_value: str | None) -> None:
+    assert header_value is not None
+    assert "Max-Age=0" in header_value
+    assert "expires=Thu, 01 Jan 1970 00:00:00 GMT" in header_value
+    assert "expires=expires=" not in header_value
+
+
+async def _test_engine(
+    unfazed: Unfazed,
+    session_setting: SessionSettings,
+    *,
+    expire_at_browser_close: bool = False,
+) -> None:
     settings["UNFAZED_CONTRIB_SESSION_SETTINGS"] = session_setting
 
     async with Requestfactory(unfazed, base_url="https://unfazed.com") as request:
@@ -81,6 +122,10 @@ async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> No
         resp = await request.get("/login")
         assert resp.status_code == 200
         assert resp.text == "ok"
+        if expire_at_browser_close:
+            _assert_browser_close_session_cookie(resp.headers.get("set-cookie"))
+        else:
+            _assert_persistent_session_cookie(resp.headers.get("set-cookie"))
 
         # read
         resp = await request.get("/read")
@@ -91,6 +136,10 @@ async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> No
         resp = await request.get("/update")
         assert resp.status_code == 200
         assert resp.text == "ok"
+        if expire_at_browser_close:
+            _assert_browser_close_session_cookie(resp.headers.get("set-cookie"))
+        else:
+            _assert_persistent_session_cookie(resp.headers.get("set-cookie"))
 
         # read
         resp = await request.get("/read")
@@ -101,6 +150,7 @@ async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> No
         resp = await request.get("/logout")
         assert resp.status_code == 200
         assert resp.text == "ok"
+        _assert_deleted_session_cookie(resp.headers.get("set-cookie"))
 
         # read
         resp = await request.get("/read")
@@ -109,13 +159,57 @@ async def _test_engine(unfazed: Unfazed, session_setting: SessionSettings) -> No
 
 
 async def test_middleware() -> None:
-    unfazed = Unfazed(
-        settings=UnfazedSettings.model_validate((UNFAZED_SETTINGS)), routes=ROUTES
-    )
-    await unfazed.setup()
     await _test_engine(
-        unfazed, SessionSettings.model_validate(DEFAULT_SESSION_SETTINGS)
+        await _build_unfazed(),
+        SessionSettings.model_validate(BROWSER_CLOSE_SESSION_SETTINGS),
+        expire_at_browser_close=True,
     )
 
-    cache_session_setting = SessionSettings.model_validate(CACHE_SESSION_SETTINGS)
-    await _test_engine(unfazed, cache_session_setting)
+    await _test_engine(
+        await _build_unfazed(),
+        SessionSettings.model_validate(DEFAULT_SESSION_SETTINGS),
+    )
+
+    await _test_engine(
+        await _build_unfazed(),
+        SessionSettings.model_validate(CACHE_SESSION_SETTINGS),
+    )
+
+
+async def test_cache_session_resets_when_cache_misses() -> None:
+    await _build_unfazed()
+    session = CacheSession(
+        SessionSettings.model_validate(CACHE_SESSION_SETTINGS),
+        session_key="missing-session-key",
+    )
+
+    await session.load()
+
+    assert session.session_key is None
+    assert session._session == {}
+    assert session.modified is True
+
+    await session.save()
+
+    assert session.session_key is None
+
+
+async def test_cache_session_deletes_stale_cookie_when_cache_misses() -> None:
+    settings["UNFAZED_CONTRIB_SESSION_SETTINGS"] = SessionSettings.model_validate(
+        CACHE_SESSION_SETTINGS
+    )
+
+    async with Requestfactory(
+        await _build_unfazed(),
+        base_url="https://unfazed.com",
+    ) as request:
+        resp = await request.get("/login")
+        assert resp.status_code == 200
+        _assert_persistent_session_cookie(resp.headers.get("set-cookie"))
+
+        await caches["default"].clear()
+
+        resp = await request.get("/read")
+        assert resp.status_code == 200
+        assert resp.json() == {}
+        _assert_deleted_session_cookie(resp.headers.get("set-cookie"))

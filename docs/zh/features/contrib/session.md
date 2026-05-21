@@ -68,7 +68,23 @@ Session 设置注册在 `UNFAZED_CONTRIB_SESSION_SETTINGS` 下：
 | `COOKIE_HTTPONLY` | `bool` | `True` | 禁止 JavaScript 访问 cookie。 |
 | `COOKIE_SAMESITE` | `"lax" \| "strict" \| "none"` | `"lax"` | SameSite cookie 属性。 |
 | `COOKIE_MAX_AGE` | `int` | `604800`（7 天） | cookie 生命周期（秒）。 |
+| `COOKIE_EXPIRE_AT_BROWSER_CLOSE` | `bool` | `False` | 若为 `True`，写入 session cookie 时不设置 `Max-Age` 或 `Expires`，让浏览器把它视为会话 cookie。 |
 | `CACHE_ALIAS` | `str` | `"default"` | 缓存后端别名（仅 `CacheSession` 使用）。 |
+
+### 浏览器会话 cookie
+
+当你不希望浏览器在浏览器会话结束后继续持久保存 session cookie 时，可以设置 `COOKIE_EXPIRE_AT_BROWSER_CLOSE`：
+
+```python
+UNFAZED_CONTRIB_SESSION_SETTINGS = {
+    "SECRET": "my-secret",
+    "COOKIE_EXPIRE_AT_BROWSER_CLOSE": True,
+}
+```
+
+开启后，正常 session 更新生成的 `Set-Cookie` 头不会包含 `Max-Age` 或 `Expires`。`COOKIE_MAX_AGE` 仍然会约束 session 数据本身：`SigningSession` 用它校验签名 cookie 的时间戳，`CacheSession` 用它作为缓存 TTL。
+
+当 session 被 flush 或变为空时，Unfazed 仍会发送 `Max-Age=0` 和已过期的 `Expires` 值，让浏览器立即删除 cookie。
 
 ## 后端
 
@@ -124,8 +140,9 @@ UNFAZED_SETTINGS = {
 **工作原理：**
 
 1. `load()` 时：使用 cookie 中的 session 键从缓存获取数据。
-2. `save()` 时：生成新的 session 键（如需要）并将数据存入缓存，TTL 等于 `COOKIE_MAX_AGE`。
-3. 若 save 时 session 为空，则删除缓存条目。
+2. 若缓存条目不存在或已过期，则重置 session 键、清空 session，并在响应中删除浏览器里的旧 cookie。
+3. `save()` 时：生成新的 session 键（如需要）并将数据存入缓存，TTL 等于 `COOKIE_MAX_AGE`。
+4. 若 save 时 session 为空，则删除缓存条目。
 
 **权衡：**
 
@@ -185,6 +202,7 @@ session 后端的抽象基类。对内部 `_session` 字典实现类 dict 的访
 | `async delete()` | 清除所有 session 数据。 |
 | `async flush()` | `delete()` 的别名。 |
 | `get_max_age()` | 从设置中返回 `cookie_max_age`。 |
+| `get_cookie_max_age()` | 返回 cookie 的 `Max-Age`；当启用浏览器会话 cookie 时返回 `None`。 |
 | `generate_session_key()` | （抽象）生成新的 session 键。 |
 | `async save()` | （抽象）持久化 session 数据。 |
 | `async load()` | （抽象）加载 session 数据。 |
