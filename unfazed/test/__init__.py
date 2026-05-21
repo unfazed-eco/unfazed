@@ -1,3 +1,3 @@
-from .request import Requestfactory
+from .request import Requestfactory, WebSocketTestSession
 
-__all__ = ["Requestfactory"]
+__all__ = ["Requestfactory", "WebSocketTestSession"]

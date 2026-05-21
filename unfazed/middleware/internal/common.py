@@ -88,8 +88,27 @@ class CommonMiddleware(BaseMiddleware):
         super().__init__(app)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
+        if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
+            return
+
+        if scope["type"] == "websocket":
+            try:
+                await self.app(scope, receive, send)
+            except Exception:
+                logger.error(format_exc())
+                # Safety net: Layer 1 should have already sent close,
+                # but re-send in case its close attempt failed.
+                try:
+                    await send(
+                        {
+                            "type": "websocket.close",
+                            "code": 1011,
+                            "reason": "Internal server error",
+                        }
+                    )
+                except Exception:  # pragma: no cover
+                    pass
             return
 
         try:

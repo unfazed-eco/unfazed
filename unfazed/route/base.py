@@ -6,9 +6,10 @@ from unfazed.type import ASGIApp, CanBeImported, HttpMethod
 
 from .registry import _flatten_patterns
 from .routing import Mount, Route, Static
+from .websocket_routing import WebSocketRoute
 
 
-def include(route_path: str) -> t.List[Route]:
+def include(route_path: str) -> t.List[t.Union[Route, WebSocketRoute]]:
     """
     Convert a route module path to a list of Route.
 
@@ -66,7 +67,7 @@ def path(
 def path(
     path: str,
     *,
-    routes: t.List[Route] | None = None,
+    routes: t.Sequence[t.Union[Route, WebSocketRoute]] | None = None,
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
@@ -78,14 +79,14 @@ def path(
     externalDocs: t.Dict | None = None,
     deprecated: bool = False,
     operation_id: str | None = None,
-) -> t.List[Route]: ...
+) -> t.List[t.Union[Route, WebSocketRoute]]: ...
 
 
 def path(
     path: str,
     *,
     endpoint: t.Callable | None = None,
-    routes: t.List[Route] | None = None,
+    routes: t.Sequence[t.Union[Route, WebSocketRoute]] | None = None,
     methods: t.List[HttpMethod] | None = None,
     name: str | None = None,
     app_label: str | None = None,
@@ -97,7 +98,7 @@ def path(
     externalDocs: t.Dict | None = None,
     deprecated: bool | None = None,
     operation_id: str | None = None,
-) -> Route | t.List[Route]:
+) -> Route | t.List[t.Union[Route, WebSocketRoute]]:
     """
 
     Create a Route or a list of Route.
@@ -147,8 +148,10 @@ def path(
     elif routes:
         ret = []
         for route in routes:
-            if not isinstance(route, Route):
-                raise ValueError(f"error for {path}: routes should be a list of Route")
+            if not isinstance(route, (Route, WebSocketRoute)):
+                raise ValueError(
+                    f"error for {path}: routes should be a list of Route or WebSocketRoute"
+                )
 
             route.update_path(path + route.path)
             if middlewares:
@@ -186,10 +189,45 @@ def static(
     )
 
 
+def websocket(
+    path: str,
+    *,
+    endpoint: t.Callable,
+    name: str | None = None,
+    app_label: str | None = None,
+    middlewares: t.List[CanBeImported] | None = None,
+    tags: t.List[str] | None = None,
+) -> WebSocketRoute:
+    """
+    Create a WebSocket route.
+
+    Usage:
+
+    ```python
+    from unfazed.route import websocket
+
+    patterns = [
+        websocket("/ws/chat/{room_id}", endpoint=chat_endpoint),
+    ]
+    ```
+    """
+    if not inspect.isfunction(endpoint):
+        raise ValueError(f"endpoint {endpoint} must be a function")
+
+    return WebSocketRoute(
+        path,
+        endpoint,
+        name=name,
+        middlewares=middlewares,
+        app_label=app_label,
+        tags=tags,
+    )
+
+
 def mount(
     path: str,
     app: ASGIApp | None = None,
-    routes: t.List[Route] | None = None,
+    routes: t.Sequence[t.Union[Route, WebSocketRoute]] | None = None,
     *,
     name: str | None = None,
     app_label: str | None = None,
