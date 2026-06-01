@@ -18,6 +18,7 @@ nav:
     - App: features/app.md
     - Settings: features/settings.md
     - Route: features/route.md
+    - WebSocket: features/websocket.md
     - Endpoint: features/endpoint.md
     - Middleware: features/middleware.md
     - Lifespan: features/lifespan.md
@@ -93,6 +94,7 @@ plugins:
             App: 应用
             Settings: 配置
             Route: 路由
+            WebSocket: WebSocket
             Endpoint: 视图函数
             Middleware: 中间件
             Lifespan: 生命周期

@@ -1,7 +1,7 @@
 Unfazed Routing
 ===============
 
-Unfazed's routing system maps URL paths to endpoint functions. Routes are defined using the `path()` helper, organized into `patterns` lists, and composed with `include()` for multi-app projects. The framework also supports static file serving via `static()`, mounting external ASGI apps via `mount()`, and per-route middleware.
+Unfazed's routing system maps URL paths to endpoint functions. HTTP routes are defined using the `path()` helper, WebSocket routes are defined using `websocket()`, and both are organized into `patterns` lists and composed with `include()` for multi-app projects. The framework also supports static file serving via `static()`, mounting external ASGI apps via `mount()`, and per-route middleware.
 
 ## Quick Start
 
@@ -113,6 +113,23 @@ path(
 ```
 
 Set `include_in_schema=False` to hide a route from the OpenAPI spec.
+
+### WebSocket routes
+
+Use `websocket()` for ASGI WebSocket endpoints:
+
+```python
+from unfazed.route import websocket
+
+patterns = [
+    websocket("/ws/chat/{room_id}", endpoint=chat_endpoint),
+]
+```
+
+WebSocket routes can be composed with `path(..., routes=...)` and `include()`,
+support route-level middleware, and are excluded from OpenAPI. See
+[WebSocket](websocket.md) for endpoint signatures, connection methods, and
+testing helpers.
 
 ## Composing Routes
 
@@ -291,10 +308,26 @@ Create a `Route` (when `endpoint` is given) or a list of prefixed routes (when `
 ### include()
 
 ```python
-def include(route_path: str) -> List[Route]
+def include(route_path: str) -> List[Route | WebSocketRoute]
 ```
 
 Import a module's `patterns` list. The module must define `patterns` at module level.
+
+### websocket()
+
+```python
+def websocket(
+    path: str,
+    *,
+    endpoint: Callable,
+    name: str = None,
+    app_label: str = None,
+    middlewares: List[str] = None,
+    tags: List[str] = None,
+) -> WebSocketRoute
+```
+
+Create a WebSocket route. See [WebSocket](websocket.md) for full usage.
 
 ### static()
 
