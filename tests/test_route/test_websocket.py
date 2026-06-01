@@ -1,9 +1,9 @@
 import typing as t
 
 import pytest
-from starlette.websockets import WebSocketDisconnect
 
 from unfazed.core import Unfazed
+from unfazed.exception import WebSocketDisconnect
 from unfazed.http import WebSocketConnection
 from unfazed.route import WebSocketRoute, websocket
 from unfazed.route.params import Path as WSPath
