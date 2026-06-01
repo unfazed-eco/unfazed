@@ -15,7 +15,12 @@ from unfazed.http import (
     RedirectResponse,
     StreamingResponse,
 )
-from unfazed.http.response import RangeFileHandler, parse_request
+from unfazed.http.response import (
+    ByteRange,
+    MultipartRangeFileHandler,
+    RangeFileHandler,
+    parse_request,
+)
 
 
 def test_str_esponse() -> None:
@@ -64,8 +69,18 @@ class StreamingApp:
     def __init__(self) -> None:
         self.event = asyncio.Event()
         self.body = b""
+        self.status_code = 0
+        self.headers: dict[str, str] = {}
 
     async def send(self, msg: t.MutableMapping[str, t.Any]) -> None:
+        if msg["type"] == "http.response.start":
+            self.status_code = msg["status"]
+            self.headers = {
+                key.decode("latin-1"): value.decode("latin-1")
+                for key, value in msg["headers"]
+            }
+            return
+
         flag = "more_body" in msg and msg["more_body"] is False
         body = msg.get("body", b"")
 
@@ -195,6 +210,16 @@ def test_rangehandler() -> None:
     assert handler.content_range == f"bytes 0-9/{stat.st_size}"
 
 
+def test_rangehandler_stops_on_empty_read() -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    handler = RangeFileHandler(file_path)
+    handler.set_range(0, 1)
+    handler.file.seek(handler.file_size)
+
+    with pytest.raises(StopIteration):
+        next(handler)
+
+
 def test_fileresponse_parse_request() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
 
@@ -208,7 +233,7 @@ def test_fileresponse_parse_request() -> None:
     start, end, code = parse_request(handler, req_headers)
 
     assert start == 0
-    assert end == 10
+    assert end == 11
     assert code == 206
 
     req_headers = {
@@ -217,8 +242,8 @@ def test_fileresponse_parse_request() -> None:
     }
 
     start, end, code = parse_request(handler, req_headers)
-    assert start == 0
-    assert end == 10
+    assert start == handler.file_size - 10
+    assert end == handler.file_size
     assert code == 206
 
     req_headers = {
@@ -229,7 +254,7 @@ def test_fileresponse_parse_request() -> None:
     start, end, code = parse_request(handler, req_headers)
     assert start == 0
     assert end == handler.file_size
-    assert code == 206
+    assert code == 200
 
     req_headers = {
         "Range": "bytes=x-y",
@@ -265,3 +290,120 @@ def test_fileresponse_parse_request() -> None:
     assert code == 206
     assert start == 10
     assert end == handler.file_size
+
+
+def test_fileresponse_parse_request_range_edges(tmp_path: t.Any) -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    handler = RangeFileHandler(file_path)
+
+    start, end, code = parse_request(handler, {"Range": "items=0-1"})
+    assert (start, end, code) == (0, handler.file_size, 200)
+
+    start, end, code = parse_request(handler, {"Range": "bytes=5"})
+    assert (start, end, code) == (0, handler.file_size, 200)
+
+    start, end, code = parse_request(handler, {"Range": "bytes=-x"})
+    assert (start, end, code) == (0, handler.file_size, 200)
+
+    start, end, code = parse_request(handler, {"Range": "bytes=-0"})
+    assert (start, end, code) == (0, handler.file_size, 416)
+
+    start, end, code = parse_request(
+        handler,
+        {
+            "Range": "bytes=0-1",
+            "If-Range": handler.last_modified.replace(" UTC", ""),
+        },
+    )
+    assert (start, end, code) == (0, 2, 206)
+
+    empty_path = tmp_path / "empty.txt"
+    empty_path.write_bytes(b"")
+    empty_handler = RangeFileHandler(empty_path)
+    start, end, code = parse_request(empty_handler, {"Range": "bytes=-1"})
+    assert (start, end, code) == (0, 0, 416)
+
+
+async def test_fileresponse_range_protocol() -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    with open(file_path, "rb") as f:
+        content = f.read()
+    handler = RangeFileHandler(file_path)
+
+    resp = FileResponse(file_path, headers={"Range": "bytes=0-9"})
+    assert resp.status_code == 206
+    assert resp.headers["content-range"] == f"bytes 0-9/{len(content)}"
+    assert resp.headers["content-length"] == "10"
+
+    app = StreamingApp()
+    await resp({}, app.reiceive, app.send)
+    assert app.status_code == 206
+    assert app.body == content[:10]
+
+    suffix_resp = FileResponse(file_path, headers={"Range": "bytes=-12"})
+    app = StreamingApp()
+    await suffix_resp({}, app.reiceive, app.send)
+    assert suffix_resp.status_code == 206
+    assert (
+        suffix_resp.headers["content-range"]
+        == f"bytes {len(content) - 12}-{len(content) - 1}/{len(content)}"
+    )
+    assert app.body == content[-12:]
+
+    if_range_resp = FileResponse(
+        file_path,
+        headers={"Range": "bytes=0-9", "If-Range": handler.last_modified},
+    )
+    assert if_range_resp.status_code == 206
+
+    stale_if_range_resp = FileResponse(
+        file_path,
+        headers={"Range": "bytes=0-9", "If-Range": "Wed, 21 Oct 2015 07:28:00 GMT"},
+    )
+    assert stale_if_range_resp.status_code == 200
+    assert stale_if_range_resp.headers["content-length"] == str(len(content))
+
+    unsatisfiable_resp = FileResponse(
+        file_path, headers={"Range": f"bytes={len(content)}-"}
+    )
+    assert unsatisfiable_resp.status_code == 416
+    assert unsatisfiable_resp.headers["content-range"] == f"bytes */{len(content)}"
+    assert unsatisfiable_resp.headers["content-length"] == "0"
+
+
+async def test_fileresponse_multiple_ranges() -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    with open(file_path, "rb") as f:
+        content = f.read()
+
+    resp = FileResponse(file_path, headers={"Range": "bytes=0-4,10-14"})
+    assert resp.status_code == 206
+    assert resp.headers["content-type"].startswith("multipart/byteranges; boundary=")
+    assert "content-range" not in resp.headers
+    assert "content-length" not in resp.headers
+    boundary = resp.headers["content-type"].split("boundary=", 1)[1]
+
+    app = StreamingApp()
+    await resp({}, app.reiceive, app.send)
+
+    body = app.body
+    assert b"Content-Range: bytes 0-4/" in body
+    assert b"Content-Range: bytes 10-14/" in body
+    assert content[:5] in body
+    assert content[10:15] in body
+    assert body.endswith(f"--{boundary}--\r\n".encode("latin-1"))
+
+
+def test_multipart_range_handler_errors_when_file_ends_early() -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    file_size = os.stat(file_path).st_size
+    handler = MultipartRangeFileHandler(
+        file_path,
+        [ByteRange(file_size - 1, file_size + 10)],
+        boundary="unfazed-boundary",
+        content_type="application/octet-stream",
+        file_size=file_size,
+    )
+
+    with pytest.raises(RuntimeError, match="requested byte range"):
+        b"".join(handler)

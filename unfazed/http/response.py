@@ -1,8 +1,11 @@
 import os
 import typing as t
+from dataclasses import dataclass
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from functools import partial
 from pathlib import Path
+from secrets import token_hex
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
@@ -17,6 +20,14 @@ from unfazed.protocol import ASGIType
 from unfazed.type import ContentStream, PathLike, Receive, Scope, Send
 
 T = t.TypeVar("T", bound=t.Union[t.Dict, t.List, str, bytes, BaseModel, ContentStream])
+
+
+@dataclass(frozen=True)
+class ByteRange:
+    """A normalized byte range with an exclusive end."""
+
+    start: int
+    end: int
 
 
 class HttpResponse[T](Response):
@@ -291,7 +302,7 @@ class RangeFileHandler:
         self.chunk_size = chunk_size
 
         self.range_start = 0
-        self.range_end = self.stat.st_size
+        self.range_end = self.file_size
         self._content_length = self.stat.st_size
 
         self.downloaded = 0
@@ -347,6 +358,7 @@ class RangeFileHandler:
         self.range_start = start
         self.range_end = end
         self._content_length = self.range_end - self.range_start
+        self.downloaded = 0
 
         self.file.seek(self.range_start)
 
@@ -364,14 +376,202 @@ class RangeFileHandler:
         Raises:
             StopIteration: When all data has been streamed.
         """
-        if self.downloaded >= self.range_end - self.range_start:
+        if self.downloaded >= self.content_length:
             self.close()
             raise StopIteration
 
-        chunk_size = min(self.chunk_size, self.range_end - self.downloaded)
+        chunk_size = min(self.chunk_size, self.content_length - self.downloaded)
         data = self.file.read(chunk_size)
+        if not data:
+            self.close()
+            raise StopIteration
+
         self.downloaded += len(data)
         return data
+
+
+class MultipartRangeFileHandler:
+    """
+    Iterator for RFC 7233 multipart/byteranges responses.
+    """
+
+    def __init__(
+        self,
+        path: PathLike,
+        ranges: t.Sequence[ByteRange],
+        *,
+        boundary: str,
+        content_type: str,
+        file_size: int,
+        chunk_size: int = 65536,
+    ) -> None:
+        self.path = Path(path).resolve()
+        self.ranges = ranges
+        self.boundary = boundary
+        self.content_type = content_type
+        self.file_size = file_size
+        self.chunk_size = chunk_size
+
+    @property
+    def content_length(self) -> int:
+        total = 0
+        for byte_range in self.ranges:
+            total += len(self._part_header(byte_range))
+            total += byte_range.end - byte_range.start
+            total += 2  # trailing CRLF after each part body
+        total += len(self._closing_boundary())
+        return total
+
+    def _part_header(self, byte_range: ByteRange) -> bytes:
+        return (
+            f"--{self.boundary}\r\n"
+            f"Content-Type: {self.content_type}\r\n"
+            f"Content-Range: bytes {byte_range.start}-{byte_range.end - 1}/"
+            f"{self.file_size}\r\n"
+            "\r\n"
+        ).encode("latin-1")
+
+    def _closing_boundary(self) -> bytes:
+        return f"--{self.boundary}--\r\n".encode("latin-1")
+
+    def __iter__(self) -> t.Iterator[bytes]:
+        with open(self.path, "rb") as file:
+            for byte_range in self.ranges:
+                yield self._part_header(byte_range)
+                file.seek(byte_range.start)
+
+                remaining = byte_range.end - byte_range.start
+                while remaining > 0:
+                    chunk = file.read(min(self.chunk_size, remaining))
+                    if not chunk:
+                        raise RuntimeError(
+                            "File ended before the requested byte range was fully read"
+                        )
+                    remaining -= len(chunk)
+                    yield chunk
+
+                yield b"\r\n"
+
+        yield self._closing_boundary()
+
+
+def _get_header(headers: t.Mapping[str, str], name: str) -> str | None:
+    for key, value in headers.items():
+        if key.lower() == name.lower():
+            return value
+    return None
+
+
+def _if_range_allows_range(
+    handler: RangeFileHandler, header_if_range: str | None
+) -> bool:
+    if not header_if_range:
+        return True
+
+    header_if_range = header_if_range.strip()
+    if header_if_range == handler.etag:
+        return True
+
+    try:
+        if_range_date = parsedate_to_datetime(header_if_range)
+    except (TypeError, ValueError):
+        return False
+
+    if if_range_date.tzinfo is None:
+        if_range_date = if_range_date.replace(tzinfo=ZoneInfo("UTC"))
+
+    last_modified = datetime.fromtimestamp(int(handler.stat.st_mtime), ZoneInfo("UTC"))
+    return last_modified <= if_range_date
+
+
+def _parse_ranges_header(
+    header_range: str | None, file_size: int
+) -> tuple[t.Sequence[ByteRange] | None, bool]:
+    """
+    Parse a Range header.
+
+    Returns:
+        (None, False): malformed or unsupported range, ignore Range header.
+        ([], True): syntactically valid but unsatisfiable range.
+        ([ByteRange, ...], True): satisfiable ranges.
+    """
+    if not header_range:
+        return None, False
+
+    unit, separator, range_set = header_range.partition("=")
+    if separator != "=" or unit.strip().lower() != "bytes":
+        return None, False
+
+    ranges: list[ByteRange] = []
+    unsatisfiable = False
+    for raw_item in range_set.split(","):
+        item = raw_item.strip()
+        if not item:
+            return None, False
+
+        first, dash, last = item.partition("-")
+        if dash != "-":
+            return None, False
+
+        first = first.strip()
+        last = last.strip()
+
+        if first == "":
+            if not last.isdigit():
+                return None, False
+
+            suffix_length = int(last)
+            if suffix_length <= 0:
+                unsatisfiable = True
+                continue
+
+            start = max(file_size - suffix_length, 0)
+            end = file_size
+        else:
+            if not first.isdigit() or (last and not last.isdigit()):
+                return None, False
+
+            start = int(first)
+            if last == "":
+                end = file_size
+            else:
+                last_byte = int(last)
+                if start > last_byte:
+                    unsatisfiable = True
+                    continue
+                end = min(last_byte + 1, file_size)
+
+            if start >= file_size:
+                unsatisfiable = True
+                continue
+
+        if start < end:
+            ranges.append(ByteRange(start, end))
+        else:
+            unsatisfiable = True
+
+    if ranges:
+        return ranges, True
+    return [], unsatisfiable
+
+
+def parse_range_request(
+    handler: RangeFileHandler, headers: t.Mapping[str, str]
+) -> tuple[t.Sequence[ByteRange], int]:
+    header_range = _get_header(headers, "Range")
+    header_if_range = _get_header(headers, "If-Range")
+
+    if not _if_range_allows_range(handler, header_if_range):
+        return [ByteRange(0, handler.file_size)], 200
+
+    ranges, is_range_request = _parse_ranges_header(header_range, handler.file_size)
+    if not is_range_request:
+        return [ByteRange(0, handler.file_size)], 200
+
+    if not ranges:
+        return [], 416
+
+    return ranges, 206
 
 
 def parse_request(
@@ -393,50 +593,12 @@ def parse_request(
         - range_end: End byte position (exclusive).
         - status_code: HTTP status code (200, 206, or 416).
     """
-    header_if_range = headers.get("If-Range", None)
-    header_range = headers.get("Range", None)
+    ranges, status_code = parse_range_request(handler, headers)
+    if not ranges:
+        return 0, handler.file_size, status_code
 
-    range_start: int | str
-    range_end: int | str
-    range_start, range_end = 0, handler.file_size
-
-    # Compare If-Range and etag if If-Range exists
-    # If they are not equal, download the whole file
-    continue_download = True
-    status_code = 200
-    if header_if_range:
-        if header_if_range == handler.etag:
-            status_code = 206
-        else:
-            continue_download = False
-
-    if header_range and continue_download:
-        # We only support "bytes=start-end"
-        # If other range format, download the whole file
-        try:
-            range_start, range_end = header_range.split("=")[1].split("-")
-        except Exception:
-            range_start, range_end = 0, handler.file_size
-
-        if range_end == "":
-            range_end = handler.file_size
-
-        if range_start == "":
-            range_start = 0
-
-        try:
-            range_start = int(range_start)
-            range_end = int(range_end)
-            status_code = 206
-        except ValueError:
-            range_start = 0
-            range_end = handler.file_size
-            status_code = 200
-
-        if range_start > range_end:
-            status_code = 416  # Requested Range Not Satisfiable
-
-    return range_start, range_end, status_code
+    byte_range = ranges[0]
+    return byte_range.start, byte_range.end, status_code
 
 
 class FileResponse(StreamingResponse):
@@ -481,22 +643,48 @@ class FileResponse(StreamingResponse):
 
         headers = headers or {}
         if status_code == 200:
-            range_start, range_end, status_code = parse_request(handler, headers)
-            handler.set_range(range_start, range_end)
+            ranges, status_code = parse_range_request(handler, headers)
         else:
-            handler.set_range(0, handler.file_size)
+            ranges = [ByteRange(0, handler.file_size)]
+
         self.status_code = status_code
-        resp_headers = self.build_headers(handler)
+        boundary = token_hex(13)
+
+        content: ContentStream
+        if status_code == 206 and len(ranges) > 1:
+            content = MultipartRangeFileHandler(
+                path,
+                ranges,
+                boundary=boundary,
+                content_type=media_type,
+                file_size=handler.file_size,
+                chunk_size=chunk_size,
+            )
+            handler.close()
+        else:
+            if ranges:
+                byte_range = ranges[0]
+                handler.set_range(byte_range.start, byte_range.end)
+            else:
+                handler.set_range(0, 0)
+            content = handler
+
+        resp_headers = self.build_headers(handler, ranges, boundary)
 
         super().__init__(
-            handler,
+            content,
             status_code,
             resp_headers,
             background=background,
             media_type=media_type,
         )
 
-    def build_headers(self, handler: RangeFileHandler) -> t.Dict[str, str]:
+    def build_headers(
+        self,
+        handler: RangeFileHandler,
+        ranges: t.Sequence[ByteRange],
+        boundary: str,
+    ) -> t.Dict[str, str]:
         """
         Build HTTP headers for the file response.
 
@@ -526,7 +714,13 @@ class FileResponse(StreamingResponse):
                     f'{self.content_disposition_type}; filename="{self.filename}"'
                 )
 
-        if self.status_code == 206:
+        if self.status_code == 206 and len(ranges) == 1:
             headers["Content-Range"] = handler.content_range
+        elif self.status_code == 206 and len(ranges) > 1:
+            headers["Content-Type"] = f"multipart/byteranges; boundary={boundary}"
+            headers.pop("Content-Length", None)
+        elif self.status_code == 416:
+            headers["Content-Range"] = f"bytes */{handler.file_size}"
+            headers["Content-Length"] = "0"
 
         return headers

@@ -121,7 +121,11 @@ async def stream_data(request: HttpRequest) -> StreamingResponse:
 from unfazed.http import FileResponse
 
 async def download(request: HttpRequest) -> FileResponse:
-    return FileResponse("/path/to/report.pdf", filename="report.pdf")
+    return FileResponse(
+        "/path/to/report.pdf",
+        filename="report.pdf",
+        headers=dict(request.headers),
+    )
 
 
 async def preview(request: HttpRequest) -> FileResponse:
@@ -130,13 +134,19 @@ async def preview(request: HttpRequest) -> FileResponse:
         filename="manual.pdf",
         media_type="application/pdf",
         content_disposition_type="inline",
+        headers=dict(request.headers),
     )
 ```
 
-范围请求头（`Range`、`If-Range`）会被透明处理：
-- 完整文件：`200 OK`
-- 部分内容：`206 Partial Content`
-- 无效范围：`416 Range Not Satisfiable`
+传入请求头后，`Range` 和 `If-Range` 会被透明处理：
+
+- 未传入范围请求，或范围格式错误 / 不支持：`200 OK`，返回完整文件
+- 单段范围，如 `Range: bytes=0-1023`、`Range: bytes=1024-`、`Range: bytes=-512`：`206 Partial Content`，响应包含 `Content-Range`
+- 多段范围，如 `Range: bytes=0-99,200-299`：`206 Partial Content`，响应的 `Content-Type` 为 `multipart/byteranges`
+- 语法有效但无法满足的范围，如起点超过文件大小：`416 Range Not Satisfiable`，响应包含 `Content-Range: bytes */<size>`
+- `If-Range` 可使用当前文件的 `ETag` 或 HTTP 日期；校验不通过时会忽略 `Range`，返回完整文件
+
+`FileResponse` 只有在 `status_code=200` 时才会解析范围请求。传入自定义状态码时，会按该状态码返回完整文件。
 
 ## 通用参数
 
@@ -149,6 +159,8 @@ async def preview(request: HttpRequest) -> FileResponse:
 | `headers` | `Mapping[str, str]` | `None` | 额外的 HTTP headers。 |
 | `media_type` | `str` | 类默认值 | Content-Type 头的值。 |
 | `background` | `BackgroundTask` | `None` | 响应发送后执行的任务。 |
+
+对 `FileResponse` 而言，`headers` 用于读取当前请求中的 `Range` / `If-Range`，文件响应头会由框架自动生成。
 
 ### 后台任务
 
@@ -223,6 +235,17 @@ class StreamingResponse(HttpResponse):
 
 ```python
 class FileResponse(StreamingResponse):
-    def __init__(self, path: str | Path, filename: str | None = None, *, status_code: int = 200, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream", content_disposition_type: str = "attachment")
+    def __init__(
+        self,
+        path: PathLike,
+        filename: str | None = None,
+        *,
+        status_code: int = 200,
+        chunk_size: int = 65536,
+        headers: t.Dict[str, str] | None = None,
+        background: BackgroundTask | None = None,
+        media_type: str = "application/octet-stream",
+        content_disposition_type: str = "attachment",
+    ) -> None
 ```
-支持 HTTP 范围请求的文件下载。若文件不存在则抛出 `FileNotFoundError`。
+支持 HTTP 范围请求的文件下载。若要启用 `Range` / `If-Range` 处理，需要把当前请求头传给 `headers`。若文件不存在则抛出 `FileNotFoundError`。
