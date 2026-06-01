@@ -121,7 +121,11 @@ Streams a file with support for HTTP range requests (resumable downloads). Sets 
 from unfazed.http import FileResponse
 
 async def download(request: HttpRequest) -> FileResponse:
-    return FileResponse("/path/to/report.pdf", filename="report.pdf")
+    return FileResponse(
+        "/path/to/report.pdf",
+        filename="report.pdf",
+        headers=dict(request.headers),
+    )
 
 
 async def preview(request: HttpRequest) -> FileResponse:
@@ -130,13 +134,19 @@ async def preview(request: HttpRequest) -> FileResponse:
         filename="manual.pdf",
         media_type="application/pdf",
         content_disposition_type="inline",
+        headers=dict(request.headers),
     )
 ```
 
-Range request headers (`Range`, `If-Range`) are handled transparently:
-- Full file: `200 OK`
-- Partial content: `206 Partial Content`
-- Invalid range: `416 Range Not Satisfiable`
+After passing the incoming request headers, `Range` and `If-Range` are handled transparently:
+
+- No range request, or a malformed / unsupported range: `200 OK` with the full file
+- A single byte range, such as `Range: bytes=0-1023`, `Range: bytes=1024-`, or `Range: bytes=-512`: `206 Partial Content` with a `Content-Range` header
+- Multiple byte ranges, such as `Range: bytes=0-99,200-299`: `206 Partial Content` with a `multipart/byteranges` content type
+- A syntactically valid but unsatisfiable range, such as a start offset beyond the file size: `416 Range Not Satisfiable` with `Content-Range: bytes */<size>`
+- `If-Range` may use the current file `ETag` or an HTTP date. If validation fails, `Range` is ignored and the full file is returned.
+
+`FileResponse` only parses range requests when `status_code=200`. If you pass a custom status code, the response streams the full file with that status.
 
 ## Common Parameters
 
@@ -149,6 +159,8 @@ All response classes accept these constructor arguments:
 | `headers` | `Mapping[str, str]` | `None` | Additional HTTP headers. |
 | `media_type` | `str` | class default | Content-Type header value. |
 | `background` | `BackgroundTask` | `None` | Task to run after the response is sent. |
+
+For `FileResponse`, `headers` is used to read `Range` / `If-Range` from the current request. File response headers are generated automatically.
 
 ### Background Tasks
 
@@ -223,6 +235,17 @@ Streams content chunks. Handles both sync and async iterables.
 
 ```python
 class FileResponse(StreamingResponse):
-    def __init__(self, path: str | Path, filename: str | None = None, *, status_code: int = 200, chunk_size: int = 65536, headers: Dict | None = None, background=None, media_type: str = "application/octet-stream", content_disposition_type: str = "attachment")
+    def __init__(
+        self,
+        path: PathLike,
+        filename: str | None = None,
+        *,
+        status_code: int = 200,
+        chunk_size: int = 65536,
+        headers: t.Dict[str, str] | None = None,
+        background: BackgroundTask | None = None,
+        media_type: str = "application/octet-stream",
+        content_disposition_type: str = "attachment",
+    ) -> None
 ```
-File download with HTTP range-request support. Raises `FileNotFoundError` if the file does not exist.
+File download with HTTP range-request support. Pass the current request headers to `headers` to enable `Range` / `If-Range` handling. Raises `FileNotFoundError` if the file does not exist.
