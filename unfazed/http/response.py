@@ -5,6 +5,7 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from functools import partial
 from pathlib import Path
+from secrets import token_hex
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
@@ -443,7 +444,9 @@ class MultipartRangeFileHandler:
                 while remaining > 0:
                     chunk = file.read(min(self.chunk_size, remaining))
                     if not chunk:
-                        break
+                        raise RuntimeError(
+                            "File ended before the requested byte range was fully read"
+                        )
                     remaining -= len(chunk)
                     yield chunk
 
@@ -645,7 +648,7 @@ class FileResponse(StreamingResponse):
             ranges = [ByteRange(0, handler.file_size)]
 
         self.status_code = status_code
-        boundary = "unfazed-boundary"
+        boundary = token_hex(13)
 
         content: ContentStream
         if status_code == 206 and len(ranges) > 1:
@@ -714,16 +717,8 @@ class FileResponse(StreamingResponse):
         if self.status_code == 206 and len(ranges) == 1:
             headers["Content-Range"] = handler.content_range
         elif self.status_code == 206 and len(ranges) > 1:
-            multipart = MultipartRangeFileHandler(
-                handler.path,
-                ranges,
-                boundary=boundary,
-                content_type=self.media_type,
-                file_size=handler.file_size,
-                chunk_size=handler.chunk_size,
-            )
             headers["Content-Type"] = f"multipart/byteranges; boundary={boundary}"
-            headers["Content-Length"] = str(multipart.content_length)
+            headers.pop("Content-Length", None)
         elif self.status_code == 416:
             headers["Content-Range"] = f"bytes */{handler.file_size}"
             headers["Content-Length"] = "0"

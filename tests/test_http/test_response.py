@@ -380,6 +380,8 @@ async def test_fileresponse_multiple_ranges() -> None:
     assert resp.status_code == 206
     assert resp.headers["content-type"].startswith("multipart/byteranges; boundary=")
     assert "content-range" not in resp.headers
+    assert "content-length" not in resp.headers
+    boundary = resp.headers["content-type"].split("boundary=", 1)[1]
 
     app = StreamingApp()
     await resp({}, app.reiceive, app.send)
@@ -389,10 +391,10 @@ async def test_fileresponse_multiple_ranges() -> None:
     assert b"Content-Range: bytes 10-14/" in body
     assert content[:5] in body
     assert content[10:15] in body
-    assert body.endswith(b"--unfazed-boundary--\r\n")
+    assert body.endswith(f"--{boundary}--\r\n".encode("latin-1"))
 
 
-def test_multipart_range_handler_stops_when_file_ends() -> None:
+def test_multipart_range_handler_errors_when_file_ends_early() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
     file_size = os.stat(file_path).st_size
     handler = MultipartRangeFileHandler(
@@ -403,5 +405,5 @@ def test_multipart_range_handler_stops_when_file_ends() -> None:
         file_size=file_size,
     )
 
-    body = b"".join(handler)
-    assert body.endswith(b"--unfazed-boundary--\r\n")
+    with pytest.raises(RuntimeError, match="requested byte range"):
+        b"".join(handler)
