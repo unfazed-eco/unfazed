@@ -8,6 +8,7 @@ from .auth import (
 from .base import BaseUnfazedException, UnfazedSetupError
 from .http import MethodNotAllowed
 from .route import ParameterError
+from .websocket import WebSocketDisconnect
 
 
 class TypeHintRequired(Exception):
@@ -25,4 +26,5 @@ __all__ = [
     "AccountExisted",
     "MethodNotAllowed",
     "UnfazedSetupError",
+    "WebSocketDisconnect",
 ]

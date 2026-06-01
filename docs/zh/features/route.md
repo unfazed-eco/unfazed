@@ -1,7 +1,7 @@
 Unfazed 路由
 ============
 
-Unfazed 的路由系统将 URL 路径映射到 endpoint 函数。路由使用 `path()` 辅助函数定义，组织到 `patterns` 列表中，并通过 `include()` 组合用于多应用项目。框架还支持通过 `static()` 提供静态文件、通过 `mount()` 挂载外部 ASGI 应用，以及按路由配置中间件。
+Unfazed 的路由系统将 URL 路径映射到 endpoint 函数。HTTP 路由使用 `path()` 辅助函数定义，WebSocket 路由使用 `websocket()` 定义，二者都组织到 `patterns` 列表中，并通过 `include()` 组合用于多应用项目。框架还支持通过 `static()` 提供静态文件、通过 `mount()` 挂载外部 ASGI 应用，以及按路由配置中间件。
 
 ## 快速开始
 
@@ -113,6 +113,22 @@ path(
 ```
 
 设置 `include_in_schema=False` 可将路由从 OpenAPI 规范中隐藏。
+
+### WebSocket 路由
+
+ASGI WebSocket endpoint 使用 `websocket()`：
+
+```python
+from unfazed.route import websocket
+
+patterns = [
+    websocket("/ws/chat/{room_id}", endpoint=chat_endpoint),
+]
+```
+
+WebSocket 路由可以通过 `path(..., routes=...)` 和 `include()` 组合，支持路由级中间件，
+并且不会进入 OpenAPI。endpoint 签名、连接方法和测试辅助工具见
+[WebSocket](websocket.md)。
 
 ## 组合路由
 
@@ -291,10 +307,26 @@ def path(
 ### include()
 
 ```python
-def include(route_path: str) -> List[Route]
+def include(route_path: str) -> List[Route | WebSocketRoute]
 ```
 
 导入模块的 `patterns` 列表。模块必须在模块级别定义 `patterns`。
+
+### websocket()
+
+```python
+def websocket(
+    path: str,
+    *,
+    endpoint: Callable,
+    name: str = None,
+    app_label: str = None,
+    middlewares: List[str] = None,
+    tags: List[str] = None,
+) -> WebSocketRoute
+```
+
+创建 WebSocket 路由。完整用法见 [WebSocket](websocket.md)。
 
 ### static()
 

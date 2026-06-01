@@ -4,8 +4,9 @@ import typing as t
 from pydantic import BaseModel, ConfigDict, create_model
 from starlette.routing import WebSocketRoute as StarletteWebSocketRoute
 from starlette.routing import compile_path
-from starlette.websockets import WebSocketDisconnect, WebSocketState
+from starlette.websockets import WebSocketState
 
+from unfazed.exception import WebSocketDisconnect
 from unfazed.http.websocket_connection import WebSocketConnection
 from unfazed.protocol import MiddleWare as MiddleWareProtocol
 from unfazed.type import CanBeImported, Receive, Scope, Send

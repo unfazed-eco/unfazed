@@ -156,5 +156,6 @@ class Requestfactory(httpx.AsyncClient)
 |--------|-------------|
 | `async lifespan_startup()` | 发送 `lifespan.startup` 并断言 `lifespan.startup.complete`。失败时抛出 `RuntimeError`。 |
 | `async lifespan_shutdown()` | 发送 `lifespan.shutdown` 并断言 `lifespan.shutdown.complete`。失败时发出 `RuntimeWarning`。 |
+| `websocket_connect(url, subprotocols=None)` | 以 async context manager 形式打开 WebSocket 测试 session。见 [WebSocket](websocket.md)。 |
 
 以及从 `httpx.AsyncClient` 继承的所有方法 — `get`、`post`、`put`、`patch`、`delete`、`options`、`head`、`request`、`stream` 等。
