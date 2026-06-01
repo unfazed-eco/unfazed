@@ -1,6 +1,7 @@
 import typing as t
 
 if t.TYPE_CHECKING:
+    from unfazed.cache.backends.dummy import DummyCache  # pragma: no cover
     from unfazed.cache.backends.locmem import LocMemCache  # pragma: no cover
     from unfazed.cache.backends.redis.defaultclient import (
         DefaultBackend,  # pragma: no cover
@@ -18,5 +19,6 @@ class CacheOptions(t.TypedDict):
 
 
 CacheBackend = t.TypeVar(
-    "CacheBackend", bound=t.Union["LocMemCache", "DefaultBackend", "SerializerBackend"]
+    "CacheBackend",
+    bound=t.Union["LocMemCache", "DefaultBackend", "SerializerBackend", "DummyCache"],
 )
