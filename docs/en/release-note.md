@@ -1,3 +1,9 @@
+v0.0.24
+=====
+- [issue 19](https://github.com/unfazed-eco/unfazed/issues/19) Support the full HTTP Range protocol
+- [issue 86](https://github.com/unfazed-eco/unfazed/issues/86) Support WebSocket components
+- [issue 132](https://github.com/unfazed-eco/unfazed/issues/132) Improve session cookie lifecycle and stale CacheSession handling
+
 v0.0.23
 ====
 - [issue #120](https://github.com/unfazed-eco/unfazed/issues/120) Endpoint signatures now support injecting a custom `HttpRequest` subclass as the request object.
