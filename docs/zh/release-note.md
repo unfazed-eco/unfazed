@@ -3,6 +3,7 @@ v0.0.24
 - [issue 19](https://github.com/unfazed-eco/unfazed/issues/19) 支持完整的 Http Range 协议
 - [issue 86](https://github.com/unfazed-eco/unfazed/issues/86) 支持 websocket 组件
 - [issue 132](https://github.com/unfazed-eco/unfazed/issues/132) Improve session cookie lifecycle and stale CacheSession handling
+- [issue 133](https://github.com/unfazed-eco/unfazed/issues/133) 支持 DummyCache 异步空操作缓存后端
 
 v0.0.23
 ====

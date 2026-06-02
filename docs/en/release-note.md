@@ -3,6 +3,7 @@ v0.0.24
 - [issue 19](https://github.com/unfazed-eco/unfazed/issues/19) Support the full HTTP Range protocol
 - [issue 86](https://github.com/unfazed-eco/unfazed/issues/86) Support WebSocket components
 - [issue 132](https://github.com/unfazed-eco/unfazed/issues/132) Improve session cookie lifecycle and stale CacheSession handling
+- [issue 133](https://github.com/unfazed-eco/unfazed/issues/133) Support the DummyCache async no-op cache backend
 
 v0.0.23
 ====
