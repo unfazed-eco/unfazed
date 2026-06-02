@@ -95,6 +95,25 @@ A simple in-process cache backed by an `OrderedDict`. Good for development and s
 }
 ```
 
+### DummyCache — No-Op
+
+A no-op backend that accepts any method call but performs no actual operations. Useful for testing and development when you want to disable caching without changing application code. All read operations return defaults, all write operations are silently ignored, and any unknown method is proxied to a no-op.
+
+**Backend path:** `unfazed.cache.backends.dummy.DummyCache`
+
+**Options:** None. All options are ignored.
+
+**Configuration example:**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.dummy.DummyCache",
+        "LOCATION": "dummy",
+    },
+}
+```
+
 ### DefaultBackend — Raw Redis
 
 A thin wrapper around `redis.asyncio.Redis` that adds key prefixing and connection management. All standard Redis commands are available through attribute proxying — you call Redis methods directly on the backend instance.
@@ -432,6 +451,24 @@ In-process cache with automatic eviction.
 - `async clear() -> None`
 - `async close() -> None`
 - `make_key(key: str, version: int | None = None) -> str`
+
+### DummyCache
+
+```python
+class DummyCache(location: str, options: Dict[str, Any] | None = None)
+```
+
+No-op backend that proxies any method call to an async no-op. Never stores or retrieves data.
+
+- `async get(key: str, default: Any = None, version: int | None = None) -> Any`: Always returns `default`.
+- `async set(key: str, value: Any, timeout: float | None = None, version: int | None = None) -> None`: No-op.
+- `async delete(key: str, version: int | None = None) -> bool`: Always returns `False`.
+- `async has_key(key: str, version: int | None = None) -> bool`: Always returns `False`.
+- `async incr(key: str, delta: int = 1, version: int | None = None) -> int`: Always returns `0`.
+- `async decr(key: str, delta: int = 1, version: int | None = None) -> int`: Always returns `0`.
+- `async clear() -> None`: No-op.
+- `async close() -> None`: Sets the `closed` flag to `True`.
+- Any other method is proxied via `__getattr__` to an async no-op returning `None`.
 
 ### DefaultBackend
 

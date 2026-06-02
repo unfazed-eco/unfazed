@@ -95,6 +95,25 @@ sessions = caches["sessions"]
 }
 ```
 
+### DummyCache — 无操作
+
+一个无操作后端，接受任意方法调用但不执行实际操作。适用于在测试和开发中禁用缓存而无需修改应用代码。所有读操作返回默认值，所有写操作静默忽略，任意未知方法都会被代理到无操作函数。
+
+**后端路径：** `unfazed.cache.backends.dummy.DummyCache`
+
+**选项：** 无。所有选项均被忽略。
+
+**配置示例：**
+
+```python
+"CACHE": {
+    "default": {
+        "BACKEND": "unfazed.cache.backends.dummy.DummyCache",
+        "LOCATION": "dummy",
+    },
+}
+```
+
 ### DefaultBackend — 原生 Redis
 
 `redis.asyncio.Redis` 的轻量封装，增加键前缀和连接管理。所有标准 Redis 命令通过属性代理可用 —— 你直接在后端实例上调用 Redis 方法。
@@ -432,6 +451,24 @@ class LocMemCache(location: str, options: Dict[str, Any] | None = None)
 - `async clear() -> None`
 - `async close() -> None`
 - `make_key(key: str, version: int | None = None) -> str`
+
+### DummyCache
+
+```python
+class DummyCache(location: str, options: Dict[str, Any] | None = None)
+```
+
+无操作后端，将任意方法调用代理到异步无操作函数。永不存储或检索数据。
+
+- `async get(key: str, default: Any = None, version: int | None = None) -> Any`：始终返回 `default`。
+- `async set(key: str, value: Any, timeout: float | None = None, version: int | None = None) -> None`：无操作。
+- `async delete(key: str, version: int | None = None) -> bool`：始终返回 `False`。
+- `async has_key(key: str, version: int | None = None) -> bool`：始终返回 `False`。
+- `async incr(key: str, delta: int = 1, version: int | None = None) -> int`：始终返回 `0`。
+- `async decr(key: str, delta: int = 1, version: int | None = None) -> int`：始终返回 `0`。
+- `async clear() -> None`：无操作。
+- `async close() -> None`：将 `closed` 标志设为 `True`。
+- 其他任意方法通过 `__getattr__` 代理到异步无操作函数，返回 `None`。
 
 ### DefaultBackend
 
