@@ -1,4 +1,10 @@
 from tortoise import Model, fields
+from unfazed.contrib.auth.models import AbstractUser
+
+
+class User(AbstractUser):
+    class Meta:
+        table = "myapp_user"
 
 
 class Student(Model):
@@ -28,8 +34,8 @@ class Course(Model):
 
 class StudentCourse(Model):
     id = fields.IntField(pk=True)
-    student = fields.ForeignKeyField("models.Student", related_name="courses")
-    course = fields.ForeignKeyField("models.Course", related_name="students")
+    student = fields.ForeignKeyField("models.Student", related_name="student_courses")
+    course = fields.ForeignKeyField("models.Course", related_name="course_students")
 
     class Meta:
         table = "student_course"

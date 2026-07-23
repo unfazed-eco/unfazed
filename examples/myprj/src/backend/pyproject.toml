@@ -5,6 +5,7 @@ description = "A myprj project."
 authors = []
 dependencies = [
     "ipython>=9.4.0",
+    "tortoise-orm==1.1.7",
     "unfazed",
 ]
 

@@ -1,7 +1,9 @@
 import logging
 import typing as t
+from importlib.metadata import version
 from pathlib import Path
 
+from packaging.version import Version
 from tortoise import Tortoise
 
 import unfazed
@@ -57,11 +59,21 @@ class Driver(DataBaseDriver):
         # init tortoise
         config = self.conf.model_dump(exclude_none=True)
         config.pop("driver")
-        await Tortoise.init(config=config)
+
+        _tortoise_init_kwargs: dict = self.get_tortoise_init_kwargs()
+        await Tortoise.init(config=config, **_tortoise_init_kwargs)
 
         # load aerich command
         for c in self.list_aerich_command():
             self.unfazed.command_center.load_command(c)
+
+    @staticmethod
+    def get_tortoise_init_kwargs() -> dict[str, bool]:
+        # https://tortoise.github.io/setup.html#global-context-fallback
+        if Version(version("tortoise-orm")) >= Version("1.0.0"):
+            return {"_enable_global_fallback": True}
+
+        return {}
 
     async def migrate(self) -> None:
         """Generate database schemas for all registered models.

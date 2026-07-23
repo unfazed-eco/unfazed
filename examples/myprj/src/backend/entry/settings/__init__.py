@@ -26,26 +26,39 @@ UNFAZED_SETTINGS = {
     "PROJECT_NAME": PROJECT_NAME,
     "ROOT_URLCONF": "entry.routes",
     "INSTALLED_APPS": ["unfazed.contrib.admin", "unfazed.contrib.auth"],
-    # "DATABASE": {
-    #     "CONNECTIONS": {
-    #         "default": {
-    #             "ENGINE": "tortoise.backends.mysql",
-    #             "CREDENTIALS": {
-    #                 "HOST": "mysql",
-    #                 "PORT": 3306,
-    #                 "USER": "root",
-    #                 "PASSWORD": "app",
-    #                 "DATABASE": "app",
-    #             },
-    #         }
-    #     }
-    # },
-    # "CACHE": {
-    #     "default": {
-    #         "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
-    #         "LOCATION": PROJECT_NAME,
-    #     },
-    # },
+    "UNFAZED_CONTRIB_AUTH_SETTINGS": {
+        "USER_MODEL": "myapp.models.User",
+    },
+    "DATABASE": {
+        "CONNECTIONS": {
+            "default": {
+                "ENGINE": "tortoise.backends.mysql",
+                "CREDENTIALS": {
+                    "HOST": "mysql",
+                    "PORT": 3306,
+                    "USER": "root",
+                    "PASSWORD": "app",
+                    "DATABASE": "app",
+                },
+            }
+        },
+        "APPS": {
+            "models": {
+                "MODELS": [
+                    "aerich.models",
+                    "myapp.models",
+                    "unfazed.contrib.auth.models",
+                    "unfazed.contrib.admin.models",
+                ]
+            }
+        },
+    },
+    "CACHE": {
+        "default": {
+            "BACKEND": "unfazed.cache.backends.locmem.LocMemCache",
+            "LOCATION": PROJECT_NAME,
+        },
+    },
     "MIDDLEWARE": ["unfazed.middleware.internal.common.CommonMiddleware"],
     "LOGGING": {
         "formatters": {
