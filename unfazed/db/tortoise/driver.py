@@ -1,5 +1,6 @@
 import logging
 import typing as t
+import warnings
 from importlib.metadata import version
 from pathlib import Path
 
@@ -70,7 +71,15 @@ class Driver(DataBaseDriver):
     @staticmethod
     def get_tortoise_init_kwargs() -> dict[str, bool]:
         # https://tortoise.github.io/setup.html#global-context-fallback
-        if Version(version("tortoise-orm")) >= Version("1.0.0"):
+        _current_version = version("tortoise-orm")
+        if Version(_current_version) >= Version("1.0.0"):
+            warnings.warn(
+                f"tortoise-orm {_current_version} (< 1.0.0) is deprecated: "
+                "support for versions below 1.0.0 will be removed in a future "
+                "release. Please upgrade to tortoise-orm>=1.0.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
             return {"_enable_global_fallback": True}
 
         return {}
