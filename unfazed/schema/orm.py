@@ -13,6 +13,13 @@ class SqliteCredential(BaseModel):
     journal_mode: str | None = Field(default=None, alias="JOURNAL_MODE")
     journal_size_limit: int | None = Field(default=None, alias="JOURNAL_SIZE_LIMIT")
     foreign_keys: str | None = Field(default=None, alias="FOREIGN_KEYS")
+    synchronous: str | None = Field(default=None, alias="SYNCHRONOUS")
+    busy_timeout: int | None = Field(default=None, alias="BUSY_TIMEOUT")
+    cache_size: int | None = Field(default=None, alias="CACHE_SIZE")
+    temp_store: int | None = Field(default=None, alias="TEMP_STORE")
+    wal_autocheckpoint: int | None = Field(default=None, alias="WAL_AUTOCHECKPOINT")
+    mmap_size: int | None = Field(default=None, alias="MMAP_SIZE")
+    locking_mode: str | None = Field(default=None, alias="LOCKING_MODE")
 
 
 class BaseCredential(BaseModel):
@@ -23,7 +30,6 @@ class BaseCredential(BaseModel):
     database: str = Field(..., alias="DATABASE")
     minsize: int | None = Field(default=None, alias="MIN_SIZE")
     maxsize: int | None = Field(default=None, alias="MAX_SIZE")
-    ssl: t.Optional[bool] = Field(default=None, alias="SSL")
 
 
 class PgsqlCredential(BaseCredential):
@@ -31,13 +37,32 @@ class PgsqlCredential(BaseCredential):
     max_inactive_connection_lifetime: float | None = Field(
         default=None, alias="MAX_INACTIVE_CONNECTION_LIFETIME"
     )
-    # schema: _[t.Any] = Field(None, alias="SCHEMA")
+    ssl: bool | None = Field(default=None, alias="SSL")
+    command_timeout: float | None = Field(default=None, alias="COMMAND_TIMEOUT")
+    timeout: float | None = Field(default=None, alias="TIMEOUT")
+    statement_cache_size: int | None = Field(default=None, alias="STATEMENT_CACHE_SIZE")
+    max_cached_statement_lifetime: int | None = Field(
+        default=None, alias="MAX_CACHED_STATEMENT_LIFETIME"
+    )
+    max_cacheable_statement_size: int | None = Field(
+        default=None, alias="MAX_CACHEABLE_STATEMENT_SIZE"
+    )
+    application_name: str | None = Field(default=None, alias="APPLICATION_NAME")
+    server_settings: dict[str, t.Any] | None = Field(
+        default=None, alias="SERVER_SETTINGS"
+    )
 
 
 class MysqlCredential(BaseCredential):
     connect_timeout: int | None = Field(default=None, alias="CONNECT_TIMEOUT")
-    echo: bool | None = Field(default=None, alias="ECHO")
     charset: str | None = Field(default=None, alias="CHARSET")
+    ssl: dict[str, t.Any] | None = Field(default=None, alias="SSL")
+    echo: bool | None = Field(default=None, alias="ECHO")
+    pool_recycle: int | None = Field(default=None, alias="POOL_RECYCLE")
+    read_timeout: int | None = Field(default=None, alias="READ_TIMEOUT")
+    use_unicode: bool | None = Field(default=None, alias="USE_UNICODE")
+    init_command: str | None = Field(default=None, alias="INIT_COMMAND")
+    sql_mode: str | None = Field(default=None, alias="SQL_MODE")
 
 
 class Connection(BaseModel):
