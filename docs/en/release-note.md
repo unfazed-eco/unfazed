@@ -1,3 +1,7 @@
+v0.0.25
+=====
+- [issue #137](https://github.com/unfazed-eco/unfazed/issues/137) Add compatibility with Tortoise ORM 1.x and expand SQLite, PostgreSQL, and MySQL database connection settings.
+
 v0.0.24
 =====
 - [issue 19](https://github.com/unfazed-eco/unfazed/issues/19) Support the full HTTP Range protocol

@@ -1,3 +1,7 @@
+v0.0.25
+=====
+- [issue #137](https://github.com/unfazed-eco/unfazed/issues/137) 兼容 Tortoise ORM 1.x，同时扩展 SQLite、PostgreSQL 和 MySQL 数据库连接配置。
+
 v0.0.24
 =====
 - [issue 19](https://github.com/unfazed-eco/unfazed/issues/19) 支持完整的 Http Range 协议
