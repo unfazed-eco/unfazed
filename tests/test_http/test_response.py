@@ -394,6 +394,19 @@ async def test_fileresponse_multiple_ranges() -> None:
     assert body.endswith(f"--{boundary}--\r\n".encode("latin-1"))
 
 
+def test_multipart_range_handler_content_length() -> None:
+    file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
+    handler = MultipartRangeFileHandler(
+        file_path,
+        [ByteRange(0, 5), ByteRange(10, 15)],
+        boundary="unfazed-boundary",
+        content_type="application/octet-stream",
+        file_size=os.path.getsize(file_path),
+    )
+
+    assert handler.content_length == len(b"".join(handler))
+
+
 def test_multipart_range_handler_errors_when_file_ends_early() -> None:
     file_path = os.path.join(os.path.dirname(__file__), "zenofpython.txt")
     file_size = os.stat(file_path).st_size
